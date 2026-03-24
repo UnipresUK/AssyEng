@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AssyEng Task Manager</title>
+<style>
+/* ===== CSS VARIABLES ===== */
+:root {
+  --primary: #2d5a3d;
+  --primary-light: #3a7550;
+  --primary-dark: #1e3d2a;
+  --primary-subtle: #e8f0eb;
+  --sidebar-bg: #1a2e23;
+  --sidebar-hover: #253d30;
+  --sidebar-active: #2d5a3d;
+  --white: #ffffff;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --amber: #d97706;
+  --amber-light: #fffbeb;
+  --blue: #2563eb;
+  --blue-light: #eff6ff;
+  --green: #16a34a;
+  --green-light: #f0fdf4;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  --radius: 8px;
+  --radius-lg: 12px;
+  --transition: 0.2s ease;
+}
+
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--gray-100);
+  color: var(--gray-800);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; font-size: inherit; }
+
+/* ===== LOGIN SCREEN ===== */
+.login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+}
+.login-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 48px 40px;
+  width: 100%;
+  max-width: 420px;
+  margin: 20px;
+}
+.login-card h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.login-card .login-subtitle {
+  text-align: center;
+  color: var(--gray-500);
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+.login-card .form-group { margin-bottom: 20px; }
+.login-card label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+}
+.login-card input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 14px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+.login-card input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(45,90,61,0.15);
+}
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  transition: background var(--transition);
+}
+.login-btn:hover { background: var(--primary-light); }
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.login-error {
+  color: var(--red);
+  font-size: 13px;
+  text-align: center;
+  margin-top: 12px;
+  min-height: 20px;
+}
+
+/* ===== APP LAYOUT ===== */
+.app-layout { display: flex; min-height: 100vh; }
+.app-layout.hidden { display: none; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 240px;
+  background: var(--sidebar-bg);
+  color: var(--white);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+}
+.sidebar-brand {
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-brand h2 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.sidebar-brand span {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.sidebar-nav { flex: 1; padding: 16px 12px; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-radius: var(--radius);
+  color: rgba(255,255,255,0.7);
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  transition: all var(--transition);
+  margin-bottom: 4px;
+}
+.nav-item:hover { background: var(--sidebar-hover); color: var(--white); }
+.nav-item.active { background: var(--sidebar-active); color: var(--white); }
+.nav-item svg { width: 20px; height: 20px; flex-shrink: 0; }
+.sidebar-user {
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--white);
+  flex-shrink: 0;
+}
+.sidebar-user-info { flex: 1; min-width: 0; }
+.sidebar-user-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-user-role { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: capitalize; }
+.logout-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  padding: 6px;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+}
+.logout-btn:hover { color: var(--white); background: rgba(255,255,255,0.1); }
+.logout-btn svg { width: 18px; height: 18px; }
+
+/* ===== MAIN CONTENT ===== */
+.main-content {
+  flex: 1;
+  margin-left: 240px;
+  padding: 32px;
+  min-height: 100vh;
+}
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.page-header h1 { font-size: 24px; font-weight: 700; color: var(--gray-900); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  transition: all var(--transition);
+}
+.btn-primary { background: var(--primary); color: var(--white); }
+.btn-primary:hover { background: var(--primary-light); }
+.btn-secondary { background: var(--gray-200); color: var(--gray-700); }
+.btn-secondary:hover { background: var(--gray-300); }
+.btn-danger { background: var(--red); color: var(--white); }
+.btn-danger:hover { background: #b91c1c; }
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+.btn svg { width: 16px; height: 16px; }
+
+/* ===== CARDS ===== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  transition: box-shadow var(--transition);
+}
+.stat-card:hover { box-shadow: var(--shadow-md); }
+.stat-card .stat-label {
+  font-size: 13px;
+  color: var(--gray-500);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.stat-card .stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--gray-900);
+}
+.stat-card .stat-sub {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-top: 4px;
+}
+.stat-card.primary { border-left: 4px solid var(--primary); }
+.stat-card.warning { border-left: 4px solid var(--amber); }
+.stat-card.danger { border-left: 4px solid var(--red); }
+.stat-card.info { border-left: 4px solid var(--blue); }
+
+/* ===== KANBAN BOARD ===== */
+.kanban-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.kanban-filters select, .kanban-filters input {
+  padding: 8px 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: var(--white);
+  outline: none;
+  min-width: 150px;
+}
+.kanban-filters select:focus, .kanban-filters input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(45,90,61,0.1);
+}
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  min-height: 400px;
+}
+.kanban-column {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  border: 1px solid var(--gray-200);
+}
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--gray-200);
+}
+.kanban-column-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-700);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.kanban-count {
+  background: var(--gray-200);
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.kanban-cards { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
+.task-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.task-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.task-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.task-card-title { font-size: 14px; font-weight: 600; color: var(--gray-800); line-height: 1.3; flex: 1; }
+.priority-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.priority-low { background: var(--blue-light); color: var(--blue); }
+.priority-medium { background: var(--amber-light); color: var(--amber); }
+.priority-high { background: var(--red-light); color: var(--red); }
+.task-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--gray-500);
+  flex-wrap: wrap;
+}
+.task-card-meta .member-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.task-card-meta .member-name { font-weight: 500; }
+.task-card-meta .due-date { display: flex; align-items: center; gap: 3px; }
+.task-card-meta .due-date.overdue { color: var(--red); font-weight: 600; }
+.task-card-meta .objective-link {
+  font-style: italic;
+  color: var(--primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+/* ===== OBJECTIVES VIEW ===== */
+.objectives-list { display: flex; flex-direction: column; gap: 24px; }
+.member-objectives-group {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  overflow: hidden;
+}
+.member-objectives-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+}
+.member-objectives-header .member-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--white);
+}
+.member-objectives-header h3 { font-size: 16px; font-weight: 600; }
+.member-objectives-header .member-role {
+  font-size: 12px;
+  color: var(--gray-500);
+  text-transform: capitalize;
+  background: var(--gray-200);
+  padding: 2px 10px;
+  border-radius: 10px;
+}
+.objective-item {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gray-100);
+}
+.objective-item:last-child { border-bottom: none; }
+.objective-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.objective-title { font-size: 15px; font-weight: 600; color: var(--gray-800); }
+.objective-desc { font-size: 13px; color: var(--gray-500); margin-bottom: 14px; }
+.objective-year {
+  font-size: 12px;
+  background: var(--primary-subtle);
+  color: var(--primary);
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.month-tracker {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.month-checkbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.month-checkbox span {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+}
+.month-checkbox input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.progress-bar-container {
+  background: var(--gray-200);
+  border-radius: 6px;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+.progress-text { font-size: 12px; color: var(--gray-500); margin-bottom: 12px; }
+.linked-tasks { margin-top: 10px; }
+.linked-tasks-title { font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
+.linked-task-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--gray-600);
+  padding: 4px 0;
+}
+.linked-task-item .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-todo { background: var(--gray-400); }
+.status-inprogress { background: var(--amber); }
+.status-done { background: var(--green); }
+
+/* ===== TEAM TAB ===== */
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+.team-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition);
+}
+.team-card:hover { box-shadow: var(--shadow-md); }
+.team-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.team-card-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--white);
+}
+.team-card-info h3 { font-size: 16px; font-weight: 600; }
+.team-card-info .team-role {
+  font-size: 12px;
+  text-transform: capitalize;
+  color: var(--gray-500);
+}
+.team-card-email {
+  font-size: 13px;
+  color: var(--gray-500);
+  margin-bottom: 16px;
+  word-break: break-all;
+}
+.team-card-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  background: var(--gray-50);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.team-stat { text-align: center; }
+.team-stat .team-stat-value { font-size: 20px; font-weight: 700; color: var(--gray-800); }
+.team-stat .team-stat-label { font-size: 11px; color: var(--gray-500); }
+.team-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ===== DASHBOARD MEMBER SUMMARIES ===== */
+.member-summaries {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+.member-summary-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  border: 1px solid var(--gray-200);
+  box-shadow: var(--shadow-sm);
+}
+.member-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.member-summary-header .mini-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--white);
+}
+.member-summary-header h4 { font-size: 14px; font-weight: 600; }
+.member-summary-objectives { margin-bottom: 12px; }
+.member-summary-objectives h5 {
+  font-size: 12px;
+  color: var(--gray-500);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.mini-objective {
+  font-size: 12px;
+  color: var(--gray-600);
+  padding: 3px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mini-objective .mini-check {
+  color: var(--green);
+  font-weight: 700;
+}
+
+/* ===== MODALS ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition), visibility var(--transition);
+}
+.modal-overlay.visible { opacity: 1; visibility: visible; }
+.modal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 20px;
+  transform: scale(0.95);
+  transition: transform var(--transition);
+}
+.modal-overlay.visible .modal { transform: scale(1); }
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--gray-200);
+}
+.modal-header h2 { font-size: 18px; font-weight: 700; }
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--gray-400);
+  padding: 4px;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+}
+.modal-close:hover { background: var(--gray-100); color: var(--gray-600); }
+.modal-close svg { width: 20px; height: 20px; }
+.modal-body { padding: 24px; }
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--gray-200);
+}
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 6px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 14px;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(45,90,61,0.12);
+}
+.form-group textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* ===== TOAST NOTIFICATIONS ===== */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.toast {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 14px 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 280px;
+  max-width: 420px;
+  animation: toastIn 0.3s ease;
+  border-left: 4px solid var(--primary);
+}
+.toast.success { border-left-color: var(--green); }
+.toast.error { border-left-color: var(--red); }
+.toast.removing { animation: toastOut 0.3s ease forwards; }
+@keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes toastOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(40px); } }
+
+/* ===== LOADING SPINNER ===== */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid var(--gray-200);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+.spinner-lg { width: 36px; height: 36px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 60px 20px;
+  color: var(--gray-500);
+  font-size: 14px;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--gray-400);
+}
+.empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; }
+.empty-state p { font-size: 14px; }
+
+/* ===== SECTION CARDS ===== */
+.section-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--gray-200);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.section-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: 16px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .sidebar { width: 200px; }
+  .main-content { margin-left: 200px; padding: 24px; }
+  .kanban-board { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .main-content { margin-left: 0; padding: 16px; }
+  .form-row { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <h1>AssyEng Task Manager</h1>
+    <p class="login-subtitle">Sign in to manage tasks and objectives</p>
+    <div class="form-group">
+      <label for="loginUser">Username</label>
+      <input type="text" id="loginUser" placeholder="Enter your username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label for="loginPass">Password</label>
+      <input type="password" id="loginPass" placeholder="Enter your password" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ===== APP LAYOUT ===== -->
+<div class="app-layout hidden" id="appLayout">
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <h2>AssyEng</h2>
+      <span>Task Manager</span>
+    </div>
+    <div class="sidebar-nav">
+      <button class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-tab="tasks" onclick="switchTab('tasks')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Tasks
+      </button>
+      <button class="nav-item" data-tab="objectives" onclick="switchTab('objectives')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        Objectives
+      </button>
+      <button class="nav-item" data-tab="team" onclick="switchTab('team')" id="navTeam" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Team
+      </button>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebarAvatar"></div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sidebarName"></div>
+        <div class="sidebar-user-role" id="sidebarRole"></div>
+      </div>
+      <button class="logout-btn" onclick="handleLogout()" title="Sign out">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- DASHBOARD TAB -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="page-header"><h1>Dashboard</h1></div>
+      <div class="stats-grid" id="dashboardStats"></div>
+      <div class="section-card">
+        <h3 id="currentMonthTitle">Current Month Focus</h3>
+        <div id="currentMonthContent"></div>
+      </div>
+      <h3 style="font-size:16px;font-weight:600;margin-bottom:16px;color:var(--gray-800)">Team Member Summaries</h3>
+      <div class="member-summaries" id="memberSummaries"></div>
+    </div>
+
+    <!-- TASKS TAB -->
+    <div class="tab-content" id="tab-tasks">
+      <div class="page-header">
+        <h1>Tasks</h1>
+        <button class="btn btn-primary" onclick="openTaskModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Task
+        </button>
+      </div>
+      <div class="kanban-filters" id="kanbanFilters">
+        <select id="filterMember" onchange="renderKanban()">
+          <option value="">All Members</option>
+        </select>
+        <select id="filterPriority" onchange="renderKanban()">
+          <option value="">All Priorities</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <select id="filterMonth" onchange="renderKanban()">
+          <option value="">All Months</option>
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+      </div>
+      <div class="kanban-board" id="kanbanBoard"></div>
+    </div>
+
+    <!-- OBJECTIVES TAB -->
+    <div class="tab-content" id="tab-objectives">
+      <div class="page-header">
+        <h1>Objectives</h1>
+        <button class="btn btn-primary" onclick="openObjectiveModal()" id="addObjBtn" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Objective
+        </button>
+      </div>
+      <div class="objectives-list" id="objectivesList"></div>
+    </div>
+
+    <!-- TEAM TAB -->
+    <div class="tab-content" id="tab-team">
+      <div class="page-header">
+        <h1>Team</h1>
+        <button class="btn btn-primary" onclick="openTeamModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Member
+        </button>
+      </div>
+      <div class="team-grid" id="teamGrid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ===== TASK MODAL ===== -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="taskModalTitle">Add Task</h2>
+      <button class="modal-close" onclick="closeModal('taskModal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="taskId">
+      <div class="form-group">
+        <label for="taskTitle">Title</label>
+        <input type="text" id="taskTitle" placeholder="Enter task title">
+      </div>
+      <div class="form-group">
+        <label for="taskNotes">Notes</label>
+        <textarea id="taskNotes" placeholder="Add notes or description"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="taskAssignee">Assignee</label>
+          <select id="taskAssignee"></select>
+        </div>
+        <div class="form-group">
+          <label for="taskObjective">Linked Objective</label>
+          <select id="taskObjective"><option value="">None</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="taskPriority">Priority</label>
+          <select id="taskPriority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="taskStatus">Status</label>
+          <select id="taskStatus">
+            <option value="todo">To Do</option>
+            <option value="inprogress">In Progress</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="taskMonth">Month</label>
+          <select id="taskMonth">
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="taskDue">Due Date</label>
+          <input type="date" id="taskDue">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="taskDeleteBtn" onclick="deleteTask()" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn btn-secondary" onclick="closeModal('taskModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTask()">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== OBJECTIVE MODAL ===== -->
+<div class="modal-overlay" id="objectiveModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="objModalTitle">Add Objective</h2>
+      <button class="modal-close" onclick="closeModal('objectiveModal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="objId">
+      <div class="form-group">
+        <label for="objTitle">Title</label>
+        <input type="text" id="objTitle" placeholder="Objective title">
+      </div>
+      <div class="form-group">
+        <label for="objDesc">Description</label>
+        <textarea id="objDesc" placeholder="Describe the objective and what success looks like"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="objMember">Assigned To</label>
+          <select id="objMember"></select>
+        </div>
+        <div class="form-group">
+          <label for="objYear">Year</label>
+          <input type="number" id="objYear" value="2026" min="2024" max="2030">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="objDeleteBtn" onclick="deleteObjective()" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn btn-secondary" onclick="closeModal('objectiveModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveObjective()">Save Objective</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TEAM MEMBER MODAL ===== -->
+<div class="modal-overlay" id="teamModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="teamModalTitle">Add Team Member</h2>
+      <button class="modal-close" onclick="closeModal('teamModal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="teamMemberId">
+      <div class="form-group">
+        <label for="teamName">Full Name</label>
+        <input type="text" id="teamName" placeholder="Full name">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="teamUsername">Username</label>
+          <input type="text" id="teamUsername" placeholder="Login username">
+        </div>
+        <div class="form-group">
+          <label for="teamPassword">Password</label>
+          <input type="text" id="teamPassword" placeholder="Set password">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="teamRole">Role</label>
+          <select id="teamRole">
+            <option value="engineer">Engineer</option>
+            <option value="manager">Manager</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="teamColor">Color</label>
+          <input type="color" id="teamColor" value="#2d5a3d" style="height:38px">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="teamEmail">Email</label>
+        <input type="email" id="teamEmail" placeholder="Email address">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="teamDeleteBtn" onclick="deleteTeamMember()" style="display:none;margin-right:auto">Delete</button>
+      <button class="btn btn-secondary" onclick="closeModal('teamModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTeamMember()">Save Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ================================================================
+   CONFIG - Update this URL after redeploying your Google Apps Script
+   ================================================================ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzyPVtMryCbSgM4Aic_JtNmlNlXhOswx1hgll_S882lhZxJiMoMFLNts-zD6yskDOb81Q/exec';
+
+/* ===== STATE ===== */
+let currentUser = null;
+let users = [];
+let tasks = [];
+let objectives = [];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+/* ===== API HELPERS ===== */
+async function apiCall(params) {
+  const url = new URL(API_URL);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
+  try {
+    const res = await fetch(url.toString());
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'API error');
+    return data.data;
+  } catch (err) {
+    console.error('API Error:', err);
+    throw err;
+  }
+}
+
+function generateId() {
+  return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+/* ===== TOAST ===== */
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${type === 'success' ? '&#10003;' : '&#10007;'}</span> ${escapeHtml(message)}`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('removing');
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+/* ===== MODAL HELPERS ===== */
+function openModal(id) {
+  document.getElementById(id).classList.add('visible');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('visible');
+}
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('visible');
+  });
+});
+
+/* ===== LOGIN ===== */
+async function handleLogin() {
+  const username = document.getElementById('loginUser').value.trim();
+  const password = document.getElementById('loginPass').value.trim();
+  const errorEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+
+  if (!username || !password) { errorEl.textContent = 'Please enter both fields.'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px"></span> Signing in...';
+  errorEl.textContent = '';
+
+  try {
+    const data = await apiCall({ action: 'login', username, password });
+    if (data && data.id) {
+      currentUser = data;
+      localStorage.setItem('assyeng_session', JSON.stringify(data));
+      showApp();
+    } else {
+      errorEl.textContent = 'Invalid credentials.';
+    }
+  } catch (err) {
+    errorEl.textContent = err.message || 'Login failed. Check credentials.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+  }
+}
+
+function handleLogout() {
+  currentUser = null;
+  localStorage.removeItem('assyeng_session');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appLayout').classList.add('hidden');
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').textContent = '';
+}
+
+// Enter key on login
+document.getElementById('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+document.getElementById('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginPass').focus(); });
+
+/* ===== SESSION RESTORE ===== */
+function checkSession() {
+  const saved = localStorage.getItem('assyeng_session');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      if (currentUser && currentUser.id) { showApp(); return; }
+    } catch (e) {}
+  }
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+/* ===== SHOW APP ===== */
+async function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appLayout').classList.remove('hidden');
+
+  // Sidebar user info
+  const initials = (currentUser.name || '').split(' ').map(w => w[0]).join('').toUpperCase();
+  document.getElementById('sidebarAvatar').textContent = initials;
+  document.getElementById('sidebarAvatar').style.background = currentUser.color || '#2d5a3d';
+  document.getElementById('sidebarName').textContent = currentUser.name;
+  document.getElementById('sidebarRole').textContent = currentUser.role;
+
+  const isManager = currentUser.role === 'manager';
+  document.getElementById('navTeam').style.display = isManager ? 'flex' : 'none';
+  document.getElementById('addObjBtn').style.display = isManager ? 'inline-flex' : 'none';
+
+  await loadAllData();
+  switchTab('dashboard');
+}
+
+/* ===== LOAD DATA ===== */
+async function loadAllData() {
+  try {
+    const [u, t, o] = await Promise.all([
+      apiCall({ action: 'read', sheet: 'Users' }),
+      apiCall({ action: 'read', sheet: 'Tasks' }),
+      apiCall({ action: 'read', sheet: 'Objectives' })
+    ]);
+    users = Array.isArray(u) ? u : [];
+    tasks = Array.isArray(t) ? t : [];
+    objectives = Array.isArray(o) ? o : [];
+
+    // Filter for engineers: they see only their own tasks/objectives
+    if (currentUser.role !== 'manager') {
+      tasks = tasks.filter(t => t.memberId === currentUser.id);
+      objectives = objectives.filter(o => o.memberId === currentUser.id);
+    }
+
+    populateDropdowns();
+    renderCurrentTab();
+  } catch (err) {
+    showToast('Failed to load data: ' + err.message, 'error');
+  }
+}
+
+function populateDropdowns() {
+  // Member filter
+  const memberFilter = document.getElementById('filterMember');
+  const prevMember = memberFilter.value;
+  memberFilter.innerHTML = '<option value="">All Members</option>';
+  const memberList = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.id);
+  memberList.forEach(u => {
+    memberFilter.innerHTML += `<option value="${u.id}">${escapeHtml(u.name)}</option>`;
+  });
+  memberFilter.value = prevMember;
+
+  // Task assignee
+  const taskAssignee = document.getElementById('taskAssignee');
+  taskAssignee.innerHTML = '';
+  memberList.forEach(u => {
+    taskAssignee.innerHTML += `<option value="${u.id}">${escapeHtml(u.name)}</option>`;
+  });
+
+  // Task objective dropdown
+  const taskObj = document.getElementById('taskObjective');
+  taskObj.innerHTML = '<option value="">None</option>';
+  objectives.forEach(o => {
+    taskObj.innerHTML += `<option value="${o.id}">${escapeHtml(o.title)}</option>`;
+  });
+
+  // Objective member dropdown
+  const objMember = document.getElementById('objMember');
+  objMember.innerHTML = '';
+  users.forEach(u => {
+    objMember.innerHTML += `<option value="${u.id}">${escapeHtml(u.name)}</option>`;
+  });
+}
+
+/* ===== TAB SWITCHING ===== */
+function switchTab(tab) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === `tab-${tab}`));
+  renderCurrentTab();
+}
+
+function renderCurrentTab() {
+  const active = document.querySelector('.tab-content.active');
+  if (!active) return;
+  const tab = active.id.replace('tab-', '');
+  switch (tab) {
+    case 'dashboard': renderDashboard(); break;
+    case 'tasks': renderKanban(); break;
+    case 'objectives': renderObjectives(); break;
+    case 'team': renderTeam(); break;
+  }
+}
+
+/* ===== HELPER: get user by id ===== */
+function getUserById(id) { return users.find(u => u.id === id); }
+function getObjectiveById(id) { return objectives.find(o => o.id === id); }
+
+function getTasksForObjective(objId) {
+  return tasks.filter(t => t.objectiveId === objId);
+}
+
+function isOverdue(task) {
+  if (!task.due || task.status === 'done') return false;
+  return new Date(task.due) < new Date(new Date().toDateString());
+}
+
+/* ===== RENDER: DASHBOARD ===== */
+function renderDashboard() {
+  const total = tasks.length;
+  const todo = tasks.filter(t => t.status === 'todo').length;
+  const inprog = tasks.filter(t => t.status === 'inprogress').length;
+  const done = tasks.filter(t => t.status === 'done').length;
+  const overdue = tasks.filter(t => isOverdue(t)).length;
+
+  document.getElementById('dashboardStats').innerHTML = `
+    <div class="stat-card primary">
+      <div class="stat-label">Total Tasks</div>
+      <div class="stat-value">${total}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">To Do</div>
+      <div class="stat-value">${todo}</div>
+      <div class="stat-sub">${total ? Math.round(todo/total*100) : 0}% of total</div>
+    </div>
+    <div class="stat-card info">
+      <div class="stat-label">In Progress</div>
+      <div class="stat-value">${inprog}</div>
+      <div class="stat-sub">${total ? Math.round(inprog/total*100) : 0}% of total</div>
+    </div>
+    <div class="stat-card" style="border-left:4px solid var(--green)">
+      <div class="stat-label">Completed</div>
+      <div class="stat-value">${done}</div>
+      <div class="stat-sub">${total ? Math.round(done/total*100) : 0}% of total</div>
+    </div>
+    <div class="stat-card ${overdue > 0 ? 'danger' : ''}">
+      <div class="stat-label">Overdue</div>
+      <div class="stat-value">${overdue}</div>
+      <div class="stat-sub">${overdue > 0 ? 'Needs attention' : 'All on track'}</div>
+    </div>
+  `;
+
+  // Current month focus
+  const now = new Date();
+  const curMonth = now.getMonth() + 1;
+  document.getElementById('currentMonthTitle').textContent = `${MONTH_FULL[curMonth - 1]} ${now.getFullYear()} Focus`;
+  const monthTasks = tasks.filter(t => Number(t.month) === curMonth);
+  const monthDone = monthTasks.filter(t => t.status === 'done').length;
+  const monthOverdue = monthTasks.filter(t => isOverdue(t)).length;
+  document.getElementById('currentMonthContent').innerHTML = monthTasks.length === 0
+    ? '<p style="color:var(--gray-400);font-size:14px">No tasks scheduled for this month.</p>'
+    : `<p style="font-size:14px;color:var(--gray-600)">${monthTasks.length} task${monthTasks.length !== 1 ? 's' : ''} this month &mdash; ${monthDone} done, ${monthTasks.length - monthDone} remaining${monthOverdue > 0 ? `, <strong style="color:var(--red)">${monthOverdue} overdue</strong>` : ''}.</p>`;
+
+  // Member summaries
+  const memberList = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.id);
+  const container = document.getElementById('memberSummaries');
+  container.innerHTML = memberList.map(user => {
+    const memberObjs = objectives.filter(o => o.memberId === user.id);
+    const memberTasks = tasks.filter(t => t.memberId === user.id);
+    const memberDone = memberTasks.filter(t => t.status === 'done').length;
+    const pct = memberTasks.length ? Math.round(memberDone / memberTasks.length * 100) : 0;
+    const initials = (user.name || '').split(' ').map(w => w[0]).join('').toUpperCase();
+    return `
+      <div class="member-summary-card">
+        <div class="member-summary-header">
+          <div class="mini-avatar" style="background:${user.color || '#666'}">${initials}</div>
+          <h4>${escapeHtml(user.name)}</h4>
+        </div>
+        <div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--gray-500);margin-bottom:4px">
+            <span>Task completion</span><span>${pct}% (${memberDone}/${memberTasks.length})</span>
+          </div>
+          <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="member-summary-objectives">
+          <h5>Objectives (${memberObjs.length})</h5>
+          ${memberObjs.length === 0 ? '<p style="font-size:12px;color:var(--gray-400)">No objectives assigned.</p>' :
+            memberObjs.map(o => {
+              const oTasks = getTasksForObjective(o.id);
+              const oDone = oTasks.filter(t => t.status === 'done').length;
+              return `<div class="mini-objective"><span class="mini-check">${oDone === oTasks.length && oTasks.length > 0 ? '&#10003;' : '&#9675;'}</span> ${escapeHtml(o.title)} ${oTasks.length ? `(${oDone}/${oTasks.length})` : ''}</div>`;
+            }).join('')
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ===== RENDER: KANBAN ===== */
+function renderKanban() {
+  const memberFilter = document.getElementById('filterMember').value;
+  const priorityFilter = document.getElementById('filterPriority').value;
+  const monthFilter = document.getElementById('filterMonth').value;
+
+  let filtered = [...tasks];
+  if (memberFilter) filtered = filtered.filter(t => t.memberId === memberFilter);
+  if (priorityFilter) filtered = filtered.filter(t => t.priority === priorityFilter);
+  if (monthFilter) filtered = filtered.filter(t => String(t.month) === monthFilter);
+
+  const columns = [
+    { key: 'todo', label: 'To Do' },
+    { key: 'inprogress', label: 'In Progress' },
+    { key: 'done', label: 'Done' }
+  ];
+
+  document.getElementById('kanbanBoard').innerHTML = columns.map(col => {
+    const colTasks = filtered.filter(t => t.status === col.key);
+    return `
+      <div class="kanban-column">
+        <div class="kanban-column-header">
+          <div class="kanban-column-title">${col.label} <span class="kanban-count">${colTasks.length}</span></div>
+        </div>
+        <div class="kanban-cards">
+          ${colTasks.length === 0 ? '<div class="empty-state"><p>No tasks</p></div>' :
+            colTasks.map(t => renderTaskCard(t)).join('')
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTaskCard(task) {
+  const user = getUserById(task.memberId);
+  const obj = getObjectiveById(task.objectiveId);
+  const overdue = isOverdue(task);
+  const dueStr = task.due ? new Date(task.due).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+  const userName = user ? user.name : 'Unassigned';
+  const userColor = user ? (user.color || '#666') : '#999';
+  const initials = userName.split(' ').map(w => w[0]).join('').toUpperCase();
+
+  return `
+    <div class="task-card" onclick="openTaskModal('${task.id}')">
+      <div class="task-card-header">
+        <div class="task-card-title">${escapeHtml(task.title)}</div>
+        <span class="priority-badge priority-${task.priority || 'medium'}">${task.priority || 'medium'}</span>
+      </div>
+      <div class="task-card-meta">
+        <span style="display:flex;align-items:center;gap:4px">
+          <span class="member-dot" style="background:${userColor}"></span>
+          <span class="member-name">${escapeHtml(userName)}</span>
+        </span>
+        ${dueStr ? `<span class="due-date ${overdue ? 'overdue' : ''}">${overdue ? '&#9888; ' : ''}${dueStr}</span>` : ''}
+        ${obj ? `<span class="objective-link" title="${escapeHtml(obj.title)}">&#127919; ${escapeHtml(obj.title)}</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+/* ===== TASK MODAL ===== */
+function openTaskModal(taskId) {
+  const isEdit = !!taskId;
+  document.getElementById('taskModalTitle').textContent = isEdit ? 'Edit Task' : 'Add Task';
+  document.getElementById('taskDeleteBtn').style.display = isEdit ? 'inline-flex' : 'none';
+
+  if (isEdit) {
+    const t = tasks.find(tk => tk.id === taskId);
+    if (!t) return;
+    document.getElementById('taskId').value = t.id;
+    document.getElementById('taskTitle').value = t.title || '';
+    document.getElementById('taskNotes').value = t.notes || '';
+    document.getElementById('taskAssignee').value = t.memberId || '';
+    document.getElementById('taskObjective').value = t.objectiveId || '';
+    document.getElementById('taskPriority').value = t.priority || 'medium';
+    document.getElementById('taskStatus').value = t.status || 'todo';
+    document.getElementById('taskMonth').value = t.month || (new Date().getMonth() + 1);
+    document.getElementById('taskDue').value = t.due || '';
+  } else {
+    document.getElementById('taskId').value = '';
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskNotes').value = '';
+    document.getElementById('taskAssignee').value = currentUser.id;
+    document.getElementById('taskObjective').value = '';
+    document.getElementById('taskPriority').value = 'medium';
+    document.getElementById('taskStatus').value = 'todo';
+    document.getElementById('taskMonth').value = new Date().getMonth() + 1;
+    document.getElementById('taskDue').value = '';
+  }
+  openModal('taskModal');
+}
+
+async function saveTask() {
+  const id = document.getElementById('taskId').value;
+  const title = document.getElementById('taskTitle').value.trim();
+  if (!title) { showToast('Task title is required.', 'error'); return; }
+
+  const row = {
+    id: id || generateId(),
+    title,
+    notes: document.getElementById('taskNotes').value.trim(),
+    memberId: document.getElementById('taskAssignee').value,
+    objectiveId: document.getElementById('taskObjective').value,
+    priority: document.getElementById('taskPriority').value,
+    status: document.getElementById('taskStatus').value,
+    month: document.getElementById('taskMonth').value,
+    due: document.getElementById('taskDue').value,
+    comments: '[]',
+    parentId: '',
+    visibility: '',
+    teamAssignees: ''
+  };
+
+  try {
+    await apiCall({ action: id ? 'update' : 'create', sheet: 'Tasks', row: JSON.stringify(row) });
+    showToast(id ? 'Task updated.' : 'Task created.');
+    closeModal('taskModal');
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to save task: ' + err.message, 'error');
+  }
+}
+
+async function deleteTask() {
+  const id = document.getElementById('taskId').value;
+  if (!id || !confirm('Delete this task?')) return;
+  try {
+    await apiCall({ action: 'delete', sheet: 'Tasks', id });
+    showToast('Task deleted.');
+    closeModal('taskModal');
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to delete task: ' + err.message, 'error');
+  }
+}
+
+/* ===== RENDER: OBJECTIVES ===== */
+function renderObjectives() {
+  const memberList = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.id);
+  const container = document.getElementById('objectivesList');
+
+  if (objectives.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>No objectives found.</p></div>';
+    return;
+  }
+
+  container.innerHTML = memberList.map(user => {
+    const memberObjs = objectives.filter(o => o.memberId === user.id);
+    if (memberObjs.length === 0) return '';
+    const initials = (user.name || '').split(' ').map(w => w[0]).join('').toUpperCase();
+    return `
+      <div class="member-objectives-group">
+        <div class="member-objectives-header">
+          <div class="member-avatar" style="background:${user.color || '#666'}">${initials}</div>
+          <h3>${escapeHtml(user.name)}</h3>
+          <span class="member-role">${user.role}</span>
+        </div>
+        ${memberObjs.map(obj => renderObjectiveItem(obj)).join('')}
+      </div>
+    `;
+  }).filter(Boolean).join('') || '<div class="empty-state"><p>No objectives assigned to visible members.</p></div>';
+}
+
+function renderObjectiveItem(obj) {
+  let completedMonths = [];
+  try { completedMonths = JSON.parse(obj.completedMonths || '[]'); } catch (e) {}
+  const linkedTasks = getTasksForObjective(obj.id);
+  const doneTasks = linkedTasks.filter(t => t.status === 'done').length;
+  const pct = linkedTasks.length ? Math.round(doneTasks / linkedTasks.length * 100) : 0;
+  const isManager = currentUser.role === 'manager';
+
+  return `
+    <div class="objective-item">
+      <div class="objective-header">
+        <div>
+          <div class="objective-title">${escapeHtml(obj.title)}</div>
+          <div class="objective-desc">${escapeHtml(obj.desc || '')}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="objective-year">${obj.year || ''}</span>
+          ${isManager ? `<button class="btn btn-sm btn-secondary" onclick="openObjectiveModal('${obj.id}')">Edit</button>` : ''}
+        </div>
+      </div>
+      <div class="month-tracker">
+        ${MONTHS.map((m, i) => `
+          <div class="month-checkbox">
+            <span>${m}</span>
+            <input type="checkbox" ${completedMonths.includes(i + 1) ? 'checked' : ''} onchange="toggleObjMonth('${obj.id}', ${i + 1}, this.checked)" ${!isManager ? 'disabled' : ''}>
+          </div>
+        `).join('')}
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--gray-500);margin-bottom:4px">
+        <span>Task progress</span><span>${pct}% (${doneTasks}/${linkedTasks.length})</span>
+      </div>
+      <div class="progress-bar-container"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+      <div class="progress-text">${completedMonths.length}/12 months completed</div>
+      ${linkedTasks.length > 0 ? `
+        <div class="linked-tasks">
+          <div class="linked-tasks-title">Linked Tasks</div>
+          ${linkedTasks.map(t => `
+            <div class="linked-task-item">
+              <span class="status-dot status-${t.status}"></span>
+              ${escapeHtml(t.title)}
+              <span style="margin-left:auto" class="priority-badge priority-${t.priority || 'medium'}">${t.priority || 'medium'}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </div>
+  `;
+}
+
+async function toggleObjMonth(objId, month, checked) {
+  const obj = objectives.find(o => o.id === objId);
+  if (!obj) return;
+  let cm = [];
+  try { cm = JSON.parse(obj.completedMonths || '[]'); } catch (e) {}
+  if (checked && !cm.includes(month)) cm.push(month);
+  if (!checked) cm = cm.filter(m => m !== month);
+  cm.sort((a, b) => a - b);
+
+  const row = { ...obj, completedMonths: JSON.stringify(cm) };
+  try {
+    await apiCall({ action: 'update', sheet: 'Objectives', row: JSON.stringify(row) });
+    showToast('Month updated.');
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to update: ' + err.message, 'error');
+  }
+}
+
+/* ===== OBJECTIVE MODAL ===== */
+function openObjectiveModal(objId) {
+  const isEdit = !!objId;
+  document.getElementById('objModalTitle').textContent = isEdit ? 'Edit Objective' : 'Add Objective';
+  document.getElementById('objDeleteBtn').style.display = isEdit ? 'inline-flex' : 'none';
+
+  if (isEdit) {
+    const o = objectives.find(ob => ob.id === objId);
+    if (!o) return;
+    document.getElementById('objId').value = o.id;
+    document.getElementById('objTitle').value = o.title || '';
+    document.getElementById('objDesc').value = o.desc || '';
+    document.getElementById('objMember').value = o.memberId || '';
+    document.getElementById('objYear').value = o.year || new Date().getFullYear();
+  } else {
+    document.getElementById('objId').value = '';
+    document.getElementById('objTitle').value = '';
+    document.getElementById('objDesc').value = '';
+    document.getElementById('objMember').value = currentUser.id;
+    document.getElementById('objYear').value = new Date().getFullYear();
+  }
+  openModal('objectiveModal');
+}
+
+async function saveObjective() {
+  const id = document.getElementById('objId').value;
+  const title = document.getElementById('objTitle').value.trim();
+  if (!title) { showToast('Objective title is required.', 'error'); return; }
+
+  const existingObj = id ? objectives.find(o => o.id === id) : null;
+  let completedMonths = '[]';
+  if (existingObj) {
+    try { completedMonths = existingObj.completedMonths || '[]'; } catch (e) {}
+  }
+
+  const row = {
+    id: id || generateId(),
+    title,
+    desc: document.getElementById('objDesc').value.trim(),
+    memberId: document.getElementById('objMember').value,
+    year: document.getElementById('objYear').value,
+    completedMonths
+  };
+
+  try {
+    await apiCall({ action: id ? 'update' : 'create', sheet: 'Objectives', row: JSON.stringify(row) });
+    showToast(id ? 'Objective updated.' : 'Objective created.');
+    closeModal('objectiveModal');
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to save objective: ' + err.message, 'error');
+  }
+}
+
+async function deleteObjective() {
+  const id = document.getElementById('objId').value;
+  if (!id || !confirm('Delete this objective? Linked tasks will not be deleted.')) return;
+  try {
+    await apiCall({ action: 'delete', sheet: 'Objectives', id });
+    showToast('Objective deleted.');
+    closeModal('objectiveModal');
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to delete objective: ' + err.message, 'error');
+  }
+}
+
+/* ===== RENDER: TEAM ===== */
+function renderTeam() {
+  const container = document.getElementById('teamGrid');
+  container.innerHTML = users.map(user => {
+    const initials = (user.name || '').split(' ').map(w => w[0]).join('').toUpperCase();
+    const memberTasks = tasks.filter(t => t.memberId === user.id);
+    const memberDone = memberTasks.filter(t => t.status === 'done').length;
+    const memberObjs = objectives.filter(o => o.memberId === user.id);
+    return `
+      <div class="team-card">
+        <div class="team-card-header">
+          <div class="team-card-avatar" style="background:${user.color || '#666'}">${initials}</div>
+          <div class="team-card-info">
+            <h3>${escapeHtml(user.name)}</h3>
+            <div class="team-role">${user.role}</div>
+          </div>
+        </div>
+        <div class="team-card-email">${escapeHtml(user.email || 'No email')}</div>
+        <div class="team-card-stats">
+          <div class="team-stat">
+            <div class="team-stat-value">${memberObjs.length}</div>
+            <div class="team-stat-label">Objectives</div>
+          </div>
+          <div class="team-stat">
+            <div class="team-stat-value">${memberDone}</div>
+            <div class="team-stat-label">Completed</div>
+          </div>
+          <div class="team-stat">
+            <div class="team-stat-value">${memberTasks.length}</div>
+            <div class="team-stat-label">Total Tasks</div>
+          </div>
+        </div>
+        <div class="team-card-actions">
+          <button class="btn btn-sm btn-secondary" onclick="openTeamModal('${user.id}')">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="removeTeamMember('${user.id}')">Remove</button>
+        </div>
+      </div>
+    `;
+  }).join('') || '<div class="empty-state"><p>No team members found.</p></div>';
+}
+
+/* ===== TEAM MODAL ===== */
+function openTeamModal(userId) {
+  const isEdit = !!userId;
+  document.getElementById('teamModalTitle').textContent = isEdit ? 'Edit Team Member' : 'Add Team Member';
+  document.getElementById('teamDeleteBtn').style.display = isEdit ? 'inline-flex' : 'none';
+
+  if (isEdit) {
+    const u = users.find(usr => usr.id === userId);
+    if (!u) return;
+    document.getElementById('teamMemberId').value = u.id;
+    document.getElementById('teamName').value = u.name || '';
+    document.getElementById('teamUsername').value = u.username || '';
+    document.getElementById('teamPassword').value = '';
+    document.getElementById('teamRole').value = u.role || 'engineer';
+    document.getElementById('teamColor').value = u.color || '#2d5a3d';
+    document.getElementById('teamEmail').value = u.email || '';
+  } else {
+    document.getElementById('teamMemberId').value = '';
+    document.getElementById('teamName').value = '';
+    document.getElementById('teamUsername').value = '';
+    document.getElementById('teamPassword').value = '';
+    document.getElementById('teamRole').value = 'engineer';
+    document.getElementById('teamColor').value = '#2d5a3d';
+    document.getElementById('teamEmail').value = '';
+  }
+  openModal('teamModal');
+}
+
+async function saveTeamMember() {
+  const id = document.getElementById('teamMemberId').value;
+  const name = document.getElementById('teamName').value.trim();
+  const username = document.getElementById('teamUsername').value.trim();
+  if (!name || !username) { showToast('Name and username are required.', 'error'); return; }
+
+  const existingUser = id ? users.find(u => u.id === id) : null;
+  const password = document.getElementById('teamPassword').value.trim();
+
+  const row = {
+    id: id || generateId(),
+    name,
+    username,
+    passwordHash: password || (existingUser ? existingUser.passwordHash : ''),
+    role: document.getElementById('teamRole').value,
+    email: document.getElementById('teamEmail').value.trim(),
+    color: document.getElementById('teamColor').value
+  };
+
+  try {
+    await apiCall({ action: id ? 'update' : 'create', sheet: 'Users', row: JSON.stringify(row) });
+    showToast(id ? 'Member updated.' : 'Member added.');
+    closeModal('teamModal');
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to save member: ' + err.message, 'error');
+  }
+}
+
+async function deleteTeamMember() {
+  const id = document.getElementById('teamMemberId').value;
+  if (!id || !confirm('Remove this team member?')) return;
+  try {
+    await apiCall({ action: 'delete', sheet: 'Users', id });
+    showToast('Member removed.');
+    closeModal('teamModal');
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to remove member: ' + err.message, 'error');
+  }
+}
+
+async function removeTeamMember(userId) {
+  if (!confirm('Remove this team member? This will not delete their tasks or objectives.')) return;
+  try {
+    await apiCall({ action: 'delete', sheet: 'Users', id: userId });
+    showToast('Member removed.');
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to remove member: ' + err.message, 'error');
+  }
+}
+
+/* ===== INIT ===== */
+checkSession();
+</script>
+</body>
+</html>
