@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dashboard",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "serve.cmd"],
+      "port": 3000
+    }
+  ]
+}

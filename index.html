@@ -258,15 +258,17 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   gap: 20px;
   margin-bottom: 32px;
 }
+/* #1 Clickable stat cards */
 .stat-card {
   background: var(--white);
   border-radius: var(--radius-lg);
   padding: 24px;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--gray-200);
-  transition: box-shadow var(--transition);
+  transition: box-shadow var(--transition), transform var(--transition);
+  cursor: pointer;
 }
-.stat-card:hover { box-shadow: var(--shadow-md); }
+.stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .stat-card .stat-label {
   font-size: 13px;
   color: var(--gray-500);
@@ -420,7 +422,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   padding: 12px 20px;
   border-bottom: 1px solid var(--gray-100);
   cursor: pointer;
-  transition: background var(--transition);
+  transition: background 0.3s ease;
   position: relative;
 }
 .task-row:last-child { border-bottom: none; }
@@ -429,15 +431,332 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .task-row.overdue-row:hover { background: rgba(220,38,38,0.06); }
 .task-row.today-row { background: rgba(45,90,61,0.02); }
 
-.task-row-status {
-  width: 4px;
-  height: 36px;
-  border-radius: 2px;
+/* #2 Compact/Cozy view density */
+.task-row.compact-row { padding: 4px 14px; gap: 8px; }
+.task-row.compact-row .complete-circle { width: 18px; height: 18px; }
+.task-row.compact-row .complete-circle svg { width: 10px; height: 10px; }
+.task-row.compact-row .subtask-btn svg { width: 12px; height: 12px; }
+.task-row.compact-row .task-row-title { font-size: 12px; }
+.task-row.compact-row .priority-badge { font-size: 9px; padding: 1px 6px; }
+.task-row.compact-row .task-row-due { font-size: 10px; }
+.task-row.compact-row .task-row-assignee { font-size: 10px; min-width: 80px; }
+.task-row.compact-row .task-row-assignee .member-dot { width: 6px; height: 6px; }
+.task-row.compact-row .task-row-objective { font-size: 10px; }
+.task-row.compact-row .status-select { font-size: 10px; padding: 2px 6px; min-width: 76px; }
+.task-date-group.compact .task-date-header { padding: 6px 0 3px; font-size: 11px; }
+.task-date-group.compact .task-date-header .group-count { font-size: 10px; }
+
+/* Kanban Board View */
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  min-height: 400px;
+}
+.kanban-column {
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+  min-width: 280px;
+  max-width: 320px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.kanban-column-header {
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gray-600);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--gray-200);
+}
+.kanban-column-header .col-count {
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--gray-200);
+  color: var(--gray-500);
+  padding: 1px 8px;
+  border-radius: 10px;
+}
+.kanban-column-body {
+  padding: 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+.kanban-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--gray-200);
+  cursor: pointer;
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+.kanban-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.kanban-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--gray-800);
+  margin-bottom: 8px;
+}
+.kanban-card.done-card .kanban-card-title {
+  text-decoration: line-through;
+  color: var(--gray-400);
+}
+.kanban-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.kanban-card-meta .member-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
-.task-row-status.status-todo { background: var(--gray-400); }
-.task-row-status.status-inprogress { background: var(--blue); }
-.task-row-status.status-done { background: var(--green); }
+.kanban-card-assignee {
+  font-size: 11px;
+  color: var(--gray-500);
+}
+.kanban-card-due {
+  font-size: 11px;
+  color: var(--gray-500);
+  margin-left: auto;
+}
+.kanban-card-due.overdue { color: var(--red); font-weight: 600; }
+.kanban-subtask-count {
+  font-size: 11px;
+  color: var(--gray-500);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kanban-subtask-count .mini-progress {
+  flex: 1;
+  height: 4px;
+  background: var(--gray-200);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.kanban-subtask-count .mini-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 2px;
+}
+.kanban-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--gray-400);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* #8 Task completion animation */
+@keyframes flashGreen {
+  0% { background: rgba(22,163,74,0.25); }
+  100% { background: transparent; }
+}
+.task-row.flash-done {
+  animation: flashGreen 1s ease forwards;
+}
+
+/* #4 Task group styles */
+.task-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--gray-700);
+  transition: background var(--transition);
+}
+.task-group-header:hover { background: var(--gray-100); }
+.task-group-header .group-chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--transition);
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+.task-group-header.collapsed .group-chevron { transform: rotate(-90deg); }
+.task-group-header .group-progress {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-400);
+  margin-left: auto;
+}
+.task-group-header .group-progress-bar {
+  width: 60px;
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: 3px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+.task-group-header .group-progress-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.task-row.subtask-row {
+  padding-left: 48px;
+}
+.task-row.subtask-row.compact-row {
+  padding-left: 36px;
+}
+
+/* #5 Search bar */
+.search-bar {
+  padding: 7px 12px 7px 34px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: var(--white);
+  outline: none;
+  min-width: 200px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.search-bar:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(45,90,61,0.1);
+}
+.search-bar-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.search-bar-wrap svg {
+  position: absolute;
+  left: 10px;
+  width: 16px;
+  height: 16px;
+  color: var(--gray-400);
+  pointer-events: none;
+}
+
+/* #6 Sort dropdown */
+.sort-select {
+  padding: 7px 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: var(--white);
+  outline: none;
+  min-width: 150px;
+}
+.sort-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(45,90,61,0.1);
+}
+
+/* #2 Density toggle */
+.density-toggle {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--gray-200);
+  border-radius: var(--radius);
+  padding: 2px;
+}
+.density-btn {
+  padding: 5px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: var(--gray-500);
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.density-btn:hover { color: var(--gray-700); }
+.density-btn.active {
+  background: var(--white);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+.density-btn svg { width: 16px; height: 16px; }
+
+/* #11 Quick add */
+.quick-add-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.quick-add-row input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  padding: 4px 0;
+  background: transparent;
+}
+.quick-add-row input::placeholder { color: var(--gray-400); }
+.quick-add-row svg { width: 18px; height: 18px; color: var(--gray-400); flex-shrink: 0; }
+
+.complete-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--gray-300);
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  background: transparent;
+  padding: 0;
+}
+.complete-circle:hover { border-color: var(--green); background: var(--green-light); }
+.complete-circle.status-inprogress { border-color: var(--blue); background: var(--blue-light); }
+.complete-circle.status-inprogress:hover { border-color: var(--green); background: var(--green-light); }
+.complete-circle.status-done {
+  border-color: var(--green);
+  background: var(--green);
+}
+.complete-circle.status-done svg { stroke: var(--white); }
+.complete-circle svg { width: 12px; height: 12px; stroke: transparent; stroke-width: 3; fill: none; }
+.subtask-btn {
+  background: none;
+  border: none;
+  color: var(--gray-400);
+  padding: 4px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  transition: all var(--transition);
+}
+.subtask-btn:hover { color: var(--primary); background: var(--primary-subtle); }
+.subtask-btn svg { width: 14px; height: 14px; }
 
 .task-row-title {
   flex: 1;
@@ -787,6 +1106,23 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .member-mini-stat.overdue-stat .mini-stat-val { color: var(--red); }
 .member-mini-stat.today-stat .mini-stat-val { color: var(--primary); }
 
+/* #12 Progress bar in member summaries */
+.member-obj-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+.member-obj-progress-bar .bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
 /* ===== MODALS ===== */
 .modal-overlay {
   position: fixed;
@@ -1041,10 +1377,21 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     <div class="tab-content" id="tab-tasks">
       <div class="page-header">
         <h1>Tasks</h1>
-        <button class="btn btn-primary" id="addTaskBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Task
-        </button>
+        <div style="display:flex;align-items:center;gap:10px">
+          <!-- #2 Density toggle -->
+          <div class="density-toggle" id="densityToggle">
+            <button class="density-btn" data-density="compact" title="Compact view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <button class="density-btn active" data-density="cozy" title="Cozy view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="10" width="18" height="5" rx="1"/><rect x="3" y="17" width="18" height="5" rx="1"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-primary" id="addTaskBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Task
+          </button>
+        </div>
       </div>
       <div class="task-toolbar">
         <div class="view-toggle" id="viewToggle">
@@ -1053,6 +1400,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
           <button class="view-toggle-btn" data-view="week">This Week</button>
           <button class="view-toggle-btn" data-view="overdue">Overdue</button>
           <button class="view-toggle-btn" data-view="upcoming">Upcoming</button>
+          <button class="view-toggle-btn" data-view="board">Board</button>
         </div>
         <label class="toggle-switch" id="objToggle">
           <input type="checkbox" checked>
@@ -1061,6 +1409,11 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
         </label>
       </div>
       <div class="task-filters" id="taskFilters">
+        <!-- #5 Search bar -->
+        <div class="search-bar-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-bar" id="taskSearchBar" placeholder="Search tasks...">
+        </div>
         <select id="filterMember">
           <option value="">All Members</option>
         </select>
@@ -1076,6 +1429,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
           <option value="inprogress">In Progress</option>
           <option value="done">Done</option>
         </select>
+        <!-- #6 Sort dropdown -->
+        <select class="sort-select" id="taskSortBy">
+          <option value="due">Sort by: Due Date</option>
+          <option value="priority">Sort by: Priority</option>
+          <option value="name">Sort by: Name</option>
+          <option value="status">Sort by: Status</option>
+        </select>
       </div>
       <div style="margin-top:20px" id="taskListArea"></div>
     </div>
@@ -1084,10 +1444,21 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
     <div class="tab-content" id="tab-objectives">
       <div class="page-header">
         <h1>Objectives</h1>
-        <button class="btn btn-primary" id="addObjBtn" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add Objective
-        </button>
+        <div style="display:flex;align-items:center;gap:10px">
+          <!-- Density toggle for objectives too -->
+          <div class="density-toggle" id="densityToggleObj">
+            <button class="density-btn" data-density="compact" title="Compact view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <button class="density-btn active" data-density="cozy" title="Cozy view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1"/><rect x="3" y="10" width="18" height="5" rx="1"/><rect x="3" y="17" width="18" height="5" rx="1"/></svg>
+            </button>
+          </div>
+          <button class="btn btn-primary" id="addObjBtn" style="display:none">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Objective
+          </button>
+        </div>
       </div>
       <div class="objectives-list" id="objectivesList"></div>
     </div>
@@ -1135,6 +1506,15 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
           <select id="taskObjective"><option value="">None</option></select>
         </div>
       </div>
+      <!-- #4 Task Group dropdown -->
+      <div class="form-group">
+        <label for="taskGroup">Task Group</label>
+        <select id="taskGroup">
+          <option value="">None (standalone)</option>
+          <option value="__new__">Create new group...</option>
+        </select>
+        <input type="text" id="taskGroupName" class="form-input" placeholder="Enter group name..." style="display:none; margin-top:8px;">
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label for="taskPriority">Priority</label>
@@ -1153,23 +1533,11 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
           </select>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label for="taskMonth">Month</label>
-          <select id="taskMonth">
-            <option value="1">January</option><option value="2">February</option>
-            <option value="3">March</option><option value="4">April</option>
-            <option value="5">May</option><option value="6">June</option>
-            <option value="7">July</option><option value="8">August</option>
-            <option value="9">September</option><option value="10">October</option>
-            <option value="11">November</option><option value="12">December</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="taskDue">Due Date</label>
-          <input type="date" id="taskDue">
-        </div>
+      <div class="form-group">
+        <label for="taskDue">Due Date</label>
+        <input type="date" id="taskDue">
       </div>
+      <select id="taskMonth" style="display:none"><option value=""></option></select>
     </div>
     <div class="modal-footer">
       <button class="btn btn-danger" id="taskDeleteBtn" style="display:none;margin-right:auto">Delete</button>
@@ -1284,6 +1652,11 @@ let tasks = [];
 let objectives = [];
 let currentTaskView = 'all';
 let includeObjectiveTasks = true;
+let searchQuery = '';
+let sortOrder = localStorage.getItem('assyeng_sort') || 'due';
+let viewDensity = localStorage.getItem('assyeng_density') || 'cozy';
+let collapsedGroups = {};  // Track collapsed task groups
+
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const MONTH_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -1344,6 +1717,24 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 });
 document.querySelectorAll('[data-close]').forEach(btn => {
   btn.addEventListener('click', () => closeModal(btn.dataset.close));
+});
+
+/* #10 Keyboard shortcuts */
+document.addEventListener('keydown', function(e) {
+  // Escape to close any open modal
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.visible').forEach(m => m.classList.remove('visible'));
+    return;
+  }
+  // N to open Add Task modal (when not in input/textarea/select)
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey && tag !== 'input' && tag !== 'textarea' && tag !== 'select') {
+    // Only if app is visible and we are on the tasks tab or dashboard
+    if (!document.getElementById('appLayout').classList.contains('hidden')) {
+      e.preventDefault();
+      openTaskModal();
+    }
+  }
 });
 
 /* ===== LOGIN ===== */
@@ -1423,8 +1814,21 @@ async function showApp() {
   // Default task view: engineers see Today, managers see All
   currentTaskView = isManager ? 'all' : 'today';
 
+  // Restore preferences
+  sortOrder = localStorage.getItem('assyeng_sort') || 'due';
+  viewDensity = localStorage.getItem('assyeng_density') || 'cozy';
+  document.getElementById('taskSortBy').value = sortOrder;
+  updateDensityButtons();
+
   await loadAllData();
   switchTab('dashboard');
+}
+
+/* ===== DENSITY MANAGEMENT ===== */
+function updateDensityButtons() {
+  document.querySelectorAll('#densityToggle .density-btn, #densityToggleObj .density-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.density === viewDensity);
+  });
 }
 
 /* ===== LOAD DATA ===== */
@@ -1480,12 +1884,34 @@ function populateDropdowns() {
     taskObj.innerHTML += `<option value="${o.id}">${escapeHtml(o.title)}</option>`;
   });
 
+  // #4 Task group dropdown
+  populateTaskGroupDropdown();
+
   // Objective member dropdown
   const objMember = document.getElementById('objMember');
   objMember.innerHTML = '';
   users.forEach(u => {
     objMember.innerHTML += `<option value="${u.id}">${escapeHtml(u.name)}</option>`;
   });
+}
+
+function populateTaskGroupDropdown(selectedParentId) {
+  const taskGroup = document.getElementById('taskGroup');
+  taskGroup.innerHTML = '<option value="">None (standalone)</option>';
+  // Find all parent tasks (tasks that have no parentId and have children, or tasks that have been used as parents)
+  const parentIds = new Set(tasks.filter(t => t.parentId).map(t => t.parentId));
+  // Also include tasks that are standalone (could become groups) that already serve as groups
+  const groupTasks = tasks.filter(t => parentIds.has(t.id) || (!t.parentId && parentIds.has(t.id)));
+  // Actually, just list all tasks that are parents (have children pointing to them)
+  const groupHeaders = tasks.filter(t => parentIds.has(t.id));
+  groupHeaders.forEach(t => {
+    taskGroup.innerHTML += `<option value="${t.id}">${escapeHtml(t.title)}</option>`;
+  });
+  // Also list tasks that have no parentId and no children as potential groups for "Create new group..."
+  taskGroup.innerHTML += '<option value="__new__">Create new group...</option>';
+  if (selectedParentId) {
+    taskGroup.value = selectedParentId;
+  }
 }
 
 /* ===== TAB SWITCHING ===== */
@@ -1561,12 +1987,30 @@ function isThisWeek(task) {
   return due >= monday && due <= sunday;
 }
 
+/* #7 Relative due dates */
 function formatDueDate(str) {
   const d = parseDate(str);
   if (!d) return '';
+  const today = getToday();
+  const diffMs = d.getTime() - today.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays === -1) return 'Yesterday';
+  if (diffDays > 1 && diffDays <= 7) return `in ${diffDays} days`;
+  if (diffDays < -1 && diffDays >= -7) return `${Math.abs(diffDays)} days ago`;
+
+  // For further dates, show "Mar 28" style
   const day = d.getDate();
   const mon = MONTHS[d.getMonth()];
-  return `${day} ${mon}`;
+  return `${mon} ${day}`;
+}
+
+function formatAbsoluteDate(str) {
+  const d = parseDate(str);
+  if (!d) return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function formatDateHeader(d) {
@@ -1574,6 +2018,13 @@ function formatDateHeader(d) {
   const day = d.getDate();
   const mon = MONTHS[d.getMonth()];
   return `${dayName} ${day} ${mon}`;
+}
+
+/* #3 Default due date: 2 weeks from today */
+function getDefaultDueDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + 14);
+  return d.toISOString().split('T')[0];
 }
 
 /* ===== RENDER: DASHBOARD ===== */
@@ -1585,23 +2036,24 @@ function renderDashboard() {
   const total = tasks.length;
   const done = tasks.filter(t => t.status === 'done').length;
 
+  /* #1 Clickable stat cards with data-stat-action */
   document.getElementById('dashboardStats').innerHTML = `
-    <div class="stat-card primary">
+    <div class="stat-card primary" data-stat-action="today">
       <div class="stat-label">Today's Tasks</div>
       <div class="stat-value">${todayTasks.length}</div>
       <div class="stat-sub">Due today, not yet done</div>
     </div>
-    <div class="stat-card ${overdueTasks.length > 0 ? 'danger' : ''}">
+    <div class="stat-card ${overdueTasks.length > 0 ? 'danger' : ''}" data-stat-action="overdue">
       <div class="stat-label">Overdue</div>
       <div class="stat-value" style="${overdueTasks.length > 0 ? 'color:var(--red)' : ''}">${overdueTasks.length}</div>
       <div class="stat-sub">${overdueTasks.length > 0 ? 'Needs attention' : 'All on track'}</div>
     </div>
-    <div class="stat-card info">
+    <div class="stat-card info" data-stat-action="week">
       <div class="stat-label">This Week</div>
       <div class="stat-value">${thisWeekTasks.length}</div>
       <div class="stat-sub">Remaining this week</div>
     </div>
-    <div class="stat-card" style="border-left:4px solid var(--green)">
+    <div class="stat-card" style="border-left:4px solid var(--green)" data-stat-action="completed">
       <div class="stat-label">Completed</div>
       <div class="stat-value">${done}</div>
       <div class="stat-sub">${total ? Math.round(done/total*100) : 0}% of ${total} total</div>
@@ -1617,7 +2069,7 @@ function renderDashboard() {
     ? '<p style="color:var(--gray-400);font-size:14px">No tasks scheduled for this week.</p>'
     : `<p style="font-size:14px;color:var(--gray-600)">${weekAll} task${weekAll !== 1 ? 's' : ''} this week &mdash; ${weekDone} done, ${weekAll - weekDone} remaining${weekOverdue > 0 ? `, <strong style="color:var(--red)">${weekOverdue} overdue</strong>` : ''}.</p>`;
 
-  // Member summaries
+  // Member summaries with #12 progress bars
   const memberList = currentUser.role === 'manager' ? users : users.filter(u => u.id === currentUser.id);
   const container = document.getElementById('memberSummaries');
   container.innerHTML = memberList.map(user => {
@@ -1651,7 +2103,13 @@ function renderDashboard() {
             <div class="mini-stat-label">Obj. Done</div>
           </div>
         </div>
-        <div style="margin-top:8px">
+        <!-- #12 Progress bar for objectives -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:11px;color:var(--gray-500)">Objectives</span>
+          <div class="member-obj-progress-bar" style="flex:1"><div class="bar-fill" style="width:${objPct}%"></div></div>
+          <span style="font-size:11px;color:var(--gray-500)">${memberObjsDone}/${memberObjs.length}</span>
+        </div>
+        <div style="margin-top:4px">
           ${memberObjs.length === 0 ? '<p style="font-size:12px;color:var(--gray-400)">No objectives assigned.</p>' :
             memberObjs.slice(0, 5).map(o => {
               const oTasks = getTasksForObjective(o.id);
@@ -1693,6 +2151,15 @@ function renderTaskList() {
   if (priorityFilter) filtered = filtered.filter(t => t.priority === priorityFilter);
   if (statusFilter) filtered = filtered.filter(t => t.status === statusFilter);
 
+  // #5 Search filter
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(t =>
+      (t.title && t.title.toLowerCase().includes(q)) ||
+      (t.notes && t.notes.toLowerCase().includes(q))
+    );
+  }
+
   // Apply view filter
   switch (currentTaskView) {
     case 'today':
@@ -1717,30 +2184,152 @@ function renderTaskList() {
     // 'all' shows everything
   }
 
-  // Group tasks by date sections
-  const groups = groupTasksByDate(filtered);
+  // #4 Separate into groups: parent tasks (groups), subtasks, standalone
+  const parentIds = new Set(tasks.filter(t => t.parentId).map(t => t.parentId));
+  const subtaskMap = {};  // parentId -> [subtasks]
+  const topLevel = [];
+
+  for (const t of filtered) {
+    if (t.parentId && parentIds.has(t.parentId)) {
+      if (!subtaskMap[t.parentId]) subtaskMap[t.parentId] = [];
+      subtaskMap[t.parentId].push(t);
+    } else {
+      topLevel.push(t);
+    }
+  }
+
+  // Also check if any filtered-out parent tasks have subtasks that ARE in filtered
+  // Add those subtasks as top-level if their parent is not in topLevel
+  const topLevelIds = new Set(topLevel.map(t => t.id));
+  for (const pid in subtaskMap) {
+    if (!topLevelIds.has(pid)) {
+      // Parent not in filtered results, show subtasks as top-level
+      topLevel.push(...subtaskMap[pid]);
+      delete subtaskMap[pid];
+    }
+  }
+
+  // #6 Sort
+  const sortedTop = sortTasks(topLevel, sortOrder);
+  const isCompactView = viewDensity === 'compact';
   const container = document.getElementById('taskListArea');
 
-  if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg><p>No tasks match the current filters.</p></div>';
+  // KANBAN BOARD VIEW
+  if (currentTaskView === 'board') {
+    renderKanbanBoard(filtered, subtaskMap, container);
     return;
   }
 
-  let html = '';
+  // Group tasks by date sections
+  const groups = groupTasksByDate(sortedTop);
+
+  // #11 Quick add row
+  let html = `
+    <div class="quick-add-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <input type="text" id="quickAddInput" placeholder="Quick add task... (press Enter)">
+    </div>
+  `;
+
+  // #9 Empty states
+  if (filtered.length === 0) {
+    let emptyMsg = '';
+    let emptyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>';
+    switch (currentTaskView) {
+      case 'today':
+        emptyMsg = "Nothing due today -- you're all caught up!";
+        emptyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';
+        break;
+      case 'overdue':
+        emptyMsg = 'No overdue tasks -- great job!';
+        emptyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+        break;
+      case 'week':
+        emptyMsg = 'Clear week ahead';
+        emptyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+        break;
+      default:
+        emptyMsg = "No tasks yet. Click 'Add Task' to get started.";
+        break;
+    }
+    html += `<div class="empty-state">${emptyIcon}<p>${emptyMsg}</p></div>`;
+    container.innerHTML = html;
+    return;
+  }
+
   for (const group of groups) {
     const headerClass = group.key === 'overdue' ? 'overdue-header' : group.key === 'today' ? 'today-header' : '';
-    html += `<div class="task-date-group">`;
+    html += `<div class="task-date-group${isCompactView ? ' compact' : ''}">`;
     html += `<div class="task-date-header ${headerClass}">${group.label} <span class="group-count">${group.tasks.length}</span></div>`;
     html += `<div class="task-list-container">`;
     for (const task of group.tasks) {
-      html += renderTaskRow(task, group.key);
+      // #4 Check if this task is a group header
+      const children = subtaskMap[task.id];
+      if (children && children.length > 0) {
+        const childDone = children.filter(c => c.status === 'done').length;
+        const isCollapsed = collapsedGroups[task.id] === true;
+        html += `
+          <div class="task-group-header ${isCollapsed ? 'collapsed' : ''}" data-group-toggle="${task.id}">
+            <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <span>${escapeHtml(task.title)}</span>
+            <span class="group-progress">
+              ${childDone}/${children.length} done
+              <span class="group-progress-bar"><span class="group-progress-bar-fill" style="width:${children.length ? Math.round(childDone/children.length*100) : 0}%"></span></span>
+            </span>
+          </div>
+        `;
+        // Render the parent as a task row too
+        html += renderTaskRow(task, group.key, false);
+        // Render children if not collapsed
+        if (!isCollapsed) {
+          const sortedChildren = sortTasks(children, sortOrder);
+          for (const child of sortedChildren) {
+            html += renderTaskRow(child, group.key, true);
+          }
+        }
+      } else {
+        html += renderTaskRow(task, group.key, false);
+      }
     }
     html += `</div></div>`;
   }
   container.innerHTML = html;
 }
 
+/* #6 Sort function */
+function sortTasks(taskList, order) {
+  const priOrder = { high: 0, medium: 1, low: 2 };
+  const statusOrder = { todo: 0, inprogress: 1, done: 2 };
+  const sorted = [...taskList];
+
+  sorted.sort((a, b) => {
+    switch (order) {
+      case 'priority':
+        return (priOrder[a.priority] || 1) - (priOrder[b.priority] || 1);
+      case 'name':
+        return (a.title || '').localeCompare(b.title || '');
+      case 'status':
+        return (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
+      case 'due':
+      default: {
+        const da = parseDate(a.due), db = parseDate(b.due);
+        if (da && db && da.getTime() !== db.getTime()) return da - db;
+        if (da && !db) return -1;
+        if (!da && db) return 1;
+        return (priOrder[a.priority] || 1) - (priOrder[b.priority] || 1);
+      }
+    }
+  });
+  return sorted;
+}
+
 function groupTasksByDate(tasksList) {
+  // If sort is not by due date, skip date grouping entirely
+  if (sortOrder !== 'due') {
+    if (tasksList.length === 0) return [];
+    return [{ key: 'all', label: 'All Tasks', tasks: tasksList }];
+  }
+
   const today = getToday();
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
@@ -1797,46 +2386,168 @@ function groupTasksByDate(tasksList) {
   return groups;
 }
 
-function renderTaskRow(task, groupKey) {
+function renderKanbanBoard(allFiltered, subtaskMap, container) {
+  // Build columns: one per task group (parent tasks), plus "Ungrouped" for standalone tasks
+  const parentIds = new Set(allFiltered.filter(t => t.parentId).map(t => t.parentId));
+  const groupHeaders = allFiltered.filter(t => parentIds.has(t.id));
+  const ungrouped = allFiltered.filter(t => !t.parentId && !parentIds.has(t.id));
+
+  // Also include groups whose header wasn't in filtered (pull from all tasks)
+  const allParentIds = new Set(tasks.filter(t => t.parentId).map(t => t.parentId));
+  const allGroupHeaders = tasks.filter(t => allParentIds.has(t.id));
+
+  // Build columns array
+  const columns = [];
+
+  // Add group columns
+  for (const gh of allGroupHeaders) {
+    const children = allFiltered.filter(t => t.parentId === gh.id);
+    const allChildren = tasks.filter(t => t.parentId === gh.id);
+    const doneCount = allChildren.filter(t => t.status === 'done').length;
+    columns.push({
+      id: gh.id,
+      title: gh.title,
+      tasks: children,
+      totalChildren: allChildren.length,
+      doneChildren: doneCount
+    });
+  }
+
+  // Add ungrouped column
+  if (ungrouped.length > 0 || columns.length === 0) {
+    columns.push({
+      id: '__ungrouped__',
+      title: 'Ungrouped',
+      tasks: ungrouped,
+      totalChildren: 0,
+      doneChildren: 0
+    });
+  }
+
+  let html = '<div class="kanban-board">';
+  for (const col of columns) {
+    html += `<div class="kanban-column">`;
+    html += `<div class="kanban-column-header">`;
+    html += `<span>${escapeHtml(col.title)}</span>`;
+    html += `<span class="col-count">${col.tasks.length}</span>`;
+    html += `</div>`;
+    html += `<div class="kanban-column-body">`;
+
+    if (col.tasks.length === 0) {
+      html += `<div class="kanban-empty">No tasks</div>`;
+    } else {
+      for (const t of col.tasks) {
+        const user = users.find(u => u.id === t.memberId);
+        const isDone = t.status === 'done';
+        const dueStr = t.due ? formatDueDate(t.due) : '';
+        const isOverdue = t.due && !isDone && new Date(t.due) < new Date(new Date().toDateString());
+        const absDate = t.due ? new Date(t.due).toLocaleDateString() : '';
+
+        // Check if this task has subtasks
+        const subs = tasks.filter(st => st.parentId === t.id);
+        const subsDone = subs.filter(st => st.status === 'done').length;
+
+        html += `<div class="kanban-card${isDone ? ' done-card' : ''}" data-task-id="${t.id}">`;
+        html += `<div class="kanban-card-title">${escapeHtml(t.title)}</div>`;
+        html += `<div class="kanban-card-meta">`;
+        if (user) {
+          html += `<span class="member-dot" style="background:${user.color || '#999'}"></span>`;
+          html += `<span class="kanban-card-assignee">${escapeHtml(user.name)}</span>`;
+        }
+        html += `<span class="priority-badge priority-${t.priority || 'medium'}">${(t.priority || 'medium').toUpperCase()}</span>`;
+        if (dueStr) {
+          html += `<span class="kanban-card-due${isOverdue ? ' overdue' : ''}" title="${absDate}">${isOverdue ? '!! ' : ''}${dueStr}</span>`;
+        }
+        html += `</div>`;
+
+        if (subs.length > 0) {
+          const pct = Math.round((subsDone / subs.length) * 100);
+          html += `<div class="kanban-subtask-count">`;
+          html += `<span>${subsDone}/${subs.length}</span>`;
+          html += `<div class="mini-progress"><div class="mini-progress-fill" style="width:${pct}%"></div></div>`;
+          html += `</div>`;
+        }
+
+        html += `</div>`;
+      }
+    }
+
+    // Subtask progress bar for group columns
+    if (col.id !== '__ungrouped__' && col.totalChildren > 0) {
+      const pct = Math.round((col.doneChildren / col.totalChildren) * 100);
+      html += `<div style="padding:8px 4px 4px; border-top:1px solid var(--gray-200); margin-top:auto;">`;
+      html += `<div style="font-size:11px; color:var(--gray-500); margin-bottom:4px;">${col.doneChildren}/${col.totalChildren} complete</div>`;
+      html += `<div class="mini-progress" style="height:4px; background:var(--gray-200); border-radius:2px;"><div class="mini-progress-fill" style="width:${pct}%; height:100%; background:var(--primary); border-radius:2px;"></div></div>`;
+      html += `</div>`;
+    }
+
+    html += `</div></div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+
+  // Click kanban cards to edit
+  container.querySelectorAll('.kanban-card').forEach(card => {
+    card.addEventListener('click', () => openTaskModal(card.dataset.taskId));
+  });
+}
+
+function renderTaskRow(task, groupKey, isSubtask) {
   const user = getUserById(task.memberId);
   const obj = getObjectiveById(task.objectiveId);
   const overdueTask = isOverdue(task);
   const todayTask = isToday(task);
   const dueStr = formatDueDate(task.due);
+  const absDate = formatAbsoluteDate(task.due);
   const userName = user ? user.name : 'Unassigned';
   const userColor = user ? (user.color || '#666') : '#999';
   const isDone = task.status === 'done';
+  const isCompact = viewDensity === 'compact';
 
   let rowClass = 'task-row';
   if (overdueTask) rowClass += ' overdue-row';
   else if (todayTask) rowClass += ' today-row';
   if (isDone) rowClass += ' done-task';
+  if (isSubtask) rowClass += ' subtask-row';
+  if (isCompact) rowClass += ' compact-row';
+
+  const checkSvg = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+  // Subtask count for parent tasks
+  const childTasks = tasks.filter(t => t.parentId === task.id);
+  const childDone = childTasks.filter(t => t.status === 'done').length;
+  const hasChildren = childTasks.length > 0;
+  const subtaskInfo = hasChildren ? `<span class="task-row-objective" title="Subtasks">${childDone}/${childTasks.length} subtasks</span>` : '';
 
   return `
     <div class="${rowClass}" data-task-id="${task.id}">
-      <div class="task-row-status status-${task.status}"></div>
+      <button class="complete-circle status-${task.status}" data-complete-task="${task.id}" title="${isDone ? 'Mark incomplete' : 'Mark complete'}">
+        ${checkSvg}
+      </button>
       <div class="task-row-title">${escapeHtml(task.title)}</div>
       <div class="task-row-assignee">
         <span class="member-dot" style="background:${userColor}"></span>
         ${escapeHtml(userName)}
       </div>
       <span class="priority-badge priority-${task.priority || 'medium'}">${task.priority || 'medium'}</span>
-      ${obj ? `<span class="task-row-objective" title="${escapeHtml(obj.title)}">${escapeHtml(obj.title)}</span>` : '<span class="task-row-objective"></span>'}
-      <span class="task-row-due ${overdueTask ? 'overdue' : ''}">${overdueTask ? '!! ' : ''}${dueStr}</span>
-      <select class="status-select" data-status-task="${task.id}" title="Change status">
-        <option value="todo" ${task.status === 'todo' ? 'selected' : ''}>To Do</option>
-        <option value="inprogress" ${task.status === 'inprogress' ? 'selected' : ''}>In Progress</option>
-        <option value="done" ${task.status === 'done' ? 'selected' : ''}>Done</option>
-      </select>
+      ${obj ? `<span class="task-row-objective" title="${escapeHtml(obj.title)}">${escapeHtml(obj.title)}</span>` : subtaskInfo || '<span class="task-row-objective"></span>'}
+      <span class="task-row-due ${overdueTask ? 'overdue' : ''}" title="${absDate}">${overdueTask ? '!! ' : ''}${dueStr}</span>
+      <button class="subtask-btn" data-add-subtask="${task.id}" title="Add subtask">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
     </div>
   `;
 }
 
 /* ===== TASK MODAL ===== */
-function openTaskModal(taskId, presetObjectiveId) {
+function openTaskModal(taskId, presetObjectiveId, presetParentId) {
   const isEdit = !!taskId;
   document.getElementById('taskModalTitle').textContent = isEdit ? 'Edit Task' : 'Add Task';
   document.getElementById('taskDeleteBtn').style.display = isEdit ? 'inline-flex' : 'none';
+
+  // Repopulate task group dropdown and reset group name input
+  populateTaskGroupDropdown();
+  document.getElementById('taskGroupName').style.display = 'none';
+  document.getElementById('taskGroupName').value = '';
 
   if (isEdit) {
     const t = tasks.find(tk => tk.id === taskId);
@@ -1846,9 +2557,10 @@ function openTaskModal(taskId, presetObjectiveId) {
     document.getElementById('taskNotes').value = t.notes || '';
     document.getElementById('taskAssignee').value = t.memberId || '';
     document.getElementById('taskObjective').value = t.objectiveId || '';
+    document.getElementById('taskGroup').value = t.parentId || '';
     document.getElementById('taskPriority').value = t.priority || 'medium';
     document.getElementById('taskStatus').value = t.status || 'todo';
-    document.getElementById('taskMonth').value = t.month || (new Date().getMonth() + 1);
+    document.getElementById('taskMonth').value = t.month || '';
     document.getElementById('taskDue').value = t.due || '';
   } else {
     document.getElementById('taskId').value = '';
@@ -1856,18 +2568,55 @@ function openTaskModal(taskId, presetObjectiveId) {
     document.getElementById('taskNotes').value = '';
     document.getElementById('taskAssignee').value = currentUser.id;
     document.getElementById('taskObjective').value = presetObjectiveId || '';
+    document.getElementById('taskGroup').value = presetParentId || '';
     document.getElementById('taskPriority').value = 'medium';
     document.getElementById('taskStatus').value = 'todo';
-    document.getElementById('taskMonth').value = new Date().getMonth() + 1;
-    document.getElementById('taskDue').value = '';
+    document.getElementById('taskMonth').value = '';
+    // #3 Auto-assign due date 2 weeks from today
+    document.getElementById('taskDue').value = getDefaultDueDate();
   }
   openModal('taskModal');
 }
 
 async function saveTask() {
+  const saveBtn = document.getElementById('saveTaskBtn');
+  if (saveBtn.disabled) return;
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
+
   const id = document.getElementById('taskId').value;
   const title = document.getElementById('taskTitle').value.trim();
-  if (!title) { showToast('Task title is required.', 'error'); return; }
+  if (!title) { showToast('Task title is required.', 'error'); saveBtn.disabled = false; saveBtn.textContent = 'Save Task'; return; }
+
+  let parentId = document.getElementById('taskGroup').value;
+  let groupName = document.getElementById('taskGroupName').value.trim();
+
+  // #4 If "Create new group..." is selected, create the group first as a parent task
+  if (parentId === '__new__') {
+    if (!groupName) { showToast('Please enter a group name.', 'error'); return; }
+    const groupRow = {
+      id: generateId(),
+      title: groupName,
+      notes: '',
+      memberId: document.getElementById('taskAssignee').value,
+      objectiveId: '',
+      priority: 'medium',
+      status: 'todo',
+      month: '',
+      due: '',
+      comments: '[]',
+      parentId: '',
+      visibility: '',
+      teamAssignees: ''
+    };
+    try {
+      await apiCall({ action: 'create', sheet: 'Tasks', row: JSON.stringify(groupRow) });
+      parentId = groupRow.id;
+    } catch (err) {
+      showToast('Failed to create group: ' + err.message, 'error');
+      return;
+    }
+  }
 
   const row = {
     id: id || generateId(),
@@ -1877,10 +2626,10 @@ async function saveTask() {
     objectiveId: document.getElementById('taskObjective').value,
     priority: document.getElementById('taskPriority').value,
     status: document.getElementById('taskStatus').value,
-    month: document.getElementById('taskMonth').value,
     due: document.getElementById('taskDue').value,
+    month: document.getElementById('taskDue').value ? String(new Date(document.getElementById('taskDue').value).getMonth() + 1) : '',
     comments: '[]',
-    parentId: '',
+    parentId: parentId,
     visibility: '',
     teamAssignees: ''
   };
@@ -1892,6 +2641,9 @@ async function saveTask() {
     await loadAllData();
   } catch (err) {
     showToast('Failed to save task: ' + err.message, 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Task';
   }
 }
 
@@ -1912,6 +2664,14 @@ async function quickStatusChange(taskId, newStatus) {
   const task = tasks.find(t => t.id === taskId);
   if (!task || task.status === newStatus) return;
 
+  // #8 Flash green animation on done
+  if (newStatus === 'done') {
+    const row = document.querySelector(`.task-row[data-task-id="${taskId}"]`);
+    if (row) {
+      row.classList.add('flash-done');
+    }
+  }
+
   const row = { ...task, status: newStatus };
   // Ensure comments is a string
   if (typeof row.comments === 'object') row.comments = JSON.stringify(row.comments);
@@ -1922,6 +2682,33 @@ async function quickStatusChange(taskId, newStatus) {
     await loadAllData();
   } catch (err) {
     showToast('Failed to update status: ' + err.message, 'error');
+  }
+}
+
+/* #11 Quick add task */
+async function quickAddTask(title) {
+  if (!title.trim()) return;
+  const row = {
+    id: generateId(),
+    title: title.trim(),
+    notes: '',
+    memberId: currentUser.id,
+    objectiveId: '',
+    priority: 'medium',
+    status: 'todo',
+    due: getDefaultDueDate(),
+    month: String(new Date(getDefaultDueDate()).getMonth() + 1),
+    comments: '[]',
+    parentId: '',
+    visibility: '',
+    teamAssignees: ''
+  };
+  try {
+    await apiCall({ action: 'create', sheet: 'Tasks', row: JSON.stringify(row) });
+    showToast('Task created.');
+    await loadAllData();
+  } catch (err) {
+    showToast('Failed to create task: ' + err.message, 'error');
   }
 }
 
@@ -1999,12 +2786,13 @@ function renderObjectiveCard(obj, isManager) {
             </div>
             ${linkedTasks.map(t => {
               const dueStr = formatDueDate(t.due);
+              const absDate = formatAbsoluteDate(t.due);
               return `
                 <div class="obj-task-row">
                   <span class="status-dot status-${t.status}"></span>
                   <span class="obj-task-title">${escapeHtml(t.title)}</span>
                   <span class="priority-badge priority-${t.priority || 'medium'}">${t.priority || 'medium'}</span>
-                  ${dueStr ? `<span class="obj-task-due">${dueStr}</span>` : ''}
+                  ${dueStr ? `<span class="obj-task-due" title="${absDate}">${dueStr}</span>` : ''}
                 </div>
               `;
             }).join('')}
@@ -2235,6 +3023,27 @@ async function removeTeamMember(userId) {
 document.addEventListener('click', function(e) {
   const target = e.target;
 
+  // #1 Dashboard stat card click
+  const statCard = target.closest('[data-stat-action]');
+  if (statCard) {
+    const action = statCard.dataset.statAction;
+    if (action === 'today') {
+      currentTaskView = 'today';
+      document.getElementById('filterStatus').value = '';
+    } else if (action === 'overdue') {
+      currentTaskView = 'overdue';
+      document.getElementById('filterStatus').value = '';
+    } else if (action === 'week') {
+      currentTaskView = 'week';
+      document.getElementById('filterStatus').value = '';
+    } else if (action === 'completed') {
+      currentTaskView = 'all';
+      document.getElementById('filterStatus').value = 'done';
+    }
+    switchTab('tasks');
+    return;
+  }
+
   // View toggle buttons
   const viewBtn = target.closest('.view-toggle-btn');
   if (viewBtn) {
@@ -2243,9 +3052,51 @@ document.addEventListener('click', function(e) {
     return;
   }
 
-  // Task row click (open edit modal) - but not on status select
+  // #2 Density toggle
+  const densityBtn = target.closest('.density-btn');
+  if (densityBtn) {
+    viewDensity = densityBtn.dataset.density;
+    localStorage.setItem('assyeng_density', viewDensity);
+    updateDensityButtons();
+    renderCurrentTab();
+    return;
+  }
+
+  // #4 Task group toggle
+  const groupToggle = target.closest('[data-group-toggle]');
+  if (groupToggle) {
+    const gid = groupToggle.dataset.groupToggle;
+    collapsedGroups[gid] = !collapsedGroups[gid];
+    renderTaskList();
+    return;
+  }
+
+  // Complete circle click — toggle done
+  const completeBtn = target.closest('[data-complete-task]');
+  if (completeBtn) {
+    const tid = completeBtn.dataset.completeTask;
+    const task = tasks.find(t => t.id === tid);
+    if (task) {
+      const newStatus = task.status === 'done' ? 'todo' : 'done';
+      completeBtn.disabled = true;
+      apiCall({ action: 'update', sheet: 'Tasks', row: JSON.stringify({ id: tid, status: newStatus }) })
+        .then(() => { task.status = newStatus; renderCurrentTab(); })
+        .catch(err => showToast('Failed: ' + err.message, 'error'))
+        .finally(() => { completeBtn.disabled = false; });
+    }
+    return;
+  }
+
+  // Add subtask button
+  const subtaskBtn = target.closest('[data-add-subtask]');
+  if (subtaskBtn) {
+    openTaskModal(null, null, subtaskBtn.dataset.addSubtask);
+    return;
+  }
+
+  // Task row click (open edit modal) - but not on circle or subtask btn
   const taskRow = target.closest('.task-row');
-  if (taskRow && !target.closest('.status-select')) {
+  if (taskRow && !target.closest('.complete-circle') && !target.closest('.subtask-btn')) {
     openTaskModal(taskRow.dataset.taskId);
     return;
   }
@@ -2323,6 +3174,31 @@ document.addEventListener('change', function(e) {
     renderTaskList();
     return;
   }
+
+  // #6 Sort change
+  if (target.id === 'taskSortBy') {
+    sortOrder = target.value;
+    localStorage.setItem('assyeng_sort', sortOrder);
+    renderTaskList();
+    return;
+  }
+});
+
+// #5 Search input
+document.getElementById('taskSearchBar').addEventListener('input', function(e) {
+  searchQuery = e.target.value;
+  renderTaskList();
+});
+
+// #11 Quick add - delegated since input is dynamically created
+document.addEventListener('keydown', function(e) {
+  if (e.target.id === 'quickAddInput' && e.key === 'Enter') {
+    const val = e.target.value;
+    if (val.trim()) {
+      quickAddTask(val);
+      e.target.value = '';
+    }
+  }
 });
 
 // Objective tasks toggle
@@ -2337,6 +3213,10 @@ document.getElementById('objToggle').addEventListener('change', function(e) {
 
 // Button event listeners
 document.getElementById('addTaskBtn').addEventListener('click', () => openTaskModal());
+document.getElementById('taskGroup').addEventListener('change', function() {
+  document.getElementById('taskGroupName').style.display = this.value === '__new__' ? 'block' : 'none';
+  if (this.value !== '__new__') document.getElementById('taskGroupName').value = '';
+});
 document.getElementById('addObjBtn').addEventListener('click', () => openObjectiveModal());
 document.getElementById('addTeamBtn').addEventListener('click', () => openTeamModal());
 document.getElementById('saveTaskBtn').addEventListener('click', () => saveTask());
