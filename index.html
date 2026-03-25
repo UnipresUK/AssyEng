@@ -745,18 +745,39 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .complete-circle svg { width: 12px; height: 12px; stroke: transparent; stroke-width: 3; fill: none; }
 .subtask-btn {
   background: none;
-  border: none;
+  border: 1px dashed var(--gray-300);
   color: var(--gray-400);
-  padding: 4px;
+  padding: 2px 8px;
   border-radius: var(--radius);
   cursor: pointer;
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  gap: 3px;
+  font-size: 11px;
   transition: all var(--transition);
 }
-.subtask-btn:hover { color: var(--primary); background: var(--primary-subtle); }
-.subtask-btn svg { width: 14px; height: 14px; }
+.subtask-btn:hover { color: var(--primary); background: var(--primary-subtle); border-color: var(--primary); }
+.subtask-btn svg { width: 12px; height: 12px; }
+.status-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.status-filter-group label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--gray-600);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.status-filter-group label input[type="checkbox"] {
+  accent-color: var(--primary);
+  cursor: pointer;
+}
 
 .task-row-title {
   flex: 1;
@@ -1423,12 +1444,11 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
           <option value="medium">Medium</option>
           <option value="high">High</option>
         </select>
-        <select id="filterStatus">
-          <option value="">All Statuses</option>
-          <option value="todo">To Do</option>
-          <option value="inprogress">In Progress</option>
-          <option value="done">Done</option>
-        </select>
+        <div class="status-filter-group" id="filterStatusGroup">
+          <label><input type="checkbox" value="todo" checked> To Do</label>
+          <label><input type="checkbox" value="inprogress" checked> In Progress</label>
+          <label><input type="checkbox" value="done"> Done</label>
+        </div>
         <!-- #6 Sort dropdown -->
         <select class="sort-select" id="taskSortBy">
           <option value="due">Sort by: Due Date</option>
@@ -1915,6 +1935,12 @@ function populateTaskGroupDropdown(selectedParentId) {
 }
 
 /* ===== TAB SWITCHING ===== */
+function setStatusCheckboxes(statuses) {
+  document.querySelectorAll('#filterStatusGroup input').forEach(cb => {
+    cb.checked = statuses.includes(cb.value);
+  });
+}
+
 function switchTab(tab) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.tab === tab));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.toggle('active', t.id === `tab-${tab}`));
@@ -2137,7 +2163,7 @@ function renderTaskList() {
   // Get filters
   const memberFilter = document.getElementById('filterMember').value;
   const priorityFilter = document.getElementById('filterPriority').value;
-  const statusFilter = document.getElementById('filterStatus').value;
+  const checkedStatuses = Array.from(document.querySelectorAll('#filterStatusGroup input:checked')).map(cb => cb.value);
 
   // Start with all tasks, apply filters
   let filtered = [...tasks];
@@ -2149,7 +2175,7 @@ function renderTaskList() {
 
   if (memberFilter) filtered = filtered.filter(t => t.memberId === memberFilter);
   if (priorityFilter) filtered = filtered.filter(t => t.priority === priorityFilter);
-  if (statusFilter) filtered = filtered.filter(t => t.status === statusFilter);
+  if (checkedStatuses.length < 3) filtered = filtered.filter(t => checkedStatuses.includes(t.status || 'todo'));
 
   // #5 Search filter
   if (searchQuery) {
@@ -2265,16 +2291,17 @@ function renderTaskList() {
     for (const task of group.tasks) {
       // #4 Check if this task is a group header
       const children = subtaskMap[task.id];
+      const allChildrenForGroup = tasks.filter(t => t.parentId === task.id);
       if (children && children.length > 0) {
-        const childDone = children.filter(c => c.status === 'done').length;
+        const childDone = allChildrenForGroup.filter(c => c.status === 'done').length;
         const isCollapsed = collapsedGroups[task.id] === true;
         html += `
           <div class="task-group-header ${isCollapsed ? 'collapsed' : ''}" data-group-toggle="${task.id}">
             <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
             <span>${escapeHtml(task.title)}</span>
             <span class="group-progress">
-              ${childDone}/${children.length} done
-              <span class="group-progress-bar"><span class="group-progress-bar-fill" style="width:${children.length ? Math.round(childDone/children.length*100) : 0}%"></span></span>
+              ${childDone}/${allChildrenForGroup.length} done
+              <span class="group-progress-bar"><span class="group-progress-bar-fill" style="width:${allChildrenForGroup.length ? Math.round(childDone/allChildrenForGroup.length*100) : 0}%"></span></span>
             </span>
           </div>
         `;
@@ -2533,6 +2560,7 @@ function renderTaskRow(task, groupKey, isSubtask) {
       <span class="task-row-due ${overdueTask ? 'overdue' : ''}" title="${absDate}">${overdueTask ? '!! ' : ''}${dueStr}</span>
       <button class="subtask-btn" data-add-subtask="${task.id}" title="Add subtask">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        subtask
       </button>
     </div>
   `;
@@ -3029,16 +3057,16 @@ document.addEventListener('click', function(e) {
     const action = statCard.dataset.statAction;
     if (action === 'today') {
       currentTaskView = 'today';
-      document.getElementById('filterStatus').value = '';
+      setStatusCheckboxes(['todo', 'inprogress']);
     } else if (action === 'overdue') {
       currentTaskView = 'overdue';
-      document.getElementById('filterStatus').value = '';
+      setStatusCheckboxes(['todo', 'inprogress']);
     } else if (action === 'week') {
       currentTaskView = 'week';
-      document.getElementById('filterStatus').value = '';
+      setStatusCheckboxes(['todo', 'inprogress']);
     } else if (action === 'completed') {
       currentTaskView = 'all';
-      document.getElementById('filterStatus').value = 'done';
+      setStatusCheckboxes(['done']);
     }
     switchTab('tasks');
     return;
@@ -3170,7 +3198,7 @@ document.addEventListener('change', function(e) {
   }
 
   // Task list filters
-  if (target.id === 'filterMember' || target.id === 'filterPriority' || target.id === 'filterStatus') {
+  if (target.id === 'filterMember' || target.id === 'filterPriority' || target.closest('#filterStatusGroup')) {
     renderTaskList();
     return;
   }
@@ -3220,6 +3248,13 @@ document.getElementById('taskGroup').addEventListener('change', function() {
 document.getElementById('addObjBtn').addEventListener('click', () => openObjectiveModal());
 document.getElementById('addTeamBtn').addEventListener('click', () => openTeamModal());
 document.getElementById('saveTaskBtn').addEventListener('click', () => saveTask());
+// Enter to save, Esc to close in task modal
+document.getElementById('taskModal').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    saveTask();
+  }
+});
 document.getElementById('taskDeleteBtn').addEventListener('click', () => deleteTask());
 document.getElementById('saveObjBtn').addEventListener('click', () => saveObjective());
 document.getElementById('objDeleteBtn').addEventListener('click', () => deleteObjective());
