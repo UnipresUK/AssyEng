@@ -1996,22 +1996,20 @@ function populateDropdowns() {
   });
 }
 
-function populateTaskGroupDropdown(selectedParentId) {
+function populateTaskGroupDropdown(presetParentId) {
   const taskGroup = document.getElementById('taskGroup');
   taskGroup.innerHTML = '<option value="">None (standalone)</option>';
-  // Find all parent tasks (tasks that have no parentId and have children, or tasks that have been used as parents)
+  // Find all tasks that are already parents (have children pointing to them)
   const parentIds = new Set(tasks.filter(t => t.parentId).map(t => t.parentId));
-  // Also include tasks that are standalone (could become groups) that already serve as groups
-  const groupTasks = tasks.filter(t => parentIds.has(t.id) || (!t.parentId && parentIds.has(t.id)));
-  // Actually, just list all tasks that are parents (have children pointing to them)
+  // Include the preset parent even if it has no children yet
+  if (presetParentId && presetParentId !== '__new__') parentIds.add(presetParentId);
   const groupHeaders = tasks.filter(t => parentIds.has(t.id));
   groupHeaders.forEach(t => {
     taskGroup.innerHTML += `<option value="${t.id}">${escapeHtml(t.title)}</option>`;
   });
-  // Also list tasks that have no parentId and no children as potential groups for "Create new group..."
   taskGroup.innerHTML += '<option value="__new__">Create new group...</option>';
-  if (selectedParentId) {
-    taskGroup.value = selectedParentId;
+  if (presetParentId) {
+    taskGroup.value = presetParentId;
   }
 }
 
@@ -2656,11 +2654,12 @@ function renderTaskRow(task, groupKey, isSubtask) {
 /* ===== TASK MODAL ===== */
 function openTaskModal(taskId, presetObjectiveId, presetParentId) {
   const isEdit = !!taskId;
-  document.getElementById('taskModalTitle').textContent = isEdit ? 'Edit Task' : 'Add Task';
+  const parentTask = presetParentId ? tasks.find(t => t.id === presetParentId) : null;
+  document.getElementById('taskModalTitle').textContent = isEdit ? 'Edit Task' : parentTask ? `Add subtask to: ${parentTask.title}` : 'Add Task';
   document.getElementById('taskDeleteBtn').style.display = isEdit ? 'inline-flex' : 'none';
 
-  // Repopulate task group dropdown and reset group name input
-  populateTaskGroupDropdown();
+  // Repopulate task group dropdown — pass preset so it appears even if no children yet
+  populateTaskGroupDropdown(presetParentId);
   document.getElementById('taskGroupName').style.display = 'none';
   document.getElementById('taskGroupName').value = '';
 
@@ -2691,6 +2690,8 @@ function openTaskModal(taskId, presetObjectiveId, presetParentId) {
     document.getElementById('taskDue').value = getDefaultDueDate();
   }
   openModal('taskModal');
+  // Auto-focus the title field so user can type immediately
+  setTimeout(() => document.getElementById('taskTitle').focus(), 50);
 }
 
 async function saveTask() {
@@ -2746,6 +2747,9 @@ async function saveTask() {
   saveBtn.disabled = false;
   saveBtn.textContent = 'Save Task';
 
+  // After closing modal, focus quick-add so user can keep adding tasks
+  setTimeout(() => { const qi = document.getElementById('quickAddInput'); if (qi) qi.focus(); }, 50);
+
   // Sync to API in background
   apiCall({ action: id ? 'update' : 'create', sheet: 'Tasks', row: JSON.stringify(row) }).catch(err => {
     showToast('Sync failed: ' + err.message, 'error');
@@ -2795,6 +2799,8 @@ async function quickAddTask(title) {
   tasks.push(row);
   showToast('Task created.');
   renderCurrentTab();
+  // Re-focus quick add input after render rebuilds DOM
+  setTimeout(() => { const qi = document.getElementById('quickAddInput'); if (qi) qi.focus(); }, 50);
   apiCall({ action: 'create', sheet: 'Tasks', row: JSON.stringify(row) }).catch(err => {
     showToast('Sync failed: ' + err.message, 'error');
     loadAllData();
@@ -2940,6 +2946,7 @@ function openObjectiveModal(objId) {
     document.getElementById('objYear').value = new Date().getFullYear();
   }
   openModal('objectiveModal');
+  setTimeout(() => document.getElementById('objTitle').focus(), 50);
 }
 
 async function saveObjective() {
@@ -3051,6 +3058,7 @@ function openTeamModal(userId) {
     document.getElementById('teamEmail').value = '';
   }
   openModal('teamModal');
+  setTimeout(() => document.getElementById('teamName').focus(), 50);
 }
 
 async function saveTeamMember() {
