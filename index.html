@@ -700,6 +700,28 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   font-size: 13px;
   font-style: italic;
 }
+.kanban-quick-add {
+  padding: 8px 12px;
+  border-top: 1px solid var(--gray-200);
+}
+.kanban-add-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px dashed var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 13px;
+  background: transparent;
+  color: var(--gray-600);
+  outline: none;
+  transition: all var(--transition);
+}
+.kanban-add-input:focus {
+  border-style: solid;
+  border-color: var(--primary);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(45,90,61,0.1);
+}
+.kanban-add-input::placeholder { color: var(--gray-400); }
 
 /* #8 Task completion animation */
 @keyframes flashGreen {
@@ -2708,19 +2730,24 @@ function groupTasksByDate(tasksList) {
 
 function renderKanbanBoard(allFiltered, subtaskMap, container) {
   // Build columns: one per task group (parent tasks), plus "Ungrouped" for standalone tasks
-  const parentIds = new Set(allFiltered.filter(t => t.parentId).map(t => t.parentId));
-  const groupHeaders = allFiltered.filter(t => parentIds.has(t.id));
-  const ungrouped = allFiltered.filter(t => !t.parentId && !parentIds.has(t.id));
-
-  // Also include groups whose header wasn't in filtered (pull from all tasks)
   const allParentIds = new Set(tasks.filter(t => t.parentId).map(t => t.parentId));
-  const allGroupHeaders = tasks.filter(t => allParentIds.has(t.id));
+  // Include empty groups: tasks with no parentId, no due, that look like group headers
+  // (created via Add Group — they have no children yet but should still show as columns)
+  const allGroupHeaders = tasks.filter(t => allParentIds.has(t.id) || (!t.parentId && !t.due && !t.objectiveId && tasks.some(t2 => t2.parentId === t.id) === false && allParentIds.has(t.id) === false));
+  // Actually simpler: just use tasks that ARE parents, plus tasks in ungrouped that have no due date (likely groups)
+  // Let's be explicit: a group is any task that has children OR any task with no parentId/due/objectiveId that was standalone
+  // For now, just include tasks that have children. Empty groups show in ungrouped until they get children.
+  const groupHeaderIds = new Set();
+  // Tasks that are parents
+  tasks.forEach(t => { if (t.parentId) groupHeaderIds.add(t.parentId); });
+  const groupHeaders = tasks.filter(t => groupHeaderIds.has(t.id));
+  const ungrouped = allFiltered.filter(t => !t.parentId && !groupHeaderIds.has(t.id));
 
   // Build columns array
   const columns = [];
 
   // Add group columns
-  for (const gh of allGroupHeaders) {
+  for (const gh of groupHeaders) {
     const children = allFiltered.filter(t => t.parentId === gh.id);
     const allChildren = tasks.filter(t => t.parentId === gh.id);
     const doneCount = allChildren.filter(t => t.status === 'done').length;
@@ -2801,6 +2828,11 @@ function renderKanbanBoard(allFiltered, subtaskMap, container) {
       html += `</div>`;
     }
 
+    // Quick-add input at bottom of each column
+    html += `<div class="kanban-quick-add">`;
+    html += `<input type="text" class="kanban-add-input" data-kanban-group="${col.id}" placeholder="+ Add task..." >`;
+    html += `</div>`;
+
     html += `</div></div>`;
   }
   html += '</div>';
@@ -2809,6 +2841,35 @@ function renderKanbanBoard(allFiltered, subtaskMap, container) {
   // Click kanban cards to edit
   container.querySelectorAll('.kanban-card').forEach(card => {
     card.addEventListener('click', () => openTaskModal(card.dataset.taskId));
+  });
+
+  // Kanban quick-add: Enter to create task in that column
+  container.querySelectorAll('.kanban-add-input').forEach(input => {
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && this.value.trim()) {
+        const groupId = this.dataset.kanbanGroup;
+        const parentId = groupId === '__ungrouped__' ? '' : groupId;
+        const row = {
+          id: generateId(), title: this.value.trim(), notes: '', memberId: currentUser.id,
+          objectiveId: '', priority: 'medium', status: 'todo', due: getDefaultDueDate(),
+          month: String(new Date(getDefaultDueDate()).getMonth() + 1),
+          comments: '[]', parentId: parentId, visibility: '', teamAssignees: ''
+        };
+        tasks.push(row);
+        showToast('Task created.');
+        renderCurrentTab();
+        // Re-focus the same column's input after re-render
+        setTimeout(() => {
+          const newInput = document.querySelector(`.kanban-add-input[data-kanban-group="${groupId}"]`);
+          if (newInput) newInput.focus();
+        }, 50);
+        apiCall({ action: 'create', sheet: 'Tasks', row: JSON.stringify(row) }).catch(err => {
+          showToast('Sync failed: ' + err.message, 'error');
+          loadAllData();
+        });
+      }
+      if (e.key === 'Escape') { this.value = ''; this.blur(); }
+    });
   });
 }
 
@@ -3525,13 +3586,20 @@ document.getElementById('objToggle').addEventListener('change', function(e) {
 // Button event listeners
 document.getElementById('addTaskBtn').addEventListener('click', () => openTaskModal());
 document.getElementById('addGroupBtn').addEventListener('click', function() {
-  // Open task modal with "Create new group..." pre-selected
-  openTaskModal();
-  document.getElementById('taskGroup').value = '__new__';
-  document.getElementById('taskGroupName').style.display = 'block';
-  document.getElementById('taskModalTitle').textContent = 'Add Task Group';
-  // Focus the group name field
-  setTimeout(() => document.getElementById('taskGroupName').focus(), 50);
+  const name = prompt('Enter group name:');
+  if (!name || !name.trim()) return;
+  const groupRow = {
+    id: generateId(), title: name.trim(), notes: '', memberId: currentUser.id,
+    objectiveId: '', priority: 'medium', status: 'todo', month: '', due: '',
+    comments: '[]', parentId: '', visibility: '', teamAssignees: ''
+  };
+  tasks.push(groupRow);
+  showToast('Group created. Add tasks to it using "+ Subtask" or the Task Group dropdown.');
+  renderCurrentTab();
+  apiCall({ action: 'create', sheet: 'Tasks', row: JSON.stringify(groupRow) }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 });
 document.getElementById('taskGroup').addEventListener('change', function() {
   document.getElementById('taskGroupName').style.display = this.value === '__new__' ? 'block' : 'none';
