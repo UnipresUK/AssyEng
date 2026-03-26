@@ -602,57 +602,91 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 }
 
 /* #4 Task group styles */
-.task-group-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
-  background: var(--gray-50);
-  border-bottom: 1px solid var(--gray-200);
-  cursor: pointer;
-  user-select: none;
+/* Parent task with subtasks */
+.task-parent-wrap {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  overflow: hidden;
+  background: var(--white);
+}
+.task-parent-wrap > .task-row {
+  border-bottom: none;
+  border-radius: 0;
   font-weight: 600;
-  font-size: 14px;
-  color: var(--gray-700);
-  transition: background var(--transition);
+  background: var(--gray-50);
 }
-.task-group-header:hover { background: var(--gray-100); }
-.task-group-header .group-chevron {
-  width: 16px;
-  height: 16px;
-  transition: transform var(--transition);
-  color: var(--gray-400);
-  flex-shrink: 0;
-}
-.task-group-header.collapsed .group-chevron { transform: rotate(-90deg); }
-.task-group-header .group-progress {
-  font-size: 12px;
+.task-parent-wrap > .task-row:hover { background: var(--gray-100); }
+.subtask-count {
+  font-size: 11px;
   font-weight: 500;
   color: var(--gray-400);
-  margin-left: auto;
+  background: var(--gray-100);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.task-group-header .group-progress-bar {
-  width: 60px;
-  height: 6px;
+.subtask-progress-mini {
+  width: 40px;
+  height: 4px;
   background: var(--gray-200);
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
   display: inline-block;
   vertical-align: middle;
-  margin-left: 8px;
+  margin-left: 4px;
 }
-.task-group-header .group-progress-bar-fill {
+.subtask-progress-mini .bar {
   height: 100%;
-  background: var(--primary);
-  border-radius: 3px;
+  background: var(--green);
+  border-radius: 2px;
   transition: width 0.3s ease;
 }
-.task-row.subtask-row {
-  padding-left: 48px;
+.subtask-list {
+  border-top: 1px solid var(--gray-200);
+  padding-left: 0;
 }
-.task-row.subtask-row.compact-row {
-  padding-left: 36px;
+.subtask-list .task-row {
+  padding-left: 46px;
+  border-bottom: 1px solid var(--gray-100);
+  position: relative;
+  font-weight: 400;
+  min-height: 40px;
 }
+.subtask-list .task-row:last-child { border-bottom: none; }
+.subtask-list .task-row::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--gray-200);
+}
+.subtask-list .task-row::after {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  width: 10px;
+  height: 2px;
+  background: var(--gray-200);
+}
+.subtask-list .task-row:last-child::before {
+  bottom: 50%;
+}
+.subtask-list .task-row .subtask-btn { display: none; }
+.subtask-list .task-row.compact-row { padding-left: 46px; min-height: 32px; }
+.collapse-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--gray-400);
+  transition: transform var(--transition);
+  cursor: pointer;
+}
+.collapse-chevron.collapsed { transform: rotate(-90deg); }
 
 /* #5 Search bar */
 .search-bar {
@@ -1869,6 +1903,23 @@ async function showApp() {
   document.getElementById('taskSortBy').value = sortOrder;
   updateDensityButtons();
 
+  // Show cached data instantly while fresh data loads
+  const cache = localStorage.getItem('assyeng_cache');
+  if (cache) {
+    try {
+      const c = JSON.parse(cache);
+      users = c.users || [];
+      tasks = c.tasks || [];
+      objectives = c.objectives || [];
+      if (currentUser.role !== 'manager') {
+        tasks = tasks.filter(t => t.memberId === currentUser.id);
+        objectives = objectives.filter(o => o.memberId === currentUser.id);
+      }
+      populateDropdowns();
+      renderCurrentTab();
+    } catch(e) {}
+  }
+
   await loadAllData();
   switchTab('dashboard');
 }
@@ -1900,6 +1951,7 @@ async function loadAllData() {
       objectives = objectives.filter(o => o.memberId === currentUser.id);
     }
 
+    localStorage.setItem('assyeng_cache', JSON.stringify({ users, tasks, objectives, ts: Date.now() }));
     populateDropdowns();
     renderCurrentTab();
   } catch (err) {
@@ -2253,14 +2305,19 @@ function renderTaskList() {
     }
   }
 
-  // Also check if any filtered-out parent tasks have subtasks that ARE in filtered
-  // Add those subtasks as top-level if their parent is not in topLevel
+  // If a parent task was filtered out but has visible subtasks, pull the parent in
   const topLevelIds = new Set(topLevel.map(t => t.id));
   for (const pid in subtaskMap) {
     if (!topLevelIds.has(pid)) {
-      // Parent not in filtered results, show subtasks as top-level
-      topLevel.push(...subtaskMap[pid]);
-      delete subtaskMap[pid];
+      const parentTask = tasks.find(t => t.id === pid);
+      if (parentTask) {
+        topLevel.push(parentTask);
+        topLevelIds.add(pid);
+      } else {
+        // Orphaned subtasks — show as top-level
+        topLevel.push(...subtaskMap[pid]);
+        delete subtaskMap[pid];
+      }
     }
   }
 
@@ -2318,31 +2375,24 @@ function renderTaskList() {
     html += `<div class="task-date-header ${headerClass}">${group.label} <span class="group-count">${group.tasks.length}</span></div>`;
     html += `<div class="task-list-container">`;
     for (const task of group.tasks) {
-      // #4 Check if this task is a group header
       const children = subtaskMap[task.id];
       const allChildrenForGroup = tasks.filter(t => t.parentId === task.id);
-      if (children && children.length > 0) {
-        const childDone = allChildrenForGroup.filter(c => c.status === 'done').length;
+      const hasChildren = allChildrenForGroup.length > 0;
+
+      if (hasChildren) {
+        // Parent task wraps its subtasks — Google Tasks style
         const isCollapsed = collapsedGroups[task.id] === true;
-        html += `
-          <div class="task-group-header ${isCollapsed ? 'collapsed' : ''}" data-group-toggle="${task.id}">
-            <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            <span>${escapeHtml(task.title)}</span>
-            <span class="group-progress">
-              ${childDone}/${allChildrenForGroup.length} done
-              <span class="group-progress-bar"><span class="group-progress-bar-fill" style="width:${allChildrenForGroup.length ? Math.round(childDone/allChildrenForGroup.length*100) : 0}%"></span></span>
-            </span>
-          </div>
-        `;
-        // Render the parent as a task row too
+        html += `<div class="task-parent-wrap">`;
         html += renderTaskRow(task, group.key, false);
-        // Render children if not collapsed
-        if (!isCollapsed) {
+        if (!isCollapsed && children && children.length > 0) {
+          html += `<div class="subtask-list">`;
           const sortedChildren = sortTasks(children, sortOrder);
           for (const child of sortedChildren) {
             html += renderTaskRow(child, group.key, true);
           }
+          html += `</div>`;
         }
+        html += `</div>`;
       } else {
         html += renderTaskRow(task, group.key, false);
       }
@@ -2564,33 +2614,41 @@ function renderTaskRow(task, groupKey, isSubtask) {
   if (overdueTask) rowClass += ' overdue-row';
   else if (todayTask) rowClass += ' today-row';
   if (isDone) rowClass += ' done-task';
-  if (isSubtask) rowClass += ' subtask-row';
   if (isCompact) rowClass += ' compact-row';
 
   const checkSvg = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
-  // Subtask count for parent tasks
   const childTasks = tasks.filter(t => t.parentId === task.id);
   const childDone = childTasks.filter(t => t.status === 'done').length;
   const hasChildren = childTasks.length > 0;
-  const subtaskInfo = hasChildren ? `<span class="task-row-objective" title="Subtasks">${childDone}/${childTasks.length} subtasks</span>` : '';
+  const isCollapsed = collapsedGroups[task.id] === true;
+
+  // Parent tasks get a chevron toggle and subtask count badge
+  const chevronHtml = hasChildren
+    ? `<svg class="collapse-chevron ${isCollapsed ? 'collapsed' : ''}" data-group-toggle="${task.id}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`
+    : '';
+  const subtaskBadge = hasChildren
+    ? `<span class="subtask-count">${childDone}/${childTasks.length} <span class="subtask-progress-mini"><span class="bar" style="width:${childTasks.length ? Math.round(childDone/childTasks.length*100) : 0}%"></span></span></span>`
+    : '';
 
   return `
     <div class="${rowClass}" data-task-id="${task.id}">
+      ${chevronHtml}
       <button class="complete-circle status-${task.status}" data-complete-task="${task.id}" title="${isDone ? 'Mark incomplete' : 'Mark complete'}">
         ${checkSvg}
       </button>
       <div class="task-row-title">${escapeHtml(task.title)}</div>
+      ${subtaskBadge}
       <div class="task-row-assignee">
         <span class="member-dot" style="background:${userColor}"></span>
         ${escapeHtml(userName)}
       </div>
       <span class="priority-badge priority-${task.priority || 'medium'}">${task.priority || 'medium'}</span>
-      ${obj ? `<span class="task-row-objective" title="${escapeHtml(obj.title)}">${escapeHtml(obj.title)}</span>` : subtaskInfo || '<span class="task-row-objective"></span>'}
+      ${obj ? `<span class="task-row-objective" title="${escapeHtml(obj.title)}">${escapeHtml(obj.title)}</span>` : '<span class="task-row-objective"></span>'}
       <span class="task-row-due ${overdueTask ? 'overdue' : ''}" title="${absDate}">${overdueTask ? '!! ' : ''}${dueStr}</span>
-      <button class="subtask-btn" data-add-subtask="${task.id}" title="Add subtask to this task">
+      ${!isSubtask ? `<button class="subtask-btn" data-add-subtask="${task.id}" title="Add subtask to this task">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         + Subtask
-      </button>
+      </button>` : ''}
     </div>
   `;
 }
@@ -2639,45 +2697,31 @@ async function saveTask() {
   const saveBtn = document.getElementById('saveTaskBtn');
   if (saveBtn.disabled) return;
   saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving...';
 
   const id = document.getElementById('taskId').value;
   const title = document.getElementById('taskTitle').value.trim();
-  if (!title) { showToast('Task title is required.', 'error'); saveBtn.disabled = false; saveBtn.textContent = 'Save Task'; return; }
+  if (!title) { showToast('Task title is required.', 'error'); saveBtn.disabled = false; return; }
 
   let parentId = document.getElementById('taskGroup').value;
   let groupName = document.getElementById('taskGroupName').value.trim();
 
-  // #4 If "Create new group..." is selected, create the group first as a parent task
+  // If creating new group, create it locally first
   if (parentId === '__new__') {
-    if (!groupName) { showToast('Please enter a group name.', 'error'); return; }
+    if (!groupName) { showToast('Please enter a group name.', 'error'); saveBtn.disabled = false; return; }
     const groupRow = {
-      id: generateId(),
-      title: groupName,
-      notes: '',
-      memberId: document.getElementById('taskAssignee').value,
-      objectiveId: '',
-      priority: 'medium',
-      status: 'todo',
-      month: '',
-      due: '',
-      comments: '[]',
-      parentId: '',
-      visibility: '',
-      teamAssignees: ''
+      id: generateId(), title: groupName, notes: '', memberId: document.getElementById('taskAssignee').value,
+      objectiveId: '', priority: 'medium', status: 'todo', month: '', due: '', comments: '[]', parentId: '', visibility: '', teamAssignees: ''
     };
-    try {
-      await apiCall({ action: 'create', sheet: 'Tasks', row: JSON.stringify(groupRow) });
-      parentId = groupRow.id;
-    } catch (err) {
-      showToast('Failed to create group: ' + err.message, 'error');
-      return;
-    }
+    tasks.push(groupRow);
+    parentId = groupRow.id;
+    // Sync group to API in background
+    apiCall({ action: 'create', sheet: 'Tasks', row: JSON.stringify(groupRow) }).catch(err => {
+      showToast('Failed to sync group: ' + err.message, 'error');
+    });
   }
 
   const row = {
-    id: id || generateId(),
-    title,
+    id: id || generateId(), title,
     notes: document.getElementById('taskNotes').value.trim(),
     memberId: document.getElementById('taskAssignee').value,
     objectiveId: document.getElementById('taskObjective').value,
@@ -2685,88 +2729,76 @@ async function saveTask() {
     status: document.getElementById('taskStatus').value,
     due: document.getElementById('taskDue').value,
     month: document.getElementById('taskDue').value ? String(new Date(document.getElementById('taskDue').value).getMonth() + 1) : '',
-    comments: '[]',
-    parentId: parentId,
-    visibility: '',
-    teamAssignees: ''
+    comments: '[]', parentId: parentId, visibility: '', teamAssignees: ''
   };
 
-  try {
-    await apiCall({ action: id ? 'update' : 'create', sheet: 'Tasks', row: JSON.stringify(row) });
-    showToast(id ? 'Task updated.' : 'Task created.');
-    closeModal('taskModal');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to save task: ' + err.message, 'error');
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Save Task';
+  // Optimistic: update local state immediately
+  if (id) {
+    const idx = tasks.findIndex(t => t.id === id);
+    if (idx >= 0) tasks[idx] = { ...tasks[idx], ...row };
+  } else {
+    tasks.push(row);
   }
+
+  closeModal('taskModal');
+  showToast(id ? 'Task updated.' : 'Task created.');
+  renderCurrentTab();
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Save Task';
+
+  // Sync to API in background
+  apiCall({ action: id ? 'update' : 'create', sheet: 'Tasks', row: JSON.stringify(row) }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData(); // Reload from server on error
+  });
 }
 
 async function deleteTask() {
   const id = document.getElementById('taskId').value;
   if (!id || !confirm('Delete this task?')) return;
-  try {
-    await apiCall({ action: 'delete', sheet: 'Tasks', id });
-    showToast('Task deleted.');
-    closeModal('taskModal');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to delete task: ' + err.message, 'error');
-  }
+  tasks = tasks.filter(t => t.id !== id && t.parentId !== id);
+  closeModal('taskModal');
+  showToast('Task deleted.');
+  renderCurrentTab();
+  apiCall({ action: 'delete', sheet: 'Tasks', id }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 }
 
 async function quickStatusChange(taskId, newStatus) {
   const task = tasks.find(t => t.id === taskId);
   if (!task || task.status === newStatus) return;
-
-  // #8 Flash green animation on done
   if (newStatus === 'done') {
     const row = document.querySelector(`.task-row[data-task-id="${taskId}"]`);
-    if (row) {
-      row.classList.add('flash-done');
-    }
+    if (row) row.classList.add('flash-done');
   }
-
-  const row = { ...task, status: newStatus };
-  // Ensure comments is a string
-  if (typeof row.comments === 'object') row.comments = JSON.stringify(row.comments);
-
-  try {
-    await apiCall({ action: 'update', sheet: 'Tasks', row: JSON.stringify(row) });
-    showToast('Status updated.');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to update status: ' + err.message, 'error');
-  }
+  task.status = newStatus;
+  showToast('Status updated.');
+  renderCurrentTab();
+  const rowData = { ...task };
+  if (typeof rowData.comments === 'object') rowData.comments = JSON.stringify(rowData.comments);
+  apiCall({ action: 'update', sheet: 'Tasks', row: JSON.stringify(rowData) }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 }
 
 /* #11 Quick add task */
 async function quickAddTask(title) {
   if (!title.trim()) return;
   const row = {
-    id: generateId(),
-    title: title.trim(),
-    notes: '',
-    memberId: currentUser.id,
-    objectiveId: '',
-    priority: 'medium',
-    status: 'todo',
-    due: getDefaultDueDate(),
-    month: String(new Date(getDefaultDueDate()).getMonth() + 1),
-    comments: '[]',
-    parentId: '',
-    visibility: '',
-    teamAssignees: ''
+    id: generateId(), title: title.trim(), notes: '', memberId: currentUser.id,
+    objectiveId: '', priority: 'medium', status: 'todo', due: getDefaultDueDate(),
+    month: String(new Date(getDefaultDueDate()).getMonth() + 1), comments: '[]', parentId: '', visibility: '', teamAssignees: ''
   };
-  try {
-    await apiCall({ action: 'create', sheet: 'Tasks', row: JSON.stringify(row) });
-    showToast('Task created.');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to create task: ' + err.message, 'error');
-  }
+  tasks.push(row);
+  showToast('Task created.');
+  renderCurrentTab();
+  apiCall({ action: 'create', sheet: 'Tasks', row: JSON.stringify(row) }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 }
 
 /* ===== RENDER: OBJECTIVES ===== */
@@ -2872,19 +2904,18 @@ async function toggleObjMonth(objId, month, checked) {
   const obj = objectives.find(o => o.id === objId);
   if (!obj) return;
   let cm = [];
-  try { cm = JSON.parse(obj.completedMonths || '[]'); } catch (e) {}
+  try { cm = JSON.parse(obj.completedMonths || '[]'); } catch(e) {}
   if (checked && !cm.includes(month)) cm.push(month);
   if (!checked) cm = cm.filter(m => m !== month);
   cm.sort((a, b) => a - b);
-
-  const row = { ...obj, completedMonths: JSON.stringify(cm) };
-  try {
-    await apiCall({ action: 'update', sheet: 'Objectives', row: JSON.stringify(row) });
-    showToast('Month updated.');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to update: ' + err.message, 'error');
-  }
+  obj.completedMonths = JSON.stringify(cm);
+  showToast('Month updated.');
+  renderCurrentTab();
+  const rowData = { ...obj };
+  apiCall({ action: 'update', sheet: 'Objectives', row: JSON.stringify(rowData) }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 }
 
 /* ===== OBJECTIVE MODAL ===== */
@@ -2915,43 +2946,42 @@ async function saveObjective() {
   const id = document.getElementById('objId').value;
   const title = document.getElementById('objTitle').value.trim();
   if (!title) { showToast('Objective title is required.', 'error'); return; }
-
   const existingObj = id ? objectives.find(o => o.id === id) : null;
   let completedMonths = '[]';
-  if (existingObj) {
-    try { completedMonths = existingObj.completedMonths || '[]'; } catch (e) {}
-  }
-
+  if (existingObj) { try { completedMonths = existingObj.completedMonths || '[]'; } catch(e) {} }
   const row = {
-    id: id || generateId(),
-    title,
+    id: id || generateId(), title,
     desc: document.getElementById('objDesc').value.trim(),
     memberId: document.getElementById('objMember').value,
     year: document.getElementById('objYear').value,
     completedMonths
   };
-
-  try {
-    await apiCall({ action: id ? 'update' : 'create', sheet: 'Objectives', row: JSON.stringify(row) });
-    showToast(id ? 'Objective updated.' : 'Objective created.');
-    closeModal('objectiveModal');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to save objective: ' + err.message, 'error');
+  if (id) {
+    const idx = objectives.findIndex(o => o.id === id);
+    if (idx >= 0) objectives[idx] = { ...objectives[idx], ...row };
+  } else {
+    objectives.push(row);
   }
+  closeModal('objectiveModal');
+  showToast(id ? 'Objective updated.' : 'Objective created.');
+  renderCurrentTab();
+  apiCall({ action: id ? 'update' : 'create', sheet: 'Objectives', row: JSON.stringify(row) }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 }
 
 async function deleteObjective() {
   const id = document.getElementById('objId').value;
   if (!id || !confirm('Delete this objective? Linked tasks will not be deleted.')) return;
-  try {
-    await apiCall({ action: 'delete', sheet: 'Objectives', id });
-    showToast('Objective deleted.');
-    closeModal('objectiveModal');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to delete objective: ' + err.message, 'error');
-  }
+  objectives = objectives.filter(o => o.id !== id);
+  closeModal('objectiveModal');
+  showToast('Objective deleted.');
+  renderCurrentTab();
+  apiCall({ action: 'delete', sheet: 'Objectives', id }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 }
 
 /* ===== RENDER: TEAM ===== */
@@ -3028,52 +3058,52 @@ async function saveTeamMember() {
   const name = document.getElementById('teamName').value.trim();
   const username = document.getElementById('teamUsername').value.trim();
   if (!name || !username) { showToast('Name and username are required.', 'error'); return; }
-
   const existingUser = id ? users.find(u => u.id === id) : null;
   const password = document.getElementById('teamPassword').value.trim();
-
   const row = {
-    id: id || generateId(),
-    name,
-    username,
+    id: id || generateId(), name, username,
     passwordHash: password || (existingUser ? existingUser.passwordHash : ''),
     role: document.getElementById('teamRole').value,
     email: document.getElementById('teamEmail').value.trim(),
     color: document.getElementById('teamColor').value
   };
-
-  try {
-    await apiCall({ action: id ? 'update' : 'create', sheet: 'Users', row: JSON.stringify(row) });
-    showToast(id ? 'Member updated.' : 'Member added.');
-    closeModal('teamModal');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to save member: ' + err.message, 'error');
+  if (id) {
+    const idx = users.findIndex(u => u.id === id);
+    if (idx >= 0) users[idx] = { ...users[idx], ...row };
+  } else {
+    users.push(row);
   }
+  closeModal('teamModal');
+  showToast(id ? 'Member updated.' : 'Member added.');
+  renderCurrentTab();
+  apiCall({ action: id ? 'update' : 'create', sheet: 'Users', row: JSON.stringify(row) }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 }
 
 async function deleteTeamMember() {
   const id = document.getElementById('teamMemberId').value;
   if (!id || !confirm('Remove this team member?')) return;
-  try {
-    await apiCall({ action: 'delete', sheet: 'Users', id });
-    showToast('Member removed.');
-    closeModal('teamModal');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to remove member: ' + err.message, 'error');
-  }
+  users = users.filter(u => u.id !== id);
+  closeModal('teamModal');
+  showToast('Member removed.');
+  renderCurrentTab();
+  apiCall({ action: 'delete', sheet: 'Users', id }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 }
 
 async function removeTeamMember(userId) {
   if (!confirm('Remove this team member? This will not delete their tasks or objectives.')) return;
-  try {
-    await apiCall({ action: 'delete', sheet: 'Users', id: userId });
-    showToast('Member removed.');
-    await loadAllData();
-  } catch (err) {
-    showToast('Failed to remove member: ' + err.message, 'error');
-  }
+  users = users.filter(u => u.id !== userId);
+  showToast('Member removed.');
+  renderCurrentTab();
+  apiCall({ action: 'delete', sheet: 'Users', id: userId }).catch(err => {
+    showToast('Sync failed: ' + err.message, 'error');
+    loadAllData();
+  });
 }
 
 /* ===== EVENT DELEGATION ===== */
@@ -3128,18 +3158,18 @@ document.addEventListener('click', function(e) {
     return;
   }
 
-  // Complete circle click — toggle done
+  // Complete circle click — toggle done (optimistic)
   const completeBtn = target.closest('[data-complete-task]');
   if (completeBtn) {
     const tid = completeBtn.dataset.completeTask;
     const task = tasks.find(t => t.id === tid);
     if (task) {
       const newStatus = task.status === 'done' ? 'todo' : 'done';
-      completeBtn.disabled = true;
+      task.status = newStatus;
+      renderCurrentTab();
+      // Sync in background
       apiCall({ action: 'update', sheet: 'Tasks', row: JSON.stringify({ id: tid, status: newStatus }) })
-        .then(() => { task.status = newStatus; renderCurrentTab(); })
-        .catch(err => showToast('Failed: ' + err.message, 'error'))
-        .finally(() => { completeBtn.disabled = false; });
+        .catch(err => { showToast('Sync failed: ' + err.message, 'error'); loadAllData(); });
     }
     return;
   }
@@ -3151,9 +3181,9 @@ document.addEventListener('click', function(e) {
     return;
   }
 
-  // Task row click (open edit modal) - but not on circle or subtask btn
+  // Task row click (open edit modal) - but not on circle, subtask btn, or chevron
   const taskRow = target.closest('.task-row');
-  if (taskRow && !target.closest('.complete-circle') && !target.closest('.subtask-btn')) {
+  if (taskRow && !target.closest('.complete-circle') && !target.closest('.subtask-btn') && !target.closest('[data-group-toggle]')) {
     openTaskModal(taskRow.dataset.taskId);
     return;
   }
