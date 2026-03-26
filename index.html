@@ -292,29 +292,57 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 
 /* ===== TASK LIST VIEW ===== */
 .view-toggle {
-  display: inline-flex;
-  background: var(--gray-200);
-  border-radius: 20px;
-  padding: 3px;
-  gap: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
 }
 .view-toggle-btn {
-  padding: 7px 16px;
-  border-radius: 18px;
-  border: none;
-  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-300);
+  background: var(--white);
   font-size: 13px;
   font-weight: 500;
   color: var(--gray-600);
   transition: all var(--transition);
   white-space: nowrap;
+  cursor: pointer;
 }
-.view-toggle-btn:hover { color: var(--gray-800); }
+.view-toggle-btn:hover { border-color: var(--primary); color: var(--gray-800); }
 .view-toggle-btn.active {
-  background: var(--white);
+  background: var(--primary-subtle);
   color: var(--primary);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--primary);
   font-weight: 600;
+}
+.view-toggle-btn .view-check {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--gray-400);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+.view-toggle-btn.active .view-check {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.view-toggle-btn.active .view-check svg {
+  stroke: var(--white);
+}
+.view-toggle-btn .view-check svg {
+  width: 10px;
+  height: 10px;
+  stroke: transparent;
+  stroke-width: 3;
+  fill: none;
 }
 .task-toolbar {
   display: flex;
@@ -744,20 +772,21 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .complete-circle.status-done svg { stroke: var(--white); }
 .complete-circle svg { width: 12px; height: 12px; stroke: transparent; stroke-width: 3; fill: none; }
 .subtask-btn {
-  background: none;
-  border: 1px dashed var(--gray-300);
-  color: var(--gray-400);
-  padding: 2px 8px;
-  border-radius: var(--radius);
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  color: var(--gray-500);
+  padding: 3px 10px;
+  border-radius: 12px;
   cursor: pointer;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   font-size: 11px;
+  font-weight: 500;
   transition: all var(--transition);
 }
-.subtask-btn:hover { color: var(--primary); background: var(--primary-subtle); border-color: var(--primary); }
+.subtask-btn:hover { color: var(--white); background: var(--primary); border-color: var(--primary); }
 .subtask-btn svg { width: 12px; height: 12px; }
 .status-filter-group {
   display: flex;
@@ -1416,12 +1445,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
       </div>
       <div class="task-toolbar">
         <div class="view-toggle" id="viewToggle">
-          <button class="view-toggle-btn active" data-view="all">All</button>
-          <button class="view-toggle-btn" data-view="today">Today</button>
-          <button class="view-toggle-btn" data-view="week">This Week</button>
-          <button class="view-toggle-btn" data-view="overdue">Overdue</button>
-          <button class="view-toggle-btn" data-view="upcoming">Upcoming</button>
-          <button class="view-toggle-btn" data-view="board">Board</button>
+          <button class="view-toggle-btn active" data-view="all"><span class="view-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>All</button>
+          <button class="view-toggle-btn" data-view="today"><span class="view-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Today</button>
+          <button class="view-toggle-btn" data-view="week"><span class="view-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>This Week</button>
+          <button class="view-toggle-btn" data-view="overdue"><span class="view-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Overdue</button>
+          <button class="view-toggle-btn" data-view="upcoming"><span class="view-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Upcoming</button>
+          <button class="view-toggle-btn" data-view="board"><span class="view-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Board</button>
         </div>
         <label class="toggle-switch" id="objToggle">
           <input type="checkbox" checked>
@@ -2558,9 +2587,9 @@ function renderTaskRow(task, groupKey, isSubtask) {
       <span class="priority-badge priority-${task.priority || 'medium'}">${task.priority || 'medium'}</span>
       ${obj ? `<span class="task-row-objective" title="${escapeHtml(obj.title)}">${escapeHtml(obj.title)}</span>` : subtaskInfo || '<span class="task-row-objective"></span>'}
       <span class="task-row-due ${overdueTask ? 'overdue' : ''}" title="${absDate}">${overdueTask ? '!! ' : ''}${dueStr}</span>
-      <button class="subtask-btn" data-add-subtask="${task.id}" title="Add subtask">
+      <button class="subtask-btn" data-add-subtask="${task.id}" title="Add subtask to this task">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        subtask
+        + Subtask
       </button>
     </div>
   `;
@@ -3257,8 +3286,16 @@ document.getElementById('taskModal').addEventListener('keydown', function(e) {
 });
 document.getElementById('taskDeleteBtn').addEventListener('click', () => deleteTask());
 document.getElementById('saveObjBtn').addEventListener('click', () => saveObjective());
+// Enter to save in objective modal
+document.getElementById('objectiveModal').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); saveObjective(); }
+});
 document.getElementById('objDeleteBtn').addEventListener('click', () => deleteObjective());
 document.getElementById('saveTeamBtn').addEventListener('click', () => saveTeamMember());
+// Enter to save in team modal
+document.getElementById('teamModal').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); saveTeamMember(); }
+});
 document.getElementById('teamDeleteBtn').addEventListener('click', () => deleteTeamMember());
 
 /* ===== INIT ===== */
