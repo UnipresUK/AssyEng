@@ -602,70 +602,91 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 }
 
 /* #4 Task group styles */
-.task-group-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
-  background: var(--gray-50);
-  border-bottom: 1px solid var(--gray-200);
-  cursor: pointer;
-  user-select: none;
+/* Parent task with subtasks */
+.task-parent-wrap {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  overflow: hidden;
+  background: var(--white);
+}
+.task-parent-wrap > .task-row {
+  border-bottom: none;
+  border-radius: 0;
   font-weight: 600;
-  font-size: 14px;
-  color: var(--gray-700);
-  transition: background var(--transition);
+  background: var(--gray-50);
 }
-.task-group-header:hover { background: var(--gray-100); }
-.task-group-header .group-chevron {
-  width: 16px;
-  height: 16px;
-  transition: transform var(--transition);
-  color: var(--gray-400);
-  flex-shrink: 0;
-}
-.task-group-header.collapsed .group-chevron { transform: rotate(-90deg); }
-.task-group-header .group-progress {
-  font-size: 12px;
+.task-parent-wrap > .task-row:hover { background: var(--gray-100); }
+.subtask-count {
+  font-size: 11px;
   font-weight: 500;
   color: var(--gray-400);
-  margin-left: auto;
+  background: var(--gray-100);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
-.task-group-header .group-progress-bar {
-  width: 60px;
-  height: 6px;
+.subtask-progress-mini {
+  width: 40px;
+  height: 4px;
   background: var(--gray-200);
-  border-radius: 3px;
+  border-radius: 2px;
   overflow: hidden;
   display: inline-block;
   vertical-align: middle;
-  margin-left: 8px;
+  margin-left: 4px;
 }
-.task-group-header .group-progress-bar-fill {
+.subtask-progress-mini .bar {
   height: 100%;
-  background: var(--primary);
-  border-radius: 3px;
+  background: var(--green);
+  border-radius: 2px;
   transition: width 0.3s ease;
 }
-.task-row.subtask-row {
-  margin-left: 32px;
-  position: relative;
-  border-left: 2px solid var(--gray-200);
-  padding-left: 12px !important;
+.subtask-list {
+  border-top: 1px solid var(--gray-200);
+  padding-left: 0;
 }
-.task-row.subtask-row::before {
+.subtask-list .task-row {
+  padding-left: 46px;
+  border-bottom: 1px solid var(--gray-100);
+  position: relative;
+  font-weight: 400;
+  min-height: 40px;
+}
+.subtask-list .task-row:last-child { border-bottom: none; }
+.subtask-list .task-row::before {
   content: '';
   position: absolute;
-  left: -2px;
+  left: 24px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--gray-200);
+}
+.subtask-list .task-row::after {
+  content: '';
+  position: absolute;
+  left: 24px;
   top: 50%;
-  width: 12px;
+  width: 10px;
   height: 2px;
   background: var(--gray-200);
 }
-.task-row.subtask-row .subtask-btn { display: none; }
-.task-row.subtask-row.compact-row {
-  padding-left: 12px !important;
+.subtask-list .task-row:last-child::before {
+  bottom: 50%;
 }
+.subtask-list .task-row .subtask-btn { display: none; }
+.subtask-list .task-row.compact-row { padding-left: 46px; min-height: 32px; }
+.collapse-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--gray-400);
+  transition: transform var(--transition);
+  cursor: pointer;
+}
+.collapse-chevron.collapsed { transform: rotate(-90deg); }
 
 /* #5 Search bar */
 .search-bar {
@@ -2284,14 +2305,19 @@ function renderTaskList() {
     }
   }
 
-  // Also check if any filtered-out parent tasks have subtasks that ARE in filtered
-  // Add those subtasks as top-level if their parent is not in topLevel
+  // If a parent task was filtered out but has visible subtasks, pull the parent in
   const topLevelIds = new Set(topLevel.map(t => t.id));
   for (const pid in subtaskMap) {
     if (!topLevelIds.has(pid)) {
-      // Parent not in filtered results, show subtasks as top-level
-      topLevel.push(...subtaskMap[pid]);
-      delete subtaskMap[pid];
+      const parentTask = tasks.find(t => t.id === pid);
+      if (parentTask) {
+        topLevel.push(parentTask);
+        topLevelIds.add(pid);
+      } else {
+        // Orphaned subtasks — show as top-level
+        topLevel.push(...subtaskMap[pid]);
+        delete subtaskMap[pid];
+      }
     }
   }
 
@@ -2349,31 +2375,24 @@ function renderTaskList() {
     html += `<div class="task-date-header ${headerClass}">${group.label} <span class="group-count">${group.tasks.length}</span></div>`;
     html += `<div class="task-list-container">`;
     for (const task of group.tasks) {
-      // #4 Check if this task is a group header
       const children = subtaskMap[task.id];
       const allChildrenForGroup = tasks.filter(t => t.parentId === task.id);
-      if (children && children.length > 0) {
-        const childDone = allChildrenForGroup.filter(c => c.status === 'done').length;
+      const hasChildren = allChildrenForGroup.length > 0;
+
+      if (hasChildren) {
+        // Parent task wraps its subtasks — Google Tasks style
         const isCollapsed = collapsedGroups[task.id] === true;
-        html += `
-          <div class="task-group-header ${isCollapsed ? 'collapsed' : ''}" data-group-toggle="${task.id}">
-            <svg class="group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            <span>${escapeHtml(task.title)}</span>
-            <span class="group-progress">
-              ${childDone}/${allChildrenForGroup.length} done
-              <span class="group-progress-bar"><span class="group-progress-bar-fill" style="width:${allChildrenForGroup.length ? Math.round(childDone/allChildrenForGroup.length*100) : 0}%"></span></span>
-            </span>
-          </div>
-        `;
-        // Render the parent as a task row too
+        html += `<div class="task-parent-wrap">`;
         html += renderTaskRow(task, group.key, false);
-        // Render children if not collapsed
-        if (!isCollapsed) {
+        if (!isCollapsed && children && children.length > 0) {
+          html += `<div class="subtask-list">`;
           const sortedChildren = sortTasks(children, sortOrder);
           for (const child of sortedChildren) {
             html += renderTaskRow(child, group.key, true);
           }
+          html += `</div>`;
         }
+        html += `</div>`;
       } else {
         html += renderTaskRow(task, group.key, false);
       }
@@ -2595,33 +2614,41 @@ function renderTaskRow(task, groupKey, isSubtask) {
   if (overdueTask) rowClass += ' overdue-row';
   else if (todayTask) rowClass += ' today-row';
   if (isDone) rowClass += ' done-task';
-  if (isSubtask) rowClass += ' subtask-row';
   if (isCompact) rowClass += ' compact-row';
 
   const checkSvg = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
-  // Subtask count for parent tasks
   const childTasks = tasks.filter(t => t.parentId === task.id);
   const childDone = childTasks.filter(t => t.status === 'done').length;
   const hasChildren = childTasks.length > 0;
-  const subtaskInfo = hasChildren ? `<span class="task-row-objective" title="Subtasks">${childDone}/${childTasks.length} subtasks</span>` : '';
+  const isCollapsed = collapsedGroups[task.id] === true;
+
+  // Parent tasks get a chevron toggle and subtask count badge
+  const chevronHtml = hasChildren
+    ? `<svg class="collapse-chevron ${isCollapsed ? 'collapsed' : ''}" data-group-toggle="${task.id}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`
+    : '';
+  const subtaskBadge = hasChildren
+    ? `<span class="subtask-count">${childDone}/${childTasks.length} <span class="subtask-progress-mini"><span class="bar" style="width:${childTasks.length ? Math.round(childDone/childTasks.length*100) : 0}%"></span></span></span>`
+    : '';
 
   return `
     <div class="${rowClass}" data-task-id="${task.id}">
+      ${chevronHtml}
       <button class="complete-circle status-${task.status}" data-complete-task="${task.id}" title="${isDone ? 'Mark incomplete' : 'Mark complete'}">
         ${checkSvg}
       </button>
       <div class="task-row-title">${escapeHtml(task.title)}</div>
+      ${subtaskBadge}
       <div class="task-row-assignee">
         <span class="member-dot" style="background:${userColor}"></span>
         ${escapeHtml(userName)}
       </div>
       <span class="priority-badge priority-${task.priority || 'medium'}">${task.priority || 'medium'}</span>
-      ${obj ? `<span class="task-row-objective" title="${escapeHtml(obj.title)}">${escapeHtml(obj.title)}</span>` : subtaskInfo || '<span class="task-row-objective"></span>'}
+      ${obj ? `<span class="task-row-objective" title="${escapeHtml(obj.title)}">${escapeHtml(obj.title)}</span>` : '<span class="task-row-objective"></span>'}
       <span class="task-row-due ${overdueTask ? 'overdue' : ''}" title="${absDate}">${overdueTask ? '!! ' : ''}${dueStr}</span>
-      <button class="subtask-btn" data-add-subtask="${task.id}" title="Add subtask to this task">
+      ${!isSubtask ? `<button class="subtask-btn" data-add-subtask="${task.id}" title="Add subtask to this task">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         + Subtask
-      </button>
+      </button>` : ''}
     </div>
   `;
 }
@@ -3154,9 +3181,9 @@ document.addEventListener('click', function(e) {
     return;
   }
 
-  // Task row click (open edit modal) - but not on circle or subtask btn
+  // Task row click (open edit modal) - but not on circle, subtask btn, or chevron
   const taskRow = target.closest('.task-row');
-  if (taskRow && !target.closest('.complete-circle') && !target.closest('.subtask-btn')) {
+  if (taskRow && !target.closest('.complete-circle') && !target.closest('.subtask-btn') && !target.closest('[data-group-toggle]')) {
     openTaskModal(taskRow.dataset.taskId);
     return;
   }
