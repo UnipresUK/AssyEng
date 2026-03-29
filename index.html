@@ -3255,8 +3255,10 @@ async function quickStatusChange(taskId, newStatus) {
 /* #11 Quick add task */
 async function quickAddTask(title) {
   if (!title.trim()) return;
+  const filterMember = document.getElementById('filterMember').value;
+  const assignTo = (filterMember && filterMember !== 'all') ? filterMember : currentUser.id;
   const row = {
-    id: generateId(), title: title.trim(), notes: '', memberId: currentUser.id,
+    id: generateId(), title: title.trim(), notes: '', memberId: assignTo,
     objectiveId: '', priority: 'medium', status: 'todo', due: getDefaultDueDate(),
     month: String(new Date(getDefaultDueDate()).getMonth() + 1), comments: '[]', parentId: '', visibility: '', teamAssignees: ''
   };
