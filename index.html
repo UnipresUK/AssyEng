@@ -1815,6 +1815,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
               <span class="settings-toggle-hint">A summary of your overdue, this week, and upcoming tasks — sorted by priority</span>
             </div>
           </label>
+          <label class="settings-toggle manager-only" id="managerBccRow" style="display:none;">
+            <input type="checkbox" id="notifyManagerBcc" checked>
+            <div class="settings-toggle-info">
+              <span class="settings-toggle-label">BCC me on team task completions</span>
+              <span class="settings-toggle-hint">Receive a BCC copy when a team member's task is completed</span>
+            </div>
+          </label>
         </div>
         <div id="notifySaveStatus" style="margin-top:12px;font-size:13px;color:var(--gray-400);"></div>
       </div>
@@ -2191,10 +2198,15 @@ async function showApp() {
 
 /* ===== NOTIFICATION PREFERENCES ===== */
 function loadNotifyPrefs() {
-  const prefs = currentUser.notifyPrefs || { assigned: true, completed: true, weeklySummary: true };
+  const prefs = currentUser.notifyPrefs || { assigned: true, completed: true, weeklySummary: true, managerBcc: true };
   document.getElementById('notifyAssigned').checked = prefs.assigned !== false;
   document.getElementById('notifyCompleted').checked = prefs.completed !== false;
   document.getElementById('notifyWeeklySummary').checked = prefs.weeklySummary !== false;
+  // Show BCC toggle only for managers
+  if (currentUser.role === 'manager') {
+    document.getElementById('managerBccRow').style.display = '';
+    document.getElementById('notifyManagerBcc').checked = prefs.managerBcc !== false;
+  }
 }
 
 function saveNotifyPrefs() {
@@ -2203,6 +2215,9 @@ function saveNotifyPrefs() {
     completed: document.getElementById('notifyCompleted').checked,
     weeklySummary: document.getElementById('notifyWeeklySummary').checked
   };
+  if (currentUser.role === 'manager') {
+    prefs.managerBcc = document.getElementById('notifyManagerBcc').checked;
+  }
   currentUser.notifyPrefs = prefs;
   localStorage.setItem('assyeng_session', JSON.stringify(currentUser));
 
@@ -2224,6 +2239,7 @@ function saveNotifyPrefs() {
 document.getElementById('notifyAssigned').addEventListener('change', saveNotifyPrefs);
 document.getElementById('notifyCompleted').addEventListener('change', saveNotifyPrefs);
 document.getElementById('notifyWeeklySummary').addEventListener('change', saveNotifyPrefs);
+document.getElementById('notifyManagerBcc').addEventListener('change', saveNotifyPrefs);
 
 /* ===== DENSITY MANAGEMENT ===== */
 function updateDensityButtons() {

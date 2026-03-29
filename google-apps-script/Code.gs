@@ -44,7 +44,7 @@ function fail(msg)   { return jsonResp({ ok: false, error: msg }); }
 
 // Parse notifyPrefs JSON safely, default all on
 function getNotifyPrefs(user) {
-  const defaults = { assigned: true, completed: true, weeklySummary: true };
+  const defaults = { assigned: true, completed: true, weeklySummary: true, managerBcc: true };
   if (!user.notifyPrefs) return defaults;
   try {
     const parsed = typeof user.notifyPrefs === 'string' ? JSON.parse(user.notifyPrefs) : user.notifyPrefs;
@@ -166,26 +166,33 @@ function sendCompletionEmails(taskTitle, memberId, taskId) {
   const assignee = users.find(u => u.id === memberId);
   const managers = users.filter(u => u.role === 'manager');
 
-  // Email the assignee (if opted in)
-  if (assignee && assignee.email) {
-    const prefs = getNotifyPrefs(assignee);
-    if (prefs.completed) {
-      MailApp.sendEmail({
-        to: assignee.email,
-        subject: 'Task Completed: ' + taskTitle,
-        htmlBody: buildEmailHtml('Task Complete', taskTitle, assignee.name,
-          'Your task has been marked as complete.',
-          '#f0fdf4', '#bbf7d0', '#166534')
-      });
-    }
-  }
+  if (!assignee || !assignee.email) return;
+  const assigneePrefs = getNotifyPrefs(assignee);
 
-  // Email managers (if opted in)
-  for (const mgr of managers) {
-    if (mgr.email && (!assignee || mgr.id !== assignee.id)) {
-      const prefs = getNotifyPrefs(mgr);
-      if (!prefs.completed) continue;
-      const completedBy = assignee ? assignee.name : 'Unknown';
+  // Build BCC list: managers who opted in to managerBcc (exclude assignee if they're a manager)
+  const bccList = managers
+    .filter(mgr => mgr.id !== assignee.id && mgr.email)
+    .filter(mgr => { const p = getNotifyPrefs(mgr); return p.managerBcc !== false; })
+    .map(mgr => mgr.email);
+
+  // Email the assignee (if opted in), BCC managers who opted in
+  if (assigneePrefs.completed) {
+    const emailOpts = {
+      to: assignee.email,
+      subject: 'Task Completed: ' + taskTitle,
+      htmlBody: buildEmailHtml('Task Complete', taskTitle, assignee.name,
+        'Your task has been marked as complete.',
+        '#f0fdf4', '#bbf7d0', '#166534')
+    };
+    if (bccList.length > 0) emailOpts.bcc = bccList.join(',');
+    MailApp.sendEmail(emailOpts);
+  } else if (bccList.length > 0) {
+    // Assignee opted out, but managers still want to know — send direct to managers
+    const completedBy = assignee.name || 'Unknown';
+    for (const mgr of managers) {
+      if (mgr.id === assignee.id || !mgr.email) continue;
+      const mgrPrefs = getNotifyPrefs(mgr);
+      if (mgrPrefs.managerBcc === false) continue;
       MailApp.sendEmail({
         to: mgr.email,
         subject: 'Task Completed: ' + taskTitle,
