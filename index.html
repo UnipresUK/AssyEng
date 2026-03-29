@@ -1540,17 +1540,56 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .empty-state p { font-size: 14px; }
 
 /* ===== RESPONSIVE ===== */
+/* Mobile hamburger button */
+.mobile-menu-btn {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1001;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius);
+  border: 1px solid var(--gray-200);
+  background: var(--white);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+.mobile-menu-btn svg { width: 24px; height: 24px; color: var(--gray-700); }
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 99;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.mobile-overlay.active { display: block; opacity: 1; }
+
+/* Clickable member cards */
+.member-summary-card[data-member-id] { cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s; }
+.member-summary-card[data-member-id]:hover { box-shadow: var(--shadow-md); border-color: var(--primary); }
+
 @media (max-width: 1024px) {
   .sidebar { width: 200px; }
   .main-content { margin-left: 200px; padding: 24px; }
 }
 @media (max-width: 768px) {
+  .mobile-menu-btn { display: flex; }
   .sidebar {
+    position: fixed;
+    z-index: 100;
+    height: 100vh;
+    width: 260px;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
   }
   .sidebar.open { transform: translateX(0); }
-  .main-content { margin-left: 0; padding: 16px; }
+  .main-content { margin-left: 0; padding: 16px; padding-top: 60px; }
   .form-row { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .task-toolbar { flex-direction: column; align-items: flex-start; }
@@ -1580,6 +1619,11 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 
 <!-- ===== APP LAYOUT ===== -->
 <div class="app-layout hidden" id="appLayout">
+  <!-- Mobile hamburger -->
+  <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
   <!-- Sidebar -->
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-brand">
@@ -2285,8 +2329,22 @@ function switchTab(tab) {
 
 // Nav item click handlers
 document.querySelectorAll('.nav-item').forEach(item => {
-  item.addEventListener('click', () => switchTab(item.dataset.tab));
+  item.addEventListener('click', () => {
+    switchTab(item.dataset.tab);
+    closeMobileMenu();
+  });
 });
+
+// Mobile menu
+function closeMobileMenu() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mobileOverlay').classList.remove('active');
+}
+document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mobileOverlay').classList.toggle('active');
+});
+document.getElementById('mobileOverlay').addEventListener('click', closeMobileMenu);
 
 function renderCurrentTab() {
   const active = document.querySelector('.tab-content.active');
@@ -2539,7 +2597,7 @@ function renderDashboard() {
     const objPct = memberObjs.length ? Math.round(memberObjsDone / memberObjs.length * 100) : 0;
     const ini = (user.name || '').split(' ').map(w => w[0]).join('').toUpperCase();
     return `
-      <div class="member-summary-card">
+      <div class="member-summary-card" data-member-id="${user.id}" title="Click to view ${escapeHtml(user.name)}'s tasks">
         <div class="member-summary-header">
           <div class="mini-avatar" style="background:${user.color || '#666'}">${ini}</div>
           <h4>${escapeHtml(user.name)}</h4>
@@ -2577,6 +2635,15 @@ function renderDashboard() {
       </div>
     `;
   }).join('');
+
+  // Member card click → navigate to their tasks
+  container.querySelectorAll('.member-summary-card[data-member-id]').forEach(card => {
+    card.addEventListener('click', () => {
+      const memberId = card.dataset.memberId;
+      document.getElementById('filterMember').value = memberId;
+      switchTab('tasks');
+    });
+  });
 }
 
 /* ===== RENDER: TASK LIST ===== */
