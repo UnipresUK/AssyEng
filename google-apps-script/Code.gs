@@ -85,7 +85,41 @@ function doCreate(p) {
   if (!row.id) row.id = uid();
   const newRow = headers.map(h => row[h] !== undefined ? row[h] : '');
   sheet.appendRow(newRow);
+
+  // Notify assignee when a task is created and assigned to them
+  if (p.sheet === 'Tasks' && row.memberId && row.title) {
+    try {
+      sendAssignmentEmail(row.title, row.memberId, row.due || '');
+    } catch (emailErr) {
+      Logger.log('Assignment email error: ' + emailErr.toString());
+    }
+  }
+
   return ok(row);
+}
+
+// ─── ASSIGNMENT NOTIFICATION ────────────────────────────────────
+function sendAssignmentEmail(taskTitle, memberId, dueDate) {
+  const users = sheetToObjects(getSheet('Users'));
+  const assignee = users.find(u => u.id === memberId);
+  if (!assignee || !assignee.email) return;
+
+  const dueStr = dueDate ? ' (Due: ' + dueDate + ')' : '';
+  MailApp.sendEmail({
+    to: assignee.email,
+    subject: '📋 New Task Assigned: ' + taskTitle,
+    htmlBody: '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;">'
+      + '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:20px;">'
+      + '<h2 style="margin:0 0 8px;color:#1e40af;">📋 New Task Assigned</h2>'
+      + '<p style="margin:0 0 16px;color:#374151;">Hi ' + assignee.name + ',</p>'
+      + '<div style="background:white;border-radius:6px;padding:16px;border:1px solid #e5e7eb;">'
+      + '<p style="margin:0;font-size:16px;font-weight:600;color:#111827;">' + taskTitle + dueStr + '</p>'
+      + '</div>'
+      + '<p style="margin:16px 0 0;color:#374151;">A new task has been assigned to you.</p>'
+      + '</div>'
+      + '<p style="margin:16px 0 0;font-size:12px;color:#9ca3af;text-align:center;">AssyEng Task Manager</p>'
+      + '</div>'
+  });
 }
 
 // ─── UPDATE ─────────────────────────────────────────────────────
@@ -97,15 +131,78 @@ function doUpdate(p) {
   const idCol = headers.indexOf('id');
   for (let r = 1; r < data.length; r++) {
     if (data[r][idCol] === updates.id) {
+      // Check if task is being marked complete
+      const wasStatus = data[r][headers.indexOf('status')];
+      const isTaskComplete = p.sheet === 'Tasks' && updates.status === 'done' && wasStatus !== 'done';
+
       headers.forEach((h, c) => {
         if (updates[h] !== undefined) {
           sheet.getRange(r + 1, c + 1).setValue(updates[h]);
         }
       });
+
+      // Send notification emails on task completion
+      if (isTaskComplete) {
+        try {
+          const taskTitle = data[r][headers.indexOf('title')] || 'Untitled';
+          const memberId = updates.memberId || data[r][headers.indexOf('memberId')];
+          sendCompletionEmails(taskTitle, memberId, updates.id);
+        } catch (emailErr) {
+          // Don't fail the update if email fails
+          Logger.log('Email notification error: ' + emailErr.toString());
+        }
+      }
+
       return ok(updates);
     }
   }
   return fail('Row not found: ' + updates.id);
+}
+
+// ─── EMAIL NOTIFICATIONS ────────────────────────────────────────
+function sendCompletionEmails(taskTitle, memberId, taskId) {
+  const usersSheet = getSheet('Users');
+  const users = sheetToObjects(usersSheet);
+
+  const assignee = users.find(u => u.id === memberId);
+  const managers = users.filter(u => u.role === 'manager');
+
+  const subject = '✅ Task Completed: ' + taskTitle;
+
+  // Email the assignee
+  if (assignee && assignee.email) {
+    MailApp.sendEmail({
+      to: assignee.email,
+      subject: subject,
+      htmlBody: buildEmailHtml(taskTitle, assignee.name, 'Your task has been marked as complete.', false)
+    });
+  }
+
+  // Email all managers (skip if they are also the assignee)
+  for (const mgr of managers) {
+    if (mgr.email && (!assignee || mgr.id !== assignee.id)) {
+      const completedBy = assignee ? assignee.name : 'Unknown';
+      MailApp.sendEmail({
+        to: mgr.email,
+        subject: subject,
+        htmlBody: buildEmailHtml(taskTitle, mgr.name, 'Task completed by ' + completedBy + '.', true)
+      });
+    }
+  }
+}
+
+function buildEmailHtml(taskTitle, recipientName, message, isManagerView) {
+  return '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;">'
+    + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;">'
+    + '<h2 style="margin:0 0 8px;color:#166534;">✅ Task Complete</h2>'
+    + '<p style="margin:0 0 16px;color:#374151;">Hi ' + recipientName + ',</p>'
+    + '<div style="background:white;border-radius:6px;padding:16px;border:1px solid #e5e7eb;">'
+    + '<p style="margin:0;font-size:16px;font-weight:600;color:#111827;">' + taskTitle + '</p>'
+    + '</div>'
+    + '<p style="margin:16px 0 0;color:#374151;">' + message + '</p>'
+    + '</div>'
+    + '<p style="margin:16px 0 0;font-size:12px;color:#9ca3af;text-align:center;">AssyEng Task Manager</p>'
+    + '</div>';
 }
 
 // ─── DELETE ─────────────────────────────────────────────────────
