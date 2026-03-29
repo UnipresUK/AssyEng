@@ -953,6 +953,23 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 }
 .subtask-btn:hover { color: var(--white); background: var(--primary); border-color: var(--primary); }
 .subtask-btn svg { width: 12px; height: 12px; }
+.prompt-btn {
+  background: var(--gray-100);
+  border: 1px solid var(--gray-200);
+  color: var(--gray-500);
+  padding: 3px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all var(--transition);
+}
+.prompt-btn:hover { color: var(--white); background: #d97706; border-color: #d97706; }
+.prompt-btn svg { width: 12px; height: 12px; }
 .status-filter-group {
   display: flex;
   align-items: center;
@@ -1815,6 +1832,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
               <span class="settings-toggle-hint">A summary of your overdue, this week, and upcoming tasks — sorted by priority</span>
             </div>
           </label>
+          <label class="settings-toggle">
+            <input type="checkbox" id="notifyDueReminder" checked>
+            <div class="settings-toggle-info">
+              <span class="settings-toggle-label">Due date reminder (day before)</span>
+              <span class="settings-toggle-hint">Get an email the day before a task is due to remind you</span>
+            </div>
+          </label>
           <label class="settings-toggle manager-only" id="managerBccRow" style="display:none;">
             <input type="checkbox" id="notifyManagerBcc" checked>
             <div class="settings-toggle-info">
@@ -2198,10 +2222,11 @@ async function showApp() {
 
 /* ===== NOTIFICATION PREFERENCES ===== */
 function loadNotifyPrefs() {
-  const prefs = currentUser.notifyPrefs || { assigned: true, completed: true, weeklySummary: true, managerBcc: true };
+  const prefs = currentUser.notifyPrefs || { assigned: true, completed: true, weeklySummary: true, managerBcc: true, dueReminder: true };
   document.getElementById('notifyAssigned').checked = prefs.assigned !== false;
   document.getElementById('notifyCompleted').checked = prefs.completed !== false;
   document.getElementById('notifyWeeklySummary').checked = prefs.weeklySummary !== false;
+  document.getElementById('notifyDueReminder').checked = prefs.dueReminder !== false;
   // Show BCC toggle only for managers
   if (currentUser.role === 'manager') {
     document.getElementById('managerBccRow').style.display = '';
@@ -2213,7 +2238,8 @@ function saveNotifyPrefs() {
   const prefs = {
     assigned: document.getElementById('notifyAssigned').checked,
     completed: document.getElementById('notifyCompleted').checked,
-    weeklySummary: document.getElementById('notifyWeeklySummary').checked
+    weeklySummary: document.getElementById('notifyWeeklySummary').checked,
+    dueReminder: document.getElementById('notifyDueReminder').checked
   };
   if (currentUser.role === 'manager') {
     prefs.managerBcc = document.getElementById('notifyManagerBcc').checked;
@@ -2239,6 +2265,7 @@ function saveNotifyPrefs() {
 document.getElementById('notifyAssigned').addEventListener('change', saveNotifyPrefs);
 document.getElementById('notifyCompleted').addEventListener('change', saveNotifyPrefs);
 document.getElementById('notifyWeeklySummary').addEventListener('change', saveNotifyPrefs);
+document.getElementById('notifyDueReminder').addEventListener('change', saveNotifyPrefs);
 document.getElementById('notifyManagerBcc').addEventListener('change', saveNotifyPrefs);
 
 /* ===== DENSITY MANAGEMENT ===== */
@@ -3127,6 +3154,10 @@ function renderTaskRow(task, groupKey, isSubtask) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         + Subtask
       </button>` : ''}
+      ${currentUser.role === 'manager' && task.memberId !== currentUser.id ? `<button class="prompt-btn" data-prompt-task="${task.id}" title="Send reminder to assignee">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Prompt
+      </button>` : ''}
     </div>
   `;
 }
@@ -3671,9 +3702,37 @@ document.addEventListener('click', function(e) {
     return;
   }
 
+  // Prompt task button (manager sends nudge email)
+  const promptBtn = target.closest('[data-prompt-task]');
+  if (promptBtn) {
+    const tid = promptBtn.dataset.promptTask;
+    const task = tasks.find(t => t.id === tid);
+    if (!task) return;
+    const assignee = users.find(u => u.id === task.memberId);
+    const msg = prompt(`Send a reminder to ${assignee ? assignee.name : 'assignee'} about "${task.title}".\n\nOptional message (or leave blank):`);
+    if (msg === null) return; // cancelled
+    promptBtn.disabled = true;
+    promptBtn.innerHTML = '<span style="font-size:11px;">Sending...</span>';
+    apiCall({ action: 'promptTask', taskId: tid, message: msg })
+      .then(() => {
+        showToast(`Reminder sent to ${assignee ? assignee.name : 'assignee'}`);
+        promptBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Sent ✓';
+        setTimeout(() => {
+          promptBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Prompt';
+          promptBtn.disabled = false;
+        }, 3000);
+      })
+      .catch(err => {
+        showToast('Failed to send: ' + err.message, 'error');
+        promptBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Prompt';
+        promptBtn.disabled = false;
+      });
+    return;
+  }
+
   // Task row click (open edit modal) - but not on circle, subtask btn, or chevron
   const taskRow = target.closest('.task-row');
-  if (taskRow && !target.closest('.complete-circle') && !target.closest('.subtask-btn') && !target.closest('[data-group-toggle]')) {
+  if (taskRow && !target.closest('.complete-circle') && !target.closest('.subtask-btn') && !target.closest('.prompt-btn') && !target.closest('[data-group-toggle]')) {
     openTaskModal(taskRow.dataset.taskId);
     return;
   }
