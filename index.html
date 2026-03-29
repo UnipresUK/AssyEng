@@ -1272,6 +1272,48 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   margin-top: 16px;
 }
 
+/* Settings */
+.settings-section {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 600px;
+}
+.settings-heading {
+  margin: 0 0 4px;
+  font-size: 16px;
+  color: var(--gray-800);
+}
+.settings-desc {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--gray-500);
+}
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.settings-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.settings-toggle:hover { background: var(--gray-50); }
+.settings-toggle input[type="checkbox"] {
+  width: 18px; height: 18px; margin-top: 2px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+.settings-toggle-info { display: flex; flex-direction: column; }
+.settings-toggle-label { font-size: 14px; font-weight: 500; color: var(--gray-800); }
+.settings-toggle-hint { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+
 /* ===== DASHBOARD MEMBER SUMMARIES ===== */
 .member-summaries {
   display: grid;
@@ -1561,6 +1603,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         Team
       </button>
+      <button class="nav-item" data-tab="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </button>
     </div>
     <div class="sidebar-user">
       <div class="user-avatar" id="sidebarAvatar"></div>
@@ -1693,6 +1739,41 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
         </button>
       </div>
       <div class="team-grid" id="teamGrid"></div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab-content" id="tab-settings">
+      <div class="page-header">
+        <h1>Settings</h1>
+      </div>
+      <div class="settings-section">
+        <h3 class="settings-heading">Email Notifications</h3>
+        <p class="settings-desc">Choose which email notifications you receive. Changes save automatically.</p>
+        <div class="settings-list">
+          <label class="settings-toggle">
+            <input type="checkbox" id="notifyAssigned" checked>
+            <div class="settings-toggle-info">
+              <span class="settings-toggle-label">Task assigned to me</span>
+              <span class="settings-toggle-hint">Get an email when a new task is assigned to you</span>
+            </div>
+          </label>
+          <label class="settings-toggle">
+            <input type="checkbox" id="notifyCompleted" checked>
+            <div class="settings-toggle-info">
+              <span class="settings-toggle-label">Task completed</span>
+              <span class="settings-toggle-hint">Get an email when your tasks are completed, or when a team member completes a task (managers)</span>
+            </div>
+          </label>
+          <label class="settings-toggle">
+            <input type="checkbox" id="notifyWeeklySummary" checked>
+            <div class="settings-toggle-info">
+              <span class="settings-toggle-label">Weekly summary (Monday 7am)</span>
+              <span class="settings-toggle-hint">A summary of your overdue, this week, and upcoming tasks — sorted by priority</span>
+            </div>
+          </label>
+        </div>
+        <div id="notifySaveStatus" style="margin-top:12px;font-size:13px;color:var(--gray-400);"></div>
+      </div>
     </div>
   </main>
 </div>
@@ -2059,7 +2140,46 @@ async function showApp() {
 
   await loadAllData();
   switchTab('dashboard');
+
+  // Restore notification preferences
+  loadNotifyPrefs();
 }
+
+/* ===== NOTIFICATION PREFERENCES ===== */
+function loadNotifyPrefs() {
+  const prefs = currentUser.notifyPrefs || { assigned: true, completed: true, weeklySummary: true };
+  document.getElementById('notifyAssigned').checked = prefs.assigned !== false;
+  document.getElementById('notifyCompleted').checked = prefs.completed !== false;
+  document.getElementById('notifyWeeklySummary').checked = prefs.weeklySummary !== false;
+}
+
+function saveNotifyPrefs() {
+  const prefs = {
+    assigned: document.getElementById('notifyAssigned').checked,
+    completed: document.getElementById('notifyCompleted').checked,
+    weeklySummary: document.getElementById('notifyWeeklySummary').checked
+  };
+  currentUser.notifyPrefs = prefs;
+  localStorage.setItem('assyeng_session', JSON.stringify(currentUser));
+
+  const status = document.getElementById('notifySaveStatus');
+  status.textContent = 'Saving...';
+
+  apiCall({
+    action: 'updateUser',
+    row: JSON.stringify({ id: currentUser.id, notifyPrefs: JSON.stringify(prefs) })
+  }).then(() => {
+    status.textContent = 'Saved';
+    setTimeout(() => { status.textContent = ''; }, 2000);
+  }).catch(err => {
+    status.textContent = 'Failed to save: ' + err.message;
+    status.style.color = 'var(--red)';
+  });
+}
+
+document.getElementById('notifyAssigned').addEventListener('change', saveNotifyPrefs);
+document.getElementById('notifyCompleted').addEventListener('change', saveNotifyPrefs);
+document.getElementById('notifyWeeklySummary').addEventListener('change', saveNotifyPrefs);
 
 /* ===== DENSITY MANAGEMENT ===== */
 function updateDensityButtons() {
