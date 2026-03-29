@@ -121,6 +121,7 @@ function sendAssignmentEmail(taskTitle, memberId, dueDate) {
   MailApp.sendEmail({
     to: assignee.email,
     subject: 'New Task Assigned: ' + taskTitle,
+    name: 'AssyEng Task Manager',
     htmlBody: buildEmailHtml('New Task Assigned', taskTitle, assignee.name,
       'A new task has been assigned to you.' + (dueStr ? '<br>Due: ' + dueDate : ''),
       '#eff6ff', '#bfdbfe', '#1e40af')
@@ -181,6 +182,7 @@ function sendCompletionEmails(taskTitle, memberId, taskId) {
     const emailOpts = {
       to: assignee.email,
       subject: 'Task Completed: ' + taskTitle,
+      name: 'AssyEng Task Manager',
       htmlBody: buildEmailHtml('Task Complete', taskTitle, assignee.name,
         'Your task has been marked as complete.',
         '#f0fdf4', '#bbf7d0', '#166534')
@@ -197,6 +199,7 @@ function sendCompletionEmails(taskTitle, memberId, taskId) {
       MailApp.sendEmail({
         to: mgr.email,
         subject: 'Task Completed: ' + taskTitle,
+        name: 'AssyEng Task Manager',
         htmlBody: buildEmailHtml('Task Complete', taskTitle, mgr.name,
           'Task completed by ' + completedBy + '.',
           '#f0fdf4', '#bbf7d0', '#166534')
@@ -309,6 +312,7 @@ function sendWeeklySummary() {
     MailApp.sendEmail({
       to: user.email,
       subject: 'Your Week: ' + overdue.length + ' overdue, ' + thisWeek.length + ' due this week',
+      name: 'AssyEng Task Manager',
       htmlBody: body
     });
   }
@@ -404,6 +408,7 @@ function sendDueReminders() {
     MailApp.sendEmail({
       to: user.email,
       subject: 'Reminder: ' + dueTomorrow.length + ' task' + (dueTomorrow.length > 1 ? 's' : '') + ' due tomorrow',
+      name: 'AssyEng Task Manager',
       htmlBody: body
     });
   }
@@ -451,6 +456,7 @@ function doPromptTask(p) {
   MailApp.sendEmail({
     to: assignee.email,
     subject: (isOverdue ? 'OVERDUE: ' : 'Reminder: ') + (task.title || 'Untitled'),
+    name: 'AssyEng Task Manager',
     htmlBody: body
   });
 
