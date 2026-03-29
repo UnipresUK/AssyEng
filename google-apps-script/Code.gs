@@ -44,7 +44,7 @@ function fail(msg)   { return jsonResp({ ok: false, error: msg }); }
 
 // Parse notifyPrefs JSON safely, default all on
 function getNotifyPrefs(user) {
-  const defaults = { assigned: true, completed: true, weeklySummary: true, managerBcc: true };
+  const defaults = { assigned: true, completed: true, weeklySummary: true, managerBcc: true, dueReminder: true };
   if (!user.notifyPrefs) return defaults;
   try {
     const parsed = typeof user.notifyPrefs === 'string' ? JSON.parse(user.notifyPrefs) : user.notifyPrefs;
@@ -73,6 +73,7 @@ function route(p) {
       case 'addUser':       return doAddUser(p);
       case 'updateUser':    return doUpdateUser(p);
       case 'deleteUser':    return doDeleteUser(p);
+      case 'promptTask':    return doPromptTask(p);
       default:              return fail('Unknown action: ' + p.action);
     }
   } catch (err) {
@@ -348,6 +349,134 @@ function taskSection(title, taskList, color, bg) {
   }
   html += '</div></div>';
   return html;
+}
+
+// ─── DAILY DUE REMINDER (trigger every day at 7am) ──────────────
+function sendDueReminders() {
+  const users = sheetToObjects(getSheet('Users'));
+  const allTasks = sheetToObjects(getSheet('Tasks'));
+
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  for (const user of users) {
+    if (!user.email) continue;
+    const prefs = getNotifyPrefs(user);
+    if (!prefs.dueReminder) continue;
+
+    // Find tasks due tomorrow that are not done
+    const dueTomorrow = allTasks.filter(t =>
+      t.memberId === user.id && t.status !== 'done' && t.due
+    ).filter(t => {
+      const d = new Date(t.due);
+      return d.toISOString().split('T')[0] === tomorrowStr;
+    });
+
+    if (dueTomorrow.length === 0) continue;
+
+    // Sort by priority
+    const priOrder = { high: 0, medium: 1, low: 2 };
+    dueTomorrow.sort((a, b) => (priOrder[a.priority] || 1) - (priOrder[b.priority] || 1));
+
+    let taskListHtml = '';
+    for (const t of dueTomorrow) {
+      const pri = t.priority || 'medium';
+      const priLabel = { high: 'HIGH', medium: 'MED', low: 'LOW' }[pri] || 'MED';
+      const priColor = { high: '#dc2626', medium: '#f59e0b', low: '#6b7280' }[pri] || '#6b7280';
+      taskListHtml += '<div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px;">';
+      taskListHtml += '<span style="font-size:10px;font-weight:700;color:' + priColor + ';background:#fefce8;padding:2px 6px;border-radius:4px;">' + priLabel + '</span>';
+      taskListHtml += '<span style="flex:1;color:#111827;font-size:14px;">' + (t.title || 'Untitled') + '</span>';
+      taskListHtml += '</div>';
+    }
+
+    const body = '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;">'
+      + '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px;">'
+      + '<h2 style="margin:0 0 8px;color:#92400e;">Due Tomorrow</h2>'
+      + '<p style="margin:0 0 16px;color:#374151;">Hi ' + user.name + ', you have ' + dueTomorrow.length + ' task' + (dueTomorrow.length > 1 ? 's' : '') + ' due tomorrow:</p>'
+      + '<div style="background:white;border-radius:6px;border:1px solid #e5e7eb;overflow:hidden;">'
+      + taskListHtml
+      + '</div>'
+      + '</div>'
+      + '<p style="margin:16px 0 0;font-size:12px;color:#9ca3af;text-align:center;">AssyEng Task Manager</p>'
+      + '</div>';
+
+    MailApp.sendEmail({
+      to: user.email,
+      subject: 'Reminder: ' + dueTomorrow.length + ' task' + (dueTomorrow.length > 1 ? 's' : '') + ' due tomorrow',
+      htmlBody: body
+    });
+  }
+}
+
+// ─── PROMPT TASK (manager sends nudge to assignee) ──────────────
+function doPromptTask(p) {
+  const taskId = p.taskId;
+  const promptMessage = p.message || '';
+  const allTasks = sheetToObjects(getSheet('Tasks'));
+  const users = sheetToObjects(getSheet('Users'));
+  const task = allTasks.find(t => t.id === taskId);
+  if (!task) return fail('Task not found');
+
+  const assignee = users.find(u => u.id === task.memberId);
+  if (!assignee || !assignee.email) return fail('Assignee has no email');
+
+  const dueStr = task.due ? new Date(task.due).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }) : 'No due date';
+  const isOverdue = task.due && new Date(task.due) < new Date(new Date().toDateString());
+
+  let messageHtml = '';
+  if (promptMessage) {
+    messageHtml = '<div style="background:#fef3c7;border-radius:6px;padding:12px;margin-top:12px;border:1px solid #fde68a;">'
+      + '<p style="margin:0;font-size:13px;color:#92400e;font-weight:600;">Message from manager:</p>'
+      + '<p style="margin:4px 0 0;color:#78350f;">' + promptMessage + '</p>'
+      + '</div>';
+  }
+
+  const statusLabel = isOverdue ? 'OVERDUE' : 'Due: ' + dueStr;
+  const statusColor = isOverdue ? '#dc2626' : '#2563eb';
+
+  const body = '<div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:24px;">'
+    + '<div style="background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:20px;">'
+    + '<h2 style="margin:0 0 8px;color:#92400e;">Task Reminder</h2>'
+    + '<p style="margin:0 0 16px;color:#374151;">Hi ' + assignee.name + ', this is a reminder about your task:</p>'
+    + '<div style="background:white;border-radius:6px;padding:16px;border:1px solid #e5e7eb;">'
+    + '<p style="margin:0;font-size:16px;font-weight:600;color:#111827;">' + (task.title || 'Untitled') + '</p>'
+    + '<p style="margin:8px 0 0;font-size:13px;color:' + statusColor + ';font-weight:600;">' + statusLabel + '</p>'
+    + '</div>'
+    + messageHtml
+    + '</div>'
+    + '<p style="margin:16px 0 0;font-size:12px;color:#9ca3af;text-align:center;">AssyEng Task Manager</p>'
+    + '</div>';
+
+  MailApp.sendEmail({
+    to: assignee.email,
+    subject: (isOverdue ? 'OVERDUE: ' : 'Reminder: ') + (task.title || 'Untitled'),
+    htmlBody: body
+  });
+
+  return ok({ prompted: taskId, assignee: assignee.name });
+}
+
+// ─── Setup triggers (run once manually) ─────────────────────────
+function setupAllTriggers() {
+  // Delete existing triggers to avoid duplicates
+  ScriptApp.getProjectTriggers().forEach(t => {
+    const fn = t.getHandlerFunction();
+    if (fn === 'sendWeeklySummary' || fn === 'sendDueReminders') ScriptApp.deleteTrigger(t);
+  });
+  // Weekly summary: Monday at 7am
+  ScriptApp.newTrigger('sendWeeklySummary')
+    .timeBased()
+    .onWeekDay(ScriptApp.WeekDay.MONDAY)
+    .atHour(7)
+    .create();
+  // Daily due reminder: every day at 7am
+  ScriptApp.newTrigger('sendDueReminders')
+    .timeBased()
+    .everyDays(1)
+    .atHour(7)
+    .create();
+  Logger.log('All triggers created: weekly summary (Mon 7am), daily due reminder (7am)');
 }
 
 // ─── Setup trigger (run once manually) ──────────────────────────
