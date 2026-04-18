@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment & Pension Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --husband: #3b82f6;
+            --wife: #ec4899;
+            --kids: #10b981;
+            --combined: #8b5cf6;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --surface2: #334155;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --border: #475569;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --r: 8px;
+            --rl: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* ── Layout ── */
+        header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+        header h1 { font-size: 1.3rem; font-weight: 700; }
+        header h1 span { color: #60a5fa; }
+        .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; gap: 2px; overflow-x: auto; }
+        .tab-btn { padding: 11px 18px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; font-size: 0.85rem; font-weight: 500; white-space: nowrap; transition: all .15s; }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active { color: var(--text); border-bottom-color: #60a5fa; }
+        .container { max-width: 1440px; margin: 0 auto; padding: 24px; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Grid ── */
+        .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        @media (max-width: 1100px) { .g4 { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 820px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } }
+
+        /* ── Cards ── */
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl); padding: 20px; }
+        .card-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .card-title { font-size: .95rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+        /* ── Badges ── */
+        .badge { font-size: .68rem; padding: 2px 8px; border-radius: 100px; font-weight: 700; letter-spacing: .04em; }
+        .bh { background: rgba(59,130,246,.18); color: var(--husband); }
+        .bw { background: rgba(236,72,153,.18); color: var(--wife); }
+        .bk { background: rgba(16,185,129,.18); color: var(--kids); }
+
+        /* ── Form ── */
+        label { display: block; font-size: .75rem; color: var(--muted); margin-bottom: 4px; }
+        input[type="text"], input[type="number"], select {
+            width: 100%; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: var(--r); padding: 7px 11px; color: var(--text);
+            font-size: .85rem; outline: none; transition: border-color .15s;
+        }
+        input:focus, select:focus { border-color: #60a5fa; }
+        .sym-wrap { position: relative; }
+        .sym-l { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .85rem; pointer-events: none; }
+        .sym-r { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: .85rem; pointer-events: none; }
+        .sym-wrap.l input { padding-left: 20px; }
+        .sym-wrap.r input { padding-right: 22px; }
+        .fg { margin-bottom: 12px; }
+
+        /* ── Buttons ── */
+        .btn { padding: 7px 14px; border-radius: var(--r); border: none; cursor: pointer; font-size: .85rem; font-weight: 500; transition: all .15s; }
+        .btn-primary { background: #2563eb; color: #fff; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-lg { padding: 10px 28px; font-size: .95rem; }
+        .btn-ghost { background: var(--surface2); color: var(--muted); }
+        .btn-ghost:hover { color: var(--text); }
+        .btn-sm { padding: 4px 9px; font-size: .75rem; }
+        .btn-del { background: rgba(239,68,68,.1); color: var(--danger); padding: 4px 8px; border-radius: var(--r); border: none; cursor: pointer; font-size: .75rem; }
+        .btn-del:hover { background: rgba(239,68,68,.2); }
+
+        /* ── Global bar ── */
+        .glob-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl); padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+        .glob-bar .fg { margin: 0; }
+        .glob-bar input { width: 110px; }
+        .glob-bar label { white-space: nowrap; }
+
+        /* ── Inline name input ── */
+        .name-input { background: none; border: none; font-size: 1rem; font-weight: 600; color: var(--text); padding: 0; width: 140px; outline: none; }
+        .name-input:focus { border-bottom: 1px dashed var(--border); }
+
+        /* ── Investment table ── */
+        .inv-tbl { width: 100%; border-collapse: collapse; font-size: .78rem; }
+        .inv-tbl th { text-align: left; padding: 7px 5px; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); white-space: nowrap; }
+        .inv-tbl td { padding: 5px; }
+        .inv-tbl td input { padding: 5px 8px; }
+        .inv-tbl tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+        .inv-count { font-size: .72rem; color: var(--muted); }
+
+        /* ── Expense bands ── */
+        .band-row { display: grid; grid-template-columns: 80px 80px 1fr 34px; gap: 8px; align-items: center; margin-bottom: 8px; }
+
+        /* ── Withdrawal boxes ── */
+        .w-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 12px; }
+        .w-box h4 { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
+
+        /* ── Stat cards ── */
+        .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl); padding: 16px 18px; }
+        .stat-lbl { font-size: .72rem; color: var(--muted); margin-bottom: 5px; }
+        .stat-val { font-size: 1.4rem; font-weight: 700; }
+        .stat-sub { font-size: .72rem; color: var(--muted); margin-top: 4px; }
+
+        /* ── Charts ── */
+        .chart-wrap { position: relative; height: 340px; }
+        .chart-wrap.sm { height: 230px; }
+
+        /* ── Breakdown table ── */
+        .scroll-tbl { overflow: auto; max-height: 620px; border: 1px solid var(--border); border-radius: var(--r); }
+        .bk-tbl { width: 100%; border-collapse: collapse; font-size: .78rem; white-space: nowrap; }
+        .bk-tbl th { position: sticky; top: 0; background: var(--surface); padding: 9px 11px; text-align: right; color: var(--muted); font-weight: 600; border-bottom: 2px solid var(--border); z-index: 10; }
+        .bk-tbl th:first-child, .bk-tbl th.note-col { text-align: left; }
+        .bk-tbl td { padding: 7px 11px; text-align: right; border-bottom: 1px solid rgba(255,255,255,.03); }
+        .bk-tbl td:first-child, .bk-tbl td.note-col { text-align: left; }
+        .bk-tbl tr:hover td { background: rgba(255,255,255,.025); }
+        .bk-tbl tr.key-row td { background: rgba(37,99,235,.08); font-weight: 600; }
+
+        /* ── Colours ── */
+        .ch { color: var(--husband); }
+        .cw { color: var(--wife); }
+        .ck { color: var(--kids); }
+        .cc { color: var(--combined); }
+        .cg { color: var(--success); }
+        .cd { color: var(--danger); }
+
+        /* ── Empty state ── */
+        .empty { text-align: center; padding: 70px 0; color: var(--muted); }
+        .empty p:first-child { font-size: 1.05rem; margin-bottom: 6px; color: var(--text); }
+
+        /* ── Divider / info ── */
+        .info { font-size: .78rem; color: var(--muted); margin-bottom: 14px; }
+        hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+        /* ── Age display ── */
+        .age-disp { font-size: .78rem; color: var(--muted); margin-bottom: 10px; }
+
+        /* ── Section label ── */
+        .sec-lbl { font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
+
+        /* ── Milestone badge ── */
+        .note-pill { display: inline-block; font-size: .68rem; background: rgba(139,92,246,.15); color: var(--combined); border-radius: 100px; padding: 1px 7px; margin-right: 4px; white-space: nowrap; }
+        .note-pill.green { background: rgba(34,197,94,.15); color: var(--success); }
+
+        /* ── Toast ── */
+        #toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 10px 20px; font-size: .85rem; color: var(--text); opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 999; white-space: nowrap; }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        #toast.ok   { border-color: var(--success); color: var(--success); }
+        #toast.err  { border-color: var(--danger);  color: var(--danger); }
+
+        /* ── Sync status ── */
+        .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); display: inline-block; margin-right: 5px; }
+        .sync-dot.saved  { background: var(--success); }
+        .sync-dot.saving { background: var(--warning); animation: pulse .8s infinite; }
+        .sync-dot.err    { background: var(--danger); }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Investment &amp; <span>Pension</span> Dashboard</h1>
+    <div style="display:flex;align-items:center;gap:12px">
+        <span id="calc-time" style="font-size:.78rem;color:var(--muted)"></span>
+        <span id="sync-status" style="font-size:.78rem;color:var(--muted);display:flex;align-items:center">
+            <span class="sync-dot" id="sync-dot"></span><span id="sync-label">Not saved</span>
+        </span>
+        <button class="btn btn-ghost" onclick="saveToSheets()" id="saveBtn">💾 Save</button>
+        <button class="btn btn-primary btn-lg" onclick="calculate()">Calculate →</button>
+    </div>
+</header>
+<div id="toast"></div>
+
+<nav class="tabs">
+    <button class="tab-btn active" data-tab="people">👤 People &amp; Investments</button>
+    <button class="tab-btn" data-tab="expenses">💷 Expenses &amp; Withdrawals</button>
+    <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
+    <button class="tab-btn" data-tab="breakdown">📋 Year by Year</button>
+</nav>
+
+<!-- ══════════════════ TAB 1: PEOPLE ══════════════════ -->
+<div id="tab-people" class="tab-panel active">
+<div class="container">
+
+    <!-- Global settings -->
+    <div class="glob-bar">
+        <strong style="font-size:.9rem">Global Settings</strong>
+        <div class="fg">
+            <label>Annual Return Rate</label>
+            <div class="sym-wrap r"><input type="number" id="gReturn" value="7" min="0" max="30" step="0.1"><span class="sym-r">%</span></div>
+        </div>
+        <div class="fg">
+            <label>Current Year</label>
+            <input type="number" id="gYear" value="2026" min="2000" max="2100" style="width:90px" onchange="refreshAges()">
+        </div>
+        <div class="fg">
+            <label>Project To Age</label>
+            <input type="number" id="gEndAge" value="90" min="60" max="110" style="width:80px">
+        </div>
+    </div>
+
+    <!-- Adults -->
+    <div class="g2" style="margin-bottom:20px">
+        <!-- Husband -->
+        <div class="card">
+            <div class="card-hdr">
+                <div class="card-title">
+                    <span>👨</span>
+                    <input class="name-input" id="hName" value="Husband">
+                    <span class="badge bh">MALE</span>
+                </div>
+                <span class="inv-count" id="hCount">0 / 10</span>
+            </div>
+            <div class="fg">
+                <label>Year of Birth</label>
+                <input type="number" id="hDob" value="1990" min="1940" max="2010" onchange="refreshAges()" style="width:110px">
+            </div>
+            <div class="age-disp" id="hAge"></div>
+            <div style="overflow-x:auto">
+                <table class="inv-tbl">
+                    <thead><tr>
+                        <th>Investment Name</th><th>Current Value</th><th>Monthly</th><th>Stop Age</th><th>Rate %</th><th></th>
+                    </tr></thead>
+                    <tbody id="hRows"></tbody>
+                </table>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="addRow('h')">+ Add Investment</button>
+        </div>
+
+        <!-- Wife -->
+        <div class="card">
+            <div class="card-hdr">
+                <div class="card-title">
+                    <span>👩</span>
+                    <input class="name-input" id="wName" value="Wife">
+                    <span class="badge bw">FEMALE</span>
+                </div>
+                <span class="inv-count" id="wCount">0 / 10</span>
+            </div>
+            <div class="fg">
+                <label>Year of Birth</label>
+                <input type="number" id="wDob" value="1992" min="1940" max="2010" onchange="refreshAges()" style="width:110px">
+            </div>
+            <div class="age-disp" id="wAge"></div>
+            <div style="overflow-x:auto">
+                <table class="inv-tbl">
+                    <thead><tr>
+                        <th>Investment Name</th><th>Current Value</th><th>Monthly</th><th>Stop Age</th><th>Rate %</th><th></th>
+                    </tr></thead>
+                    <tbody id="wRows"></tbody>
+                </table>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="addRow('w')">+ Add Investment</button>
+        </div>
+    </div>
+
+    <!-- Kids -->
+    <div class="g2">
+        <!-- Kid 1 -->
+        <div class="card">
+            <div class="card-hdr">
+                <div class="card-title">
+                    <span>🧒</span>
+                    <input class="name-input" id="k1Name" value="Child 1">
+                    <span class="badge bk">CHILD</span>
+                </div>
+                <span class="inv-count" id="k1Count">0 / 5</span>
+            </div>
+            <div class="fg">
+                <label>Year of Birth</label>
+                <input type="number" id="k1Dob" value="2018" min="2000" max="2035" onchange="refreshAges()" style="width:110px">
+            </div>
+            <div class="age-disp" id="k1Age"></div>
+            <div style="overflow-x:auto">
+                <table class="inv-tbl">
+                    <thead><tr>
+                        <th>Investment Name</th><th>Current Value</th><th>Monthly</th><th>Stop Age</th><th>Rate %</th><th></th>
+                    </tr></thead>
+                    <tbody id="k1Rows"></tbody>
+                </table>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="addRow('k1')">+ Add Investment</button>
+        </div>
+
+        <!-- Kid 2 -->
+        <div class="card">
+            <div class="card-hdr">
+                <div class="card-title">
+                    <span>🧒</span>
+                    <input class="name-input" id="k2Name" value="Child 2">
+                    <span class="badge bk">CHILD</span>
+                </div>
+                <span class="inv-count" id="k2Count">0 / 5</span>
+            </div>
+            <div class="fg">
+                <label>Year of Birth</label>
+                <input type="number" id="k2Dob" value="2021" min="2000" max="2035" onchange="refreshAges()" style="width:110px">
+            </div>
+            <div class="age-disp" id="k2Age"></div>
+            <div style="overflow-x:auto">
+                <table class="inv-tbl">
+                    <thead><tr>
+                        <th>Investment Name</th><th>Current Value</th><th>Monthly</th><th>Stop Age</th><th>Rate %</th><th></th>
+                    </tr></thead>
+                    <tbody id="k2Rows"></tbody>
+                </table>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="addRow('k2')">+ Add Investment</button>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<!-- ══════════════════ TAB 2: EXPENSES ══════════════════ -->
+<div id="tab-expenses" class="tab-panel">
+<div class="container">
+<div class="g2">
+
+    <!-- Expense bands -->
+    <div class="card">
+        <div class="card-hdr">
+            <div class="card-title">Annual Household Expenses</div>
+        </div>
+        <p class="info">Define up to 8 age-based annual expense bands for the household.</p>
+        <div style="display:grid;grid-template-columns:80px 80px 1fr 34px;gap:8px;margin-bottom:6px">
+            <span style="font-size:.72rem;color:var(--muted)">From Age</span>
+            <span style="font-size:.72rem;color:var(--muted)">To Age</span>
+            <span style="font-size:.72rem;color:var(--muted)">Annual Amount</span>
+            <span></span>
+        </div>
+        <div id="bandRows"></div>
+    </div>
+
+    <!-- Withdrawal + State Pension -->
+    <div>
+        <div class="card">
+            <div class="card-hdr">
+                <div class="card-title">Withdrawal Schedule</div>
+            </div>
+            <p class="info">Applied per person based on their individual age. Withdrawals reduce the investment pot.</p>
+
+            <div class="w-box">
+                <h4>Phase 0 — Tax-Free Lump Sum</h4>
+                <div class="g2">
+                    <div class="fg" style="margin:0"><label>Withdraw at Age</label><input type="number" id="wLumpAge" value="57" min="50" max="75"></div>
+                    <div class="fg" style="margin:0"><label>Percentage of Pot</label><div class="sym-wrap r"><input type="number" id="wLumpPct" value="25" min="0" max="100"><span class="sym-r">%</span></div></div>
+                </div>
+            </div>
+
+            <div class="w-box">
+                <h4>Phase 1 — Bridge Withdrawals</h4>
+                <div class="g3">
+                    <div class="fg" style="margin:0"><label>From Age</label><input type="number" id="w1From" value="58"></div>
+                    <div class="fg" style="margin:0"><label>To Age</label><input type="number" id="w1To" value="62"></div>
+                    <div class="fg" style="margin:0"><label>Per Year</label><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" id="w1Amt" value="10000"></div></div>
+                </div>
+            </div>
+
+            <div class="w-box">
+                <h4>Phase 2 — Reduced Withdrawals</h4>
+                <div class="g3">
+                    <div class="fg" style="margin:0"><label>From Age</label><input type="number" id="w2From" value="63"></div>
+                    <div class="fg" style="margin:0"><label>To Age</label><input type="number" id="w2To" value="67"></div>
+                    <div class="fg" style="margin:0"><label>Per Year</label><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" id="w2Amt" value="6000"></div></div>
+                </div>
+            </div>
+
+            <div class="w-box" style="margin-bottom:0">
+                <h4>State Pension</h4>
+                <div class="g2">
+                    <div class="fg" style="margin:0"><label>State Pension Age</label><input type="number" id="spAge" value="67" min="60" max="80"></div>
+                    <div class="fg" style="margin:0"><label>Annual Amount</label><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" id="spAmt" value="11502"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>
+</div>
+
+<!-- ══════════════════ TAB 3: DASHBOARD ══════════════════ -->
+<div id="tab-dashboard" class="tab-panel">
+<div class="container">
+    <div id="dashContent">
+        <div class="empty"><p>No projection yet</p><p>Set up your investments and click <strong>Calculate →</strong></p></div>
+    </div>
+</div>
+</div>
+
+<!-- ══════════════════ TAB 4: BREAKDOWN ══════════════════ -->
+<div id="tab-breakdown" class="tab-panel">
+<div class="container">
+    <div id="bkContent">
+        <div class="empty"><p>No projection yet</p><p>Set up your investments and click <strong>Calculate →</strong></p></div>
+    </div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  API
+// ═══════════════════════════════════════════════
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbwYxsVOgBn_kC-FCyhl4Z9p6a7G4Eq4WC5sNBE0PqZRhgE5mFr5_DY7C2gII7BNeBfi/exec';
+
+function toast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'show' + (type ? ' ' + type : '');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.className = ''; }, 3200);
+}
+
+function setSyncStatus(state) {
+    const dot   = document.getElementById('sync-dot');
+    const label = document.getElementById('sync-label');
+    dot.className = 'sync-dot ' + state;
+    const labels = { saving: 'Saving…', saved: 'Saved to Sheets', err: 'Save failed', loading: 'Loading…' };
+    label.textContent = labels[state] || '';
+}
+
+function collectState() {
+    const ids = ['gReturn','gYear','gEndAge','hName','hDob','wName','wDob',
+                 'k1Name','k1Dob','k2Name','k2Dob',
+                 'wLumpAge','wLumpPct','w1From','w1To','w1Amt',
+                 'w2From','w2To','w2Amt','spAge','spAmt'];
+    const config = {};
+    ids.forEach(id => { const el = document.getElementById(id); if (el) config[id] = el.value; });
+    return { config, investments: { h: ppl.h, w: ppl.w, k1: ppl.k1, k2: ppl.k2 }, bands };
+}
+
+function applyState(s) {
+    if (!s) return;
+    // Config fields
+    if (s.config) {
+        Object.entries(s.config).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+        });
+    }
+    // Investments
+    if (s.investments) {
+        ['h','w','k1','k2'].forEach(p => {
+            ppl[p] = [];
+            document.getElementById(p + 'Rows').innerHTML = '';
+            updateCount(p);
+        });
+        ['h','w','k1','k2'].forEach(p => {
+            (s.investments[p] || []).forEach(inv => addRow(p, inv));
+        });
+    }
+    // Expense bands
+    if (s.bands && s.bands.length) {
+        bands = s.bands;
+        renderBands();
+    }
+    refreshAges();
+}
+
+async function saveToSheets() {
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    setSyncStatus('saving');
+    // Always keep a local copy too
+    try { localStorage.setItem('pension_state', JSON.stringify(collectState())); } catch (_) {}
+    try {
+        const res = await fetch(API_URL + '?action=save', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'save', state: JSON.stringify(collectState()) })
+        });
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.error);
+        setSyncStatus('saved');
+        toast('Saved to Google Sheets ✓', 'ok');
+    } catch (e) {
+        setSyncStatus('err');
+        toast('Save failed: ' + e.message, 'err');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function loadFromSheets() {
+    setSyncStatus('loading');
+    try {
+        const url = new URL(API_URL);
+        url.searchParams.set('action', 'load');
+        const res  = await fetch(url.toString());
+        const json = await res.json();
+        if (json.ok && json.data) {
+            applyState(json.data);
+            setSyncStatus('saved');
+            toast('Loaded from Google Sheets', 'ok');
+            return true;
+        }
+    } catch (_) {}
+    // Fall back to localStorage
+    try {
+        const cached = localStorage.getItem('pension_state');
+        if (cached) { applyState(JSON.parse(cached)); toast('Loaded from local cache'); return true; }
+    } catch (_) {}
+    setSyncStatus('');
+    return false;
+}
+
+// ═══════════════════════════════════════════════
+//  DATA MODEL
+// ═══════════════════════════════════════════════
+
+const ppl = { h: [], w: [], k1: [], k2: [] };
+const maxInv = { h: 10, w: 10, k1: 5, k2: 5 };
+let _uid = 1;
+
+let bands = [
+    { from: 20, to: 30, amount: 20000 },
+    { from: 30, to: 40, amount: 35000 },
+    { from: 40, to: 50, amount: 50000 },
+    { from: 50, to: 55, amount: 40000 },
+    { from: 55, to: 60, amount: 30000 },
+    { from: 60, to: 65, amount: 28000 },
+    { from: 65, to: 70, amount: 25000 },
+    { from: 70, to: 95, amount: 20000 },
+];
+
+let chartRegistry = {};
+
+// ═══════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+});
+
+// ═══════════════════════════════════════════════
+//  INVESTMENT ROWS
+// ═══════════════════════════════════════════════
+
+function addRow(p, d = {}) {
+    if (ppl[p].length >= maxInv[p]) { alert(`Maximum ${maxInv[p]} investments for this person.`); return; }
+    const id = _uid++;
+    const inv = { id, name: d.name||'', value: d.value||0, monthly: d.monthly||0, stopAge: d.stopAge||57, rate: d.rate!==undefined ? d.rate : '' };
+    ppl[p].push(inv);
+
+    const tbody = document.getElementById(p + 'Rows');
+    const tr = document.createElement('tr');
+    tr.id = 'r' + id;
+    tr.innerHTML =
+        `<td><input type="text" value="${esc(inv.name)}" placeholder="e.g. Pension" style="width:120px" oninput="setInv('${p}',${id},'name',this.value)"></td>` +
+        `<td><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" value="${inv.value}" min="0" style="width:105px" oninput="setInv('${p}',${id},'value',this.value)"></div></td>` +
+        `<td><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" value="${inv.monthly}" min="0" style="width:85px" oninput="setInv('${p}',${id},'monthly',this.value)"></div></td>` +
+        `<td><input type="number" value="${inv.stopAge}" min="16" max="95" style="width:60px" oninput="setInv('${p}',${id},'stopAge',this.value)"></td>` +
+        `<td><div class="sym-wrap r"><input type="number" value="${inv.rate}" min="0" max="30" step="0.1" placeholder="global" style="width:75px" oninput="setInv('${p}',${id},'rate',this.value)"><span class="sym-r">%</span></div></td>` +
+        `<td><button class="btn-del" onclick="delRow('${p}',${id})">✕</button></td>`;
+    tbody.appendChild(tr);
+    updateCount(p);
+}
+
+function setInv(p, id, field, val) {
+    const inv = ppl[p].find(i => i.id === id);
+    if (!inv) return;
+    if (field === 'name') inv.name = val;
+    else if (field === 'rate') inv.rate = val === '' ? '' : +val;
+    else inv[field] = +val || 0;
+}
+
+function delRow(p, id) {
+    ppl[p] = ppl[p].filter(i => i.id !== id);
+    document.getElementById('r' + id)?.remove();
+    updateCount(p);
+}
+
+function updateCount(p) {
+    document.getElementById(p + 'Count').textContent = `${ppl[p].length} / ${maxInv[p]}`;
+}
+
+function esc(s) { return String(s).replace(/"/g, '&quot;'); }
+
+// ═══════════════════════════════════════════════
+//  EXPENSE BANDS
+// ═══════════════════════════════════════════════
+
+function renderBands() {
+    const c = document.getElementById('bandRows');
+    c.innerHTML = '';
+    bands.forEach((b, i) => {
+        const d = document.createElement('div');
+        d.className = 'band-row';
+        d.innerHTML =
+            `<input type="number" value="${b.from}" min="0" max="100" oninput="setBand(${i},'from',this.value)">` +
+            `<input type="number" value="${b.to}" min="0" max="110" oninput="setBand(${i},'to',this.value)">` +
+            `<div class="sym-wrap l"><span class="sym-l">£</span><input type="number" value="${b.amount}" min="0" oninput="setBand(${i},'amount',this.value)"></div>` +
+            `<button class="btn-del" onclick="delBand(${i})">✕</button>`;
+        c.appendChild(d);
+    });
+}
+
+function setBand(i, f, v) { bands[i][f] = +v || 0; }
+function delBand(i) { if (bands.length > 1) { bands.splice(i, 1); renderBands(); } }
+
+// ═══════════════════════════════════════════════
+//  AGES
+// ═══════════════════════════════════════════════
+
+function refreshAges() {
+    const yr = +document.getElementById('gYear').value || 2026;
+    [['h','hDob','hAge'],['w','wDob','wAge'],['k1','k1Dob','k1Age'],['k2','k2Dob','k2Age']].forEach(([,dob,el]) => {
+        const age = yr - (+document.getElementById(dob).value || yr);
+        document.getElementById(el).textContent = `Current age: ${age}`;
+    });
+}
+
+// ═══════════════════════════════════════════════
+//  CALCULATION ENGINE
+// ═══════════════════════════════════════════════
+
+function cfg() {
+    return {
+        yr:       +document.getElementById('gYear').value || 2026,
+        ret:      (+document.getElementById('gReturn').value || 7) / 100,
+        endAge:   +document.getElementById('gEndAge').value || 90,
+        lumpAge:  +document.getElementById('wLumpAge').value || 57,
+        lumpPct:  (+document.getElementById('wLumpPct').value || 25) / 100,
+        w1From:   +document.getElementById('w1From').value || 58,
+        w1To:     +document.getElementById('w1To').value || 62,
+        w1Amt:    +document.getElementById('w1Amt').value || 10000,
+        w2From:   +document.getElementById('w2From').value || 63,
+        w2To:     +document.getElementById('w2To').value || 67,
+        w2Amt:    +document.getElementById('w2Amt').value || 6000,
+        spAge:    +document.getElementById('spAge').value || 67,
+        spAmt:    +document.getElementById('spAmt').value || 11502,
+        bands:    bands.slice()
+    };
+}
+
+function expenseAt(age, bs) {
+    for (const b of bs) if (age >= b.from && age < b.to) return b.amount;
+    return 0;
+}
+
+function dob(key) {
+    const ids = { h:'hDob', w:'wDob', k1:'k1Dob', k2:'k2Dob' };
+    return +document.getElementById(ids[key]).value;
+}
+
+function name(key) {
+    const ids = { h:'hName', w:'wName', k1:'k1Name', k2:'k2Name' };
+    return document.getElementById(ids[key]).value || key;
+}
+
+function project(key, c, isKid) {
+    const startAge = c.yr - dob(key);
+    const endAge   = isKid ? Math.min(c.endAge, 25) : c.endAge;
+    let pot = ppl[key].reduce((s, i) => s + (i.value || 0), 0);
+    let lumpDone = false;
+    const rows = [];
+
+    for (let age = startAge; age <= endAge; age++) {
+        // Per-investment contributions & rates
+        let contrib = 0;
+        let wGrowth = 0;
+        let wContrib = 0;
+        for (const inv of ppl[key]) {
+            const r = (inv.rate !== '' ? inv.rate / 100 : c.ret);
+            if (age <= (inv.stopAge || 57)) {
+                const mc = (inv.monthly || 0) * 12;
+                contrib += mc;
+                wContrib += mc;
+            }
+        }
+        // Growth on whole pot (weighted average approximation using global rate per inv)
+        // For simplicity grow whole pot by effective weighted rate
+        const effRate = computeEffRate(key, c.ret);
+        const growth  = pot * effRate;
+
+        // Lump sum
+        let lump = 0;
+        if (!isKid && age === c.lumpAge && !lumpDone) {
+            lump = pot * c.lumpPct;
+            lumpDone = true;
+        }
+
+        // Annual withdrawal
+        let draw = 0;
+        if (!isKid) {
+            if      (age >= c.w1From && age <= c.w1To) draw = c.w1Amt;
+            else if (age >= c.w2From && age <= c.w2To) draw = c.w2Amt;
+        }
+
+        // State pension
+        const sp = (!isKid && age >= c.spAge) ? c.spAmt : 0;
+
+        pot = Math.max(0, pot + growth + contrib - lump - draw);
+
+        rows.push({
+            age, yr: c.yr + (age - startAge),
+            pot:    Math.round(pot),
+            growth: Math.round(growth),
+            contrib: Math.round(contrib),
+            lump:   Math.round(lump),
+            draw:   Math.round(draw),
+            sp:     Math.round(sp),
+            income: Math.round(lump + draw + sp),
+            expense: isKid ? 0 : expenseAt(age, c.bands)
+        });
+    }
+    return rows;
+}
+
+function computeEffRate(key, globalRate) {
+    const invs = ppl[key];
+    if (!invs.length) return globalRate;
+    const totalVal = invs.reduce((s, i) => s + (i.value || 0), 0);
+    if (totalVal === 0) return globalRate;
+    let wsum = 0;
+    for (const inv of invs) {
+        const r = (inv.rate !== '' && !isNaN(inv.rate)) ? inv.rate / 100 : globalRate;
+        wsum += r * (inv.value || 0);
+    }
+    return wsum / totalVal;
+}
+
+// ═══════════════════════════════════════════════
+//  CALCULATE
+// ═══════════════════════════════════════════════
+
+let result = null;
+
+function calculate() {
+    const c = cfg();
+    result = {
+        c,
+        h:  project('h',  c, false),
+        w:  project('w',  c, false),
+        k1: project('k1', c, true),
+        k2: project('k2', c, true),
+    };
+    renderDash(result);
+    renderBreak(result);
+    document.getElementById('calc-time').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    // Switch to dashboard
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('[data-tab="dashboard"]').classList.add('active');
+    document.getElementById('tab-dashboard').classList.add('active');
+}
+
+// ═══════════════════════════════════════════════
+//  FORMAT HELPERS
+// ═══════════════════════════════════════════════
+
+function fm(n) {
+    n = Math.round(n);
+    if (n >= 1000000) return '£' + (n/1000000).toFixed(2) + 'm';
+    if (n >= 1000)    return '£' + (n/1000).toFixed(0) + 'k';
+    return '£' + n.toLocaleString();
+}
+function ff(n) { return '£' + Math.round(n).toLocaleString(); }
+
+// ═══════════════════════════════════════════════
+//  DASHBOARD RENDER
+// ═══════════════════════════════════════════════
+
+function renderDash(r) {
+    const { c, h, w, k1, k2 } = r;
+    const hn = name('h'), wn = name('w'), k1n = name('k1'), k2n = name('k2');
+
+    const hAt57  = h.find(x => x.age === c.lumpAge) || h[0];
+    const wAt57  = w.find(x => x.age === c.lumpAge) || w[0];
+    const hAtSP  = h.find(x => x.age === c.spAge);
+    const wAtSP  = w.find(x => x.age === c.spAge);
+    const hFin   = h[h.length - 1];
+    const wFin   = w[w.length - 1];
+
+    // Kids at 18
+    const k1At18 = k1.find(x => x.age === 18) || k1[k1.length - 1] || { pot: 0 };
+    const k2At18 = k2.find(x => x.age === 18) || k2[k2.length - 1] || { pot: 0 };
+
+    const el = document.getElementById('dashContent');
+    el.innerHTML = `
+        <!-- Stat cards -->
+        <div class="g4" style="margin-bottom:20px">
+            <div class="stat" style="border-left:3px solid var(--husband)">
+                <div class="stat-lbl">${hn} — Pot after lump sum at ${c.lumpAge}</div>
+                <div class="stat-val ch">${fm(hAt57?.pot||0)}</div>
+                <div class="stat-sub">Lump sum taken: ${ff(hAt57?.lump||0)}</div>
+            </div>
+            <div class="stat" style="border-left:3px solid var(--wife)">
+                <div class="stat-lbl">${wn} — Pot after lump sum at ${c.lumpAge}</div>
+                <div class="stat-val cw">${fm(wAt57?.pot||0)}</div>
+                <div class="stat-sub">Lump sum taken: ${ff(wAt57?.lump||0)}</div>
+            </div>
+            <div class="stat" style="border-left:3px solid var(--kids)">
+                <div class="stat-lbl">Children — Combined at age 18</div>
+                <div class="stat-val ck">${fm(k1At18.pot + k2At18.pot)}</div>
+                <div class="stat-sub">${k1n}: ${fm(k1At18.pot)} &nbsp; ${k2n}: ${fm(k2At18.pot)}</div>
+            </div>
+            <div class="stat" style="border-left:3px solid var(--combined)">
+                <div class="stat-lbl">Adults — Combined pot at state pension age ${c.spAge}</div>
+                <div class="stat-val cc">${fm((hAtSP?.pot||0)+(wAtSP?.pot||0))}</div>
+                <div class="stat-sub">Final projection: ${fm((hFin?.pot||0)+(wFin?.pot||0))}</div>
+            </div>
+        </div>
+
+        <!-- Main charts -->
+        <div class="g2" style="margin-bottom:20px">
+            <div class="card">
+                <div class="card-hdr"><div class="card-title">Portfolio Growth Over Time</div></div>
+                <div class="chart-wrap"><canvas id="cGrowth"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-hdr"><div class="card-title">Annual Income vs Household Expenses</div></div>
+                <div class="chart-wrap"><canvas id="cIncome"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Individual charts + kids -->
+        <div class="g3">
+            <div class="card">
+                <div class="card-hdr"><div class="card-title ch">${hn}</div></div>
+                <div class="chart-wrap sm"><canvas id="cH"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-hdr"><div class="card-title cw">${wn}</div></div>
+                <div class="chart-wrap sm"><canvas id="cW"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-hdr"><div class="card-title ck">Children</div></div>
+                <div class="chart-wrap sm"><canvas id="cK"></canvas></div>
+            </div>
+        </div>
+    `;
+
+    // Kill old charts
+    Object.values(chartRegistry).forEach(ch => ch.destroy());
+    chartRegistry = {};
+
+    // Build aligned data on husband's age axis
+    const hLabels  = h.map(x => x.age);
+    const wByYr    = Object.fromEntries(w.map(x  => [x.yr, x]));
+    const k1ByYr   = Object.fromEntries(k1.map(x => [x.yr, x]));
+    const k2ByYr   = Object.fromEntries(k2.map(x => [x.yr, x]));
+
+    const wPots    = h.map(x => wByYr[x.yr]?.pot ?? null);
+    const combined = h.map(x => x.pot + (wByYr[x.yr]?.pot || 0));
+
+    // Growth chart
+    chartRegistry.growth = new Chart(document.getElementById('cGrowth'), {
+        type: 'line',
+        data: {
+            labels: hLabels,
+            datasets: [
+                lineDS(hn,       h.map(x=>x.pot),  '#3b82f6', 'rgba(59,130,246,0)'),
+                lineDS(wn,       wPots,             '#ec4899', 'rgba(236,72,153,0)'),
+                lineDS('Combined', combined,        '#8b5cf6', 'rgba(139,92,246,.06)', 3),
+            ]
+        },
+        options: chartOpts('£ Value', true)
+    });
+
+    // Income vs Expenses chart (husband age axis)
+    const totalIncome  = h.map(x => x.income + (wByYr[x.yr]?.income || 0));
+    const totalExpense = h.map(x => x.expense);
+
+    chartRegistry.income = new Chart(document.getElementById('cIncome'), {
+        type: 'bar',
+        data: {
+            labels: hLabels,
+            datasets: [
+                { label: 'Investment Income + State Pension', data: totalIncome, backgroundColor: 'rgba(34,197,94,.5)', borderColor: '#22c55e', borderWidth: 1 },
+                { label: 'Household Expenses', data: totalExpense, type: 'line', borderColor: '#ef4444', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: .3 }
+            ]
+        },
+        options: chartOpts('£ / Year', false)
+    });
+
+    // Individual mini charts
+    chartRegistry.cH = miniChart('cH', h.map(x=>x.age), h.map(x=>x.pot), '#3b82f6', 'rgba(59,130,246,.15)');
+    chartRegistry.cW = miniChart('cW', w.map(x=>x.age), w.map(x=>x.pot), '#ec4899', 'rgba(236,72,153,.15)');
+
+    // Kids chart
+    const kLabels = k1.map(x=>x.age);
+    const k1pots  = k1.map(x=>x.pot);
+    const k2pots  = k1.map(x => k2ByYr[x.yr]?.pot ?? null);
+    chartRegistry.cK = new Chart(document.getElementById('cK'), {
+        type: 'line',
+        data: {
+            labels: kLabels,
+            datasets: [
+                lineDS(name('k1'), k1pots, '#10b981', 'rgba(16,185,129,.15)', 2, true),
+                lineDS(name('k2'), k2pots, '#6ee7b7', 'rgba(110,231,183,.1)', 2, true),
+            ]
+        },
+        options: chartOpts('£ Value', true)
+    });
+}
+
+function lineDS(label, data, color, fill, width=2, filled=false) {
+    return { label, data, borderColor: color, backgroundColor: fill,
+             borderWidth: width, pointRadius: 0, tension: .4,
+             fill: filled, spanGaps: true };
+}
+
+function chartOpts(yLabel, millions) {
+    return {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+            legend: { labels: { color: '#f1f5f9', boxWidth: 12, font: { size: 11 } } },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ff(ctx.raw||0)}` } }
+        },
+        scales: {
+            x: { ticks: { color: '#94a3b8', maxTicksLimit: 16, font:{size:11} }, grid: { color: 'rgba(255,255,255,.04)' } },
+            y: { ticks: { color: '#94a3b8', font:{size:11},
+                     callback: v => millions && v>=1000000 ? `£${(v/1e6).toFixed(1)}m` : v>=1000 ? `£${(v/1000).toFixed(0)}k` : `£${v}` },
+                 grid: { color: 'rgba(255,255,255,.04)' } }
+        }
+    };
+}
+
+function miniChart(id, labels, data, color, fill) {
+    return new Chart(document.getElementById(id), {
+        type: 'line',
+        data: { labels, datasets: [{ data, borderColor: color, backgroundColor: fill,
+                                     borderWidth: 2, pointRadius: 0, fill: true, tension: .4 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color:'#94a3b8', maxTicksLimit:10, font:{size:10} }, grid:{color:'rgba(255,255,255,.03)'} },
+                y: { ticks: { color:'#94a3b8', font:{size:10}, callback: v => v>=1000000?`£${(v/1e6).toFixed(1)}m`:v>=1000?`£${(v/1000).toFixed(0)}k`:`£${v}` },
+                     grid:{color:'rgba(255,255,255,.03)'} }
+            }
+        }
+    });
+}
+
+// ═══════════════════════════════════════════════
+//  BREAKDOWN TABLE
+// ═══════════════════════════════════════════════
+
+function renderBreak(r) {
+    const { c, h, w } = r;
+    const hn = name('h'), wn = name('w');
+
+    const wByYr = Object.fromEntries(w.map(x => [x.yr, x]));
+
+    let rows = '';
+    for (const hRow of h) {
+        const wRow = wByYr[hRow.yr] || {};
+        const cPot = hRow.pot + (wRow.pot||0);
+        const totalIncome  = hRow.income  + (wRow.income||0);
+        const expense      = hRow.expense;
+        const surplus      = totalIncome - expense;
+
+        const isKey = hRow.age === c.lumpAge || hRow.age === c.spAge ||
+                      hRow.age === c.w1From   || hRow.age === c.w2From;
+
+        const notes = [];
+        if (hRow.lump > 0) notes.push(`<span class="note-pill">${hn} lump sum ${ff(hRow.lump)}</span>`);
+        if ((wRow.lump||0) > 0) notes.push(`<span class="note-pill">${wn} lump sum ${ff(wRow.lump)}</span>`);
+        if (hRow.sp > 0 && hRow.age === c.spAge) notes.push(`<span class="note-pill green">State pension starts</span>`);
+
+        const surplusCell = expense > 0
+            ? `<td class="${surplus >= 0 ? 'cg' : 'cd'}">${surplus >= 0 ? '+' : ''}${ff(surplus)}</td>`
+            : `<td>—</td>`;
+
+        rows += `<tr class="${isKey?'key-row':''}">
+            <td>${hRow.yr}</td>
+            <td>${hRow.age}</td>
+            <td>${wRow.age ?? '—'}</td>
+            <td class="ch">${ff(hRow.pot)}</td>
+            <td class="ch">${ff(hRow.contrib)}</td>
+            <td class="ch">${ff(hRow.growth)}</td>
+            <td class="ch">${(hRow.lump+hRow.draw)>0 ? ff(hRow.lump+hRow.draw) : '—'}</td>
+            <td class="cw">${wRow.pot!=null?ff(wRow.pot):'—'}</td>
+            <td class="cw">${wRow.contrib!=null?ff(wRow.contrib):'—'}</td>
+            <td class="cw">${wRow.growth!=null?ff(wRow.growth):'—'}</td>
+            <td class="cw">${(wRow.lump||0)+(wRow.draw||0)>0?ff((wRow.lump||0)+(wRow.draw||0)):'—'}</td>
+            <td class="cc" style="font-weight:600">${ff(cPot)}</td>
+            <td>${expense>0?ff(expense):'—'}</td>
+            <td>${totalIncome>0?ff(totalIncome):'—'}</td>
+            ${surplusCell}
+            <td class="note-col">${notes.join('')}</td>
+        </tr>`;
+    }
+
+    document.getElementById('bkContent').innerHTML = `
+        <div class="scroll-tbl">
+            <table class="bk-tbl">
+                <thead><tr>
+                    <th style="text-align:left">Year</th>
+                    <th>${hn} Age</th>
+                    <th>${wn} Age</th>
+                    <th class="ch">${hn} Pot</th>
+                    <th class="ch">Contribs</th>
+                    <th class="ch">Growth</th>
+                    <th class="ch">Withdrawn</th>
+                    <th class="cw">${wn} Pot</th>
+                    <th class="cw">Contribs</th>
+                    <th class="cw">Growth</th>
+                    <th class="cw">Withdrawn</th>
+                    <th class="cc">Combined Pot</th>
+                    <th>Expenses</th>
+                    <th>Income</th>
+                    <th>Surplus</th>
+                    <th class="note-col">Notes</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  INITIALISE
+// ═══════════════════════════════════════════════
+
+function addDefaults() {
+    addRow('h',  { name: 'Workplace Pension',  value: 48000, monthly: 450, stopAge: 57 });
+    addRow('h',  { name: 'Stocks & Shares ISA', value: 22000, monthly: 300, stopAge: 57 });
+    addRow('h',  { name: 'SIPP',               value: 15000, monthly: 200, stopAge: 57 });
+    addRow('w',  { name: 'Workplace Pension',  value: 36000, monthly: 380, stopAge: 57 });
+    addRow('w',  { name: 'Stocks & Shares ISA', value: 18000, monthly: 200, stopAge: 57 });
+    addRow('k1', { name: 'Junior ISA',         value: 5500,  monthly: 50,  stopAge: 18 });
+    addRow('k2', { name: 'Junior ISA',         value: 3000,  monthly: 50,  stopAge: 18 });
+}
+
+async function init() {
+    refreshAges();
+    renderBands();
+    const loaded = await loadFromSheets();
+    if (!loaded) addDefaults();
+}
+
+init();
+</script>
+</body>
+</html>
