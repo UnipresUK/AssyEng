@@ -89,8 +89,14 @@
         .glob-bar label { white-space: nowrap; }
 
         /* ── Inline name input ── */
-        .name-input { background: none; border: none; font-size: 1rem; font-weight: 600; color: var(--text); padding: 0; width: 140px; outline: none; }
-        .name-input:focus { border-bottom: 1px dashed var(--border); }
+        .name-input { background: none; border: none; border-bottom: 1px dashed transparent; font-size: 1rem; font-weight: 600; color: var(--text); padding: 0 2px 2px; width: 150px; outline: none; transition: border-color .15s; }
+        .name-input:hover { border-bottom-color: var(--border); }
+        .name-input:focus { border-bottom-color: #60a5fa; }
+
+        /* ── Source select ── */
+        .src-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+        .src-row label { font-size: .7rem; color: var(--muted); margin-bottom: 3px; }
+        .src-lbl { font-size: .7rem; color: var(--muted); margin-bottom: 6px; font-style: italic; }
 
         /* ── Investment table ── */
         .inv-tbl { width: 100%; border-collapse: collapse; font-size: .78rem; }
@@ -223,8 +229,8 @@
                 <span class="inv-count" id="hCount">0 / 10</span>
             </div>
             <div class="fg">
-                <label>Year of Birth</label>
-                <input type="number" id="hDob" value="1990" min="1940" max="2010" onchange="refreshAges()" style="width:110px">
+                <label>Date of Birth</label>
+                <input type="date" id="hDob" value="1990-01-01" onchange="refreshAges()">
             </div>
             <div class="age-disp" id="hAge"></div>
             <div style="overflow-x:auto">
@@ -249,8 +255,8 @@
                 <span class="inv-count" id="wCount">0 / 10</span>
             </div>
             <div class="fg">
-                <label>Year of Birth</label>
-                <input type="number" id="wDob" value="1992" min="1940" max="2010" onchange="refreshAges()" style="width:110px">
+                <label>Date of Birth</label>
+                <input type="date" id="wDob" value="1992-01-01" onchange="refreshAges()">
             </div>
             <div class="age-disp" id="wAge"></div>
             <div style="overflow-x:auto">
@@ -278,8 +284,8 @@
                 <span class="inv-count" id="k1Count">0 / 5</span>
             </div>
             <div class="fg">
-                <label>Year of Birth</label>
-                <input type="number" id="k1Dob" value="2018" min="2000" max="2035" onchange="refreshAges()" style="width:110px">
+                <label>Date of Birth</label>
+                <input type="date" id="k1Dob" value="2018-01-01" onchange="refreshAges()">
             </div>
             <div class="age-disp" id="k1Age"></div>
             <div style="overflow-x:auto">
@@ -304,8 +310,8 @@
                 <span class="inv-count" id="k2Count">0 / 5</span>
             </div>
             <div class="fg">
-                <label>Year of Birth</label>
-                <input type="number" id="k2Dob" value="2021" min="2000" max="2035" onchange="refreshAges()" style="width:110px">
+                <label>Date of Birth</label>
+                <input type="date" id="k2Dob" value="2021-01-01" onchange="refreshAges()">
             </div>
             <div class="age-disp" id="k2Age"></div>
             <div style="overflow-x:auto">
@@ -357,6 +363,10 @@
                     <div class="fg" style="margin:0"><label>Withdraw at Age</label><input type="number" id="wLumpAge" value="57" min="50" max="75"></div>
                     <div class="fg" style="margin:0"><label>Percentage of Pot</label><div class="sym-wrap r"><input type="number" id="wLumpPct" value="25" min="0" max="100"><span class="sym-r">%</span></div></div>
                 </div>
+                <div class="src-row">
+                    <div><label id="lumpSrc_h_lbl">Husband — draw from</label><select id="lumpSrc_h"><option value="all">All (proportional)</option></select></div>
+                    <div><label id="lumpSrc_w_lbl">Wife — draw from</label><select id="lumpSrc_w"><option value="all">All (proportional)</option></select></div>
+                </div>
             </div>
 
             <div class="w-box">
@@ -366,6 +376,10 @@
                     <div class="fg" style="margin:0"><label>To Age</label><input type="number" id="w1To" value="62"></div>
                     <div class="fg" style="margin:0"><label>Per Year</label><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" id="w1Amt" value="10000"></div></div>
                 </div>
+                <div class="src-row">
+                    <div><label id="w1Src_h_lbl">Husband — draw from</label><select id="w1Src_h"><option value="all">All (proportional)</option></select></div>
+                    <div><label id="w1Src_w_lbl">Wife — draw from</label><select id="w1Src_w"><option value="all">All (proportional)</option></select></div>
+                </div>
             </div>
 
             <div class="w-box">
@@ -374,6 +388,10 @@
                     <div class="fg" style="margin:0"><label>From Age</label><input type="number" id="w2From" value="63"></div>
                     <div class="fg" style="margin:0"><label>To Age</label><input type="number" id="w2To" value="67"></div>
                     <div class="fg" style="margin:0"><label>Per Year</label><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" id="w2Amt" value="6000"></div></div>
+                </div>
+                <div class="src-row">
+                    <div><label id="w2Src_h_lbl">Husband — draw from</label><select id="w2Src_h"><option value="all">All (proportional)</option></select></div>
+                    <div><label id="w2Src_w_lbl">Wife — draw from</label><select id="w2Src_w"><option value="all">All (proportional)</option></select></div>
                 </div>
             </div>
 
@@ -436,7 +454,8 @@ function collectState() {
     const ids = ['gReturn','gYear','gEndAge','hName','hDob','wName','wDob',
                  'k1Name','k1Dob','k2Name','k2Dob',
                  'wLumpAge','wLumpPct','w1From','w1To','w1Amt',
-                 'w2From','w2To','w2Amt','spAge','spAmt'];
+                 'w2From','w2To','w2Amt','spAge','spAmt',
+                 'lumpSrc_h','lumpSrc_w','w1Src_h','w1Src_w','w2Src_h','w2Src_w'];
     const config = {};
     ids.forEach(id => { const el = document.getElementById(id); if (el) config[id] = el.value; });
     return { config, investments: { h: ppl.h, w: ppl.w, k1: ppl.k1, k2: ppl.k2 }, bands };
@@ -444,9 +463,11 @@ function collectState() {
 
 function applyState(s) {
     if (!s) return;
-    // Config fields
+    // Apply non-source config fields first
+    const srcIds = new Set(['lumpSrc_h','lumpSrc_w','w1Src_h','w1Src_w','w2Src_h','w2Src_w']);
     if (s.config) {
         Object.entries(s.config).forEach(([id, val]) => {
+            if (srcIds.has(id)) return; // handle after investments are loaded
             const el = document.getElementById(id);
             if (el) el.value = val;
         });
@@ -460,6 +481,14 @@ function applyState(s) {
         });
         ['h','w','k1','k2'].forEach(p => {
             (s.investments[p] || []).forEach(inv => addRow(p, inv));
+        });
+    }
+    // Populate source dropdowns with investment names, then restore saved selections
+    populateSourceDropdowns();
+    if (s.config) {
+        srcIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el && s.config[id]) el.value = s.config[id];
         });
     }
     // Expense bands
@@ -621,10 +650,10 @@ function delBand(i) { if (bands.length > 1) { bands.splice(i, 1); renderBands();
 // ═══════════════════════════════════════════════
 
 function refreshAges() {
-    const yr = +document.getElementById('gYear').value || 2026;
-    [['h','hDob','hAge'],['w','wDob','wAge'],['k1','k1Dob','k1Age'],['k2','k2Dob','k2Age']].forEach(([,dob,el]) => {
-        const age = yr - (+document.getElementById(dob).value || yr);
-        document.getElementById(el).textContent = `Current age: ${age}`;
+    ['h','w','k1','k2'].forEach(key => {
+        const elId = { h:'hAge', w:'wAge', k1:'k1Age', k2:'k2Age' }[key];
+        const age = currentAge(key);
+        document.getElementById(elId).textContent = age !== '—' ? `Current age: ${age}` : '';
     });
 }
 
@@ -633,21 +662,28 @@ function refreshAges() {
 // ═══════════════════════════════════════════════
 
 function cfg() {
+    const gv = id => document.getElementById(id)?.value || '';
     return {
-        yr:       +document.getElementById('gYear').value || 2026,
-        ret:      (+document.getElementById('gReturn').value || 7) / 100,
-        endAge:   +document.getElementById('gEndAge').value || 90,
-        lumpAge:  +document.getElementById('wLumpAge').value || 57,
-        lumpPct:  (+document.getElementById('wLumpPct').value || 25) / 100,
-        w1From:   +document.getElementById('w1From').value || 58,
-        w1To:     +document.getElementById('w1To').value || 62,
-        w1Amt:    +document.getElementById('w1Amt').value || 10000,
-        w2From:   +document.getElementById('w2From').value || 63,
-        w2To:     +document.getElementById('w2To').value || 67,
-        w2Amt:    +document.getElementById('w2Amt').value || 6000,
-        spAge:    +document.getElementById('spAge').value || 67,
-        spAmt:    +document.getElementById('spAmt').value || 11502,
-        bands:    bands.slice()
+        yr:        +gv('gYear')    || 2026,
+        ret:       (+gv('gReturn') || 7) / 100,
+        endAge:    +gv('gEndAge') || 90,
+        lumpAge:   +gv('wLumpAge') || 57,
+        lumpPct:   (+gv('wLumpPct') || 25) / 100,
+        w1From:    +gv('w1From') || 58,
+        w1To:      +gv('w1To')   || 62,
+        w1Amt:     +gv('w1Amt')  || 10000,
+        w2From:    +gv('w2From') || 63,
+        w2To:      +gv('w2To')   || 67,
+        w2Amt:     +gv('w2Amt')  || 6000,
+        spAge:     +gv('spAge')  || 67,
+        spAmt:     +gv('spAmt')  || 11502,
+        lumpSrc_h: gv('lumpSrc_h') || 'all',
+        lumpSrc_w: gv('lumpSrc_w') || 'all',
+        w1Src_h:   gv('w1Src_h')   || 'all',
+        w1Src_w:   gv('w1Src_w')   || 'all',
+        w2Src_h:   gv('w2Src_h')   || 'all',
+        w2Src_w:   gv('w2Src_w')   || 'all',
+        bands:     bands.slice()
     };
 }
 
@@ -656,9 +692,28 @@ function expenseAt(age, bs) {
     return 0;
 }
 
-function dob(key) {
+function dobDate(key) {
     const ids = { h:'hDob', w:'wDob', k1:'k1Dob', k2:'k2Dob' };
-    return +document.getElementById(ids[key]).value;
+    const val = document.getElementById(ids[key]).value;
+    return val ? new Date(val) : null;
+}
+
+function ageOnJan1(key, yr) {
+    const d = dobDate(key);
+    if (!d) return 0;
+    let age = yr - d.getFullYear();
+    // Subtract 1 if birthday falls after Jan 1 of that year
+    if (new Date(yr, d.getMonth(), d.getDate()) > new Date(yr, 0, 1)) age--;
+    return age;
+}
+
+function currentAge(key) {
+    const d = dobDate(key);
+    if (!d) return '—';
+    const today = new Date();
+    let age = today.getFullYear() - d.getFullYear();
+    if (today < new Date(today.getFullYear(), d.getMonth(), d.getDate())) age--;
+    return age;
 }
 
 function name(key) {
@@ -666,55 +721,91 @@ function name(key) {
     return document.getElementById(ids[key]).value || key;
 }
 
+function potTotal(pots) {
+    return pots.reduce((s, p) => s + Math.max(0, p.val), 0);
+}
+
+function drawFrom(pots, srcId, amount) {
+    const total = potTotal(pots);
+    const actual = Math.min(amount, total);
+    if (actual <= 0) return 0;
+    if (!srcId || srcId === 'all') {
+        if (total <= 0) return 0;
+        pots.forEach(p => { p.val = Math.max(0, p.val - actual * (p.val / total)); });
+    } else {
+        const p = pots.find(x => String(x.id) === String(srcId));
+        if (!p || p.val <= 0) return 0;
+        const a = Math.min(amount, p.val);
+        p.val -= a;
+        return Math.round(a);
+    }
+    return Math.round(actual);
+}
+
 function project(key, c, isKid) {
-    const startAge = c.yr - dob(key);
-    const endAge   = isKid ? Math.min(c.endAge, 25) : c.endAge;
-    let pot = ppl[key].reduce((s, i) => s + (i.value || 0), 0);
+    const projStart = ageOnJan1(key, c.yr);
+    const endAge    = isKid ? Math.min(c.endAge, 25) : c.endAge;
+
+    // Per-investment pot tracking
+    const pots = ppl[key].map(inv => ({
+        id:      String(inv.id),
+        name:    inv.name || '',
+        val:     inv.value || 0,
+        monthly: inv.monthly || 0,
+        stopAge: inv.stopAge || 57,
+        rate:    inv.rate
+    }));
+
+    const lumpSrc = isKid ? 'all' : (key === 'h' ? c.lumpSrc_h : c.lumpSrc_w);
+    const w1Src   = isKid ? 'all' : (key === 'h' ? c.w1Src_h   : c.w1Src_w);
+    const w2Src   = isKid ? 'all' : (key === 'h' ? c.w2Src_h   : c.w2Src_w);
+
     let lumpDone = false;
     const rows = [];
 
-    for (let age = startAge; age <= endAge; age++) {
-        // Per-investment contributions & rates
-        let contrib = 0;
-        let wGrowth = 0;
-        let wContrib = 0;
-        for (const inv of ppl[key]) {
-            const r = (inv.rate !== '' ? inv.rate / 100 : c.ret);
-            if (age <= (inv.stopAge || 57)) {
-                const mc = (inv.monthly || 0) * 12;
-                contrib += mc;
-                wContrib += mc;
+    for (let age = projStart; age <= endAge; age++) {
+        // Grow each pot and add contributions individually
+        let totalGrowth = 0, totalContrib = 0;
+        for (const p of pots) {
+            const r = (p.rate !== '' && p.rate !== null && !isNaN(p.rate)) ? p.rate / 100 : c.ret;
+            const g = Math.max(0, p.val) * r;
+            totalGrowth += g;
+            p.val += g;
+            if (age <= p.stopAge) {
+                const mc = p.monthly * 12;
+                totalContrib += mc;
+                p.val += mc;
             }
         }
-        // Growth on whole pot (weighted average approximation using global rate per inv)
-        // For simplicity grow whole pot by effective weighted rate
-        const effRate = computeEffRate(key, c.ret);
-        const growth  = pot * effRate;
 
-        // Lump sum
+        // Lump sum (% of chosen pot)
         let lump = 0;
         if (!isKid && age === c.lumpAge && !lumpDone) {
-            lump = pot * c.lumpPct;
+            if (!lumpSrc || lumpSrc === 'all') {
+                lump = potTotal(pots) * c.lumpPct;
+                pots.forEach(p => { p.val = Math.max(0, p.val * (1 - c.lumpPct)); });
+            } else {
+                const p = pots.find(x => x.id === String(lumpSrc));
+                if (p) { lump = p.val * c.lumpPct; p.val = Math.max(0, p.val * (1 - c.lumpPct)); }
+            }
             lumpDone = true;
         }
 
-        // Annual withdrawal
+        // Annual withdrawal from chosen pot
         let draw = 0;
         if (!isKid) {
-            if      (age >= c.w1From && age <= c.w1To) draw = c.w1Amt;
-            else if (age >= c.w2From && age <= c.w2To) draw = c.w2Amt;
+            if      (age >= c.w1From && age <= c.w1To) draw = drawFrom(pots, w1Src, c.w1Amt);
+            else if (age >= c.w2From && age <= c.w2To) draw = drawFrom(pots, w2Src, c.w2Amt);
         }
 
         // State pension
         const sp = (!isKid && age >= c.spAge) ? c.spAmt : 0;
 
-        pot = Math.max(0, pot + growth + contrib - lump - draw);
-
         rows.push({
-            age, yr: c.yr + (age - startAge),
-            pot:    Math.round(pot),
-            growth: Math.round(growth),
-            contrib: Math.round(contrib),
+            age, yr: c.yr + (age - projStart),
+            pot:    Math.round(potTotal(pots)),
+            growth: Math.round(totalGrowth),
+            contrib: Math.round(totalContrib),
             lump:   Math.round(lump),
             draw:   Math.round(draw),
             sp:     Math.round(sp),
@@ -725,17 +816,28 @@ function project(key, c, isKid) {
     return rows;
 }
 
-function computeEffRate(key, globalRate) {
-    const invs = ppl[key];
-    if (!invs.length) return globalRate;
-    const totalVal = invs.reduce((s, i) => s + (i.value || 0), 0);
-    if (totalVal === 0) return globalRate;
-    let wsum = 0;
-    for (const inv of invs) {
-        const r = (inv.rate !== '' && !isNaN(inv.rate)) ? inv.rate / 100 : globalRate;
-        wsum += r * (inv.value || 0);
-    }
-    return wsum / totalVal;
+function populateSourceDropdowns() {
+    [['h', 'lumpSrc_h', 'w1Src_h', 'w2Src_h'],
+     ['w', 'lumpSrc_w', 'w1Src_w', 'w2Src_w']].forEach(([person, ...selIds]) => {
+        const pName = name(person);
+        selIds.forEach(selId => {
+            const sel = document.getElementById(selId);
+            if (!sel) return;
+            const prev = sel.value;
+            sel.innerHTML = '<option value="all">All (proportional)</option>';
+            ppl[person].forEach(inv => {
+                const opt = document.createElement('option');
+                opt.value = String(inv.id);
+                opt.textContent = inv.name || `Investment ${inv.id}`;
+                sel.appendChild(opt);
+            });
+            // Restore previous selection if still valid
+            if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+            // Update label
+            const lbl = document.getElementById(selId + '_lbl');
+            if (lbl) lbl.textContent = pName + ' — draw from';
+        });
+    });
 }
 
 // ═══════════════════════════════════════════════
@@ -745,6 +847,7 @@ function computeEffRate(key, globalRate) {
 let result = null;
 
 function calculate() {
+    populateSourceDropdowns();
     const c = cfg();
     result = {
         c,
