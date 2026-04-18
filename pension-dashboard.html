@@ -594,28 +594,29 @@ function addRow(p, d = {}) {
 
 function renderRow(p, inv) {
     const id   = inv.id;
-    const isDb = inv.type === 'db';
+    const isFixed = inv.type === 'db' || inv.type === 'sp'; // DB or State Pension — fixed income, no pot
     const tbody = document.getElementById(p + 'Rows');
     let existing = document.getElementById('r' + id);
     if (!existing) { existing = document.createElement('tr'); existing.id = 'r' + id; tbody.appendChild(existing); }
 
     existing.innerHTML =
-        `<td><select style="width:88px;padding:4px 5px;font-size:.72rem" onchange="setInv('${p}',${id},'type',this.value);reRenderRow('${p}',${id})">
-            <option value="dc"${!isDb?' selected':''}>DC Pot</option>
-            <option value="db"${isDb?' selected':''}>DB / Career Avg</option>
+        `<td><select style="width:108px;padding:4px 5px;font-size:.72rem" onchange="setInv('${p}',${id},'type',this.value);reRenderRow('${p}',${id})">
+            <option value="dc"${inv.type==='dc'?' selected':''}>DC Pot</option>
+            <option value="db"${inv.type==='db'?' selected':''}>DB / Career Avg</option>
+            <option value="sp"${inv.type==='sp'?' selected':''}>State Pension</option>
          </select></td>` +
-        `<td><input type="text" value="${esc(inv.name)}" placeholder="${isDb?'e.g. Career Avg':'e.g. Pension'}" style="width:108px" oninput="setInv('${p}',${id},'name',this.value)"></td>` +
+        `<td><input type="text" value="${esc(inv.name)}" placeholder="${inv.type==='sp'?'State Pension':isFixed?'e.g. Career Avg':'e.g. Pension'}" style="width:108px" oninput="setInv('${p}',${id},'name',this.value)"></td>` +
         `<td><div class="sym-wrap l"><span class="sym-l">£</span>` +
             `<input type="number" value="${inv.value}" min="0" style="width:90px" ` +
-            `placeholder="${isDb?'Annual income':'Current £'}" oninput="setInv('${p}',${id},'value',this.value)"></div></td>` +
-        `<td>${isDb
+            `placeholder="${isFixed?'Annual income':'Current £'}" oninput="setInv('${p}',${id},'value',this.value)"></div></td>` +
+        `<td>${isFixed
             ? `<span style="color:var(--muted);font-size:.75rem;padding:0 6px">—</span>`
             : `<div class="sym-wrap l"><span class="sym-l">£</span><input type="number" value="${inv.monthly}" min="0" style="width:78px" oninput="setInv('${p}',${id},'monthly',this.value)"></div>`
         }</td>` +
         `<td><input type="number" value="${inv.stopAge}" min="16" max="95" style="width:54px" ` +
-            `title="${isDb?'Age DB income starts':'Age contributions stop'}" ` +
+            `title="${isFixed?'Age income starts':'Age contributions stop'}" ` +
             `oninput="setInv('${p}',${id},'stopAge',this.value)"></td>` +
-        `<td>${isDb
+        `<td>${isFixed
             ? `<span style="color:var(--muted);font-size:.75rem;padding:0 6px">—</span>`
             : `<div class="sym-wrap r"><input type="number" value="${inv.rate}" min="0" max="30" step="0.1" placeholder="global" style="width:65px" oninput="setInv('${p}',${id},'rate',this.value)"><span class="sym-r">%</span></div>`
         }</td>` +
@@ -770,9 +771,9 @@ function project(key, c, isKid) {
     const projStart = ageOnJan1(key, c.yr);
     const endAge    = isKid ? Math.min(c.endAge, 25) : c.endAge;
 
-    // Split DC (pot-based) from DB (fixed annual income) investments
+    // Split DC (pot-based) from fixed-income investments (DB / State Pension)
     const dcInvs = ppl[key].filter(i => (i.type || 'dc') === 'dc');
-    const dbInvs = ppl[key].filter(i => i.type === 'db');
+    const dbInvs = ppl[key].filter(i => i.type === 'db' || i.type === 'sp');
 
     // Per-DC-investment pot tracking
     const pots = dcInvs.map(inv => ({
