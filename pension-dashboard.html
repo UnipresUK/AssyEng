@@ -1043,11 +1043,11 @@ function addDefaults() {
     addRow('k2', { name: 'Junior ISA',         value: 3000,  monthly: 50,  stopAge: 18 });
 }
 
-async function init() {
+function init() {
     refreshAges();
     renderBands();
-    const loaded = await loadFromSheets();
-    if (!loaded) addDefaults();
+    addDefaults();          // render instantly with sample data
+    loadFromSheets();       // background fetch — replaces defaults if saved data exists
 }
 
 init();
