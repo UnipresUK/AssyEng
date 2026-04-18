@@ -236,7 +236,7 @@
             <div style="overflow-x:auto">
                 <table class="inv-tbl">
                     <thead><tr>
-                        <th>Investment Name</th><th>Current Value</th><th>Monthly</th><th>Stop Age</th><th>Rate %</th><th></th>
+                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>Stop / From Age</th><th>Rate %</th><th></th>
                     </tr></thead>
                     <tbody id="hRows"></tbody>
                 </table>
@@ -262,7 +262,7 @@
             <div style="overflow-x:auto">
                 <table class="inv-tbl">
                     <thead><tr>
-                        <th>Investment Name</th><th>Current Value</th><th>Monthly</th><th>Stop Age</th><th>Rate %</th><th></th>
+                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>Stop / From Age</th><th>Rate %</th><th></th>
                     </tr></thead>
                     <tbody id="wRows"></tbody>
                 </table>
@@ -291,7 +291,7 @@
             <div style="overflow-x:auto">
                 <table class="inv-tbl">
                     <thead><tr>
-                        <th>Investment Name</th><th>Current Value</th><th>Monthly</th><th>Stop Age</th><th>Rate %</th><th></th>
+                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>Stop / From Age</th><th>Rate %</th><th></th>
                     </tr></thead>
                     <tbody id="k1Rows"></tbody>
                 </table>
@@ -317,7 +317,7 @@
             <div style="overflow-x:auto">
                 <table class="inv-tbl">
                     <thead><tr>
-                        <th>Investment Name</th><th>Current Value</th><th>Monthly</th><th>Stop Age</th><th>Rate %</th><th></th>
+                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>Stop / From Age</th><th>Rate %</th><th></th>
                     </tr></thead>
                     <tbody id="k2Rows"></tbody>
                 </table>
@@ -586,21 +586,45 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function addRow(p, d = {}) {
     if (ppl[p].length >= maxInv[p]) { alert(`Maximum ${maxInv[p]} investments for this person.`); return; }
     const id = _uid++;
-    const inv = { id, name: d.name||'', value: d.value||0, monthly: d.monthly||0, stopAge: d.stopAge||57, rate: d.rate!==undefined ? d.rate : '' };
+    const inv = { id, type: d.type||'dc', name: d.name||'', value: d.value||0, monthly: d.monthly||0, stopAge: d.stopAge||57, rate: d.rate!==undefined ? d.rate : '' };
     ppl[p].push(inv);
-
-    const tbody = document.getElementById(p + 'Rows');
-    const tr = document.createElement('tr');
-    tr.id = 'r' + id;
-    tr.innerHTML =
-        `<td><input type="text" value="${esc(inv.name)}" placeholder="e.g. Pension" style="width:120px" oninput="setInv('${p}',${id},'name',this.value)"></td>` +
-        `<td><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" value="${inv.value}" min="0" style="width:105px" oninput="setInv('${p}',${id},'value',this.value)"></div></td>` +
-        `<td><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" value="${inv.monthly}" min="0" style="width:85px" oninput="setInv('${p}',${id},'monthly',this.value)"></div></td>` +
-        `<td><input type="number" value="${inv.stopAge}" min="16" max="95" style="width:60px" oninput="setInv('${p}',${id},'stopAge',this.value)"></td>` +
-        `<td><div class="sym-wrap r"><input type="number" value="${inv.rate}" min="0" max="30" step="0.1" placeholder="global" style="width:75px" oninput="setInv('${p}',${id},'rate',this.value)"><span class="sym-r">%</span></div></td>` +
-        `<td><button class="btn-del" onclick="delRow('${p}',${id})">✕</button></td>`;
-    tbody.appendChild(tr);
+    renderRow(p, inv);
     updateCount(p);
+}
+
+function renderRow(p, inv) {
+    const id   = inv.id;
+    const isDb = inv.type === 'db';
+    const tbody = document.getElementById(p + 'Rows');
+    let existing = document.getElementById('r' + id);
+    if (!existing) { existing = document.createElement('tr'); existing.id = 'r' + id; tbody.appendChild(existing); }
+
+    existing.innerHTML =
+        `<td><select style="width:88px;padding:4px 5px;font-size:.72rem" onchange="setInv('${p}',${id},'type',this.value);reRenderRow('${p}',${id})">
+            <option value="dc"${!isDb?' selected':''}>DC Pot</option>
+            <option value="db"${isDb?' selected':''}>DB / Career Avg</option>
+         </select></td>` +
+        `<td><input type="text" value="${esc(inv.name)}" placeholder="${isDb?'e.g. Career Avg':'e.g. Pension'}" style="width:108px" oninput="setInv('${p}',${id},'name',this.value)"></td>` +
+        `<td><div class="sym-wrap l"><span class="sym-l">£</span>` +
+            `<input type="number" value="${inv.value}" min="0" style="width:90px" ` +
+            `placeholder="${isDb?'Annual income':'Current £'}" oninput="setInv('${p}',${id},'value',this.value)"></div></td>` +
+        `<td>${isDb
+            ? `<span style="color:var(--muted);font-size:.75rem;padding:0 6px">—</span>`
+            : `<div class="sym-wrap l"><span class="sym-l">£</span><input type="number" value="${inv.monthly}" min="0" style="width:78px" oninput="setInv('${p}',${id},'monthly',this.value)"></div>`
+        }</td>` +
+        `<td><input type="number" value="${inv.stopAge}" min="16" max="95" style="width:54px" ` +
+            `title="${isDb?'Age DB income starts':'Age contributions stop'}" ` +
+            `oninput="setInv('${p}',${id},'stopAge',this.value)"></td>` +
+        `<td>${isDb
+            ? `<span style="color:var(--muted);font-size:.75rem;padding:0 6px">—</span>`
+            : `<div class="sym-wrap r"><input type="number" value="${inv.rate}" min="0" max="30" step="0.1" placeholder="global" style="width:65px" oninput="setInv('${p}',${id},'rate',this.value)"><span class="sym-r">%</span></div>`
+        }</td>` +
+        `<td><button class="btn-del" onclick="delRow('${p}',${id})">✕</button></td>`;
+}
+
+function reRenderRow(p, id) {
+    const inv = ppl[p].find(i => i.id === id);
+    if (inv) renderRow(p, inv);
 }
 
 function setInv(p, id, field, val) {
@@ -746,14 +770,25 @@ function project(key, c, isKid) {
     const projStart = ageOnJan1(key, c.yr);
     const endAge    = isKid ? Math.min(c.endAge, 25) : c.endAge;
 
-    // Per-investment pot tracking
-    const pots = ppl[key].map(inv => ({
+    // Split DC (pot-based) from DB (fixed annual income) investments
+    const dcInvs = ppl[key].filter(i => (i.type || 'dc') === 'dc');
+    const dbInvs = ppl[key].filter(i => i.type === 'db');
+
+    // Per-DC-investment pot tracking
+    const pots = dcInvs.map(inv => ({
         id:      String(inv.id),
         name:    inv.name || '',
         val:     inv.value || 0,
         monthly: inv.monthly || 0,
         stopAge: inv.stopAge || 57,
         rate:    inv.rate
+    }));
+
+    // DB incomes: fixed annual amount starting from stopAge (repurposed as "from age")
+    const dbIncomes = dbInvs.map(inv => ({
+        annual:  inv.value || 0,
+        fromAge: inv.stopAge || 60,
+        name:    inv.name || 'DB Pension'
     }));
 
     const lumpSrc = isKid ? 'all' : (key === 'h' ? c.lumpSrc_h : c.lumpSrc_w);
@@ -801,16 +836,25 @@ function project(key, c, isKid) {
         // State pension
         const sp = (!isKid && age >= c.spAge) ? c.spAmt : 0;
 
+        // DB / Career Average pension income
+        let dbIncome = 0;
+        if (!isKid) {
+            for (const db of dbIncomes) {
+                if (age >= db.fromAge) dbIncome += db.annual;
+            }
+        }
+
         rows.push({
             age, yr: c.yr + (age - projStart),
-            pot:    Math.round(potTotal(pots)),
-            growth: Math.round(totalGrowth),
-            contrib: Math.round(totalContrib),
-            lump:   Math.round(lump),
-            draw:   Math.round(draw),
-            sp:     Math.round(sp),
-            income: Math.round(lump + draw + sp),
-            expense: isKid ? 0 : expenseAt(age, c.bands)
+            pot:      Math.round(potTotal(pots)),
+            growth:   Math.round(totalGrowth),
+            contrib:  Math.round(totalContrib),
+            lump:     Math.round(lump),
+            draw:     Math.round(draw),
+            sp:       Math.round(sp),
+            dbIncome: Math.round(dbIncome),
+            income:   Math.round(lump + draw + sp + dbIncome),
+            expense:  isKid ? 0 : expenseAt(age, c.bands)
         });
     }
     return rows;
@@ -825,7 +869,7 @@ function populateSourceDropdowns() {
             if (!sel) return;
             const prev = sel.value;
             sel.innerHTML = '<option value="all">All (proportional)</option>';
-            ppl[person].forEach(inv => {
+            ppl[person].filter(inv => (inv.type || 'dc') === 'dc').forEach(inv => {
                 const opt = document.createElement('option');
                 opt.value = String(inv.id);
                 opt.textContent = inv.name || `Investment ${inv.id}`;
