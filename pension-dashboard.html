@@ -828,12 +828,13 @@ function project(key, c, isKid) {
 
     // Per-DC-investment pot tracking
     const pots = dcInvs.map(inv => ({
-        id:      String(inv.id),
-        name:    inv.name || '',
-        val:     inv.value || 0,
-        monthly: inv.monthly || 0,
-        stopAge: inv.stopAge || 57,
-        rate:    inv.rate
+        id:          String(inv.id),
+        name:        inv.name || '',
+        val:         inv.value || 0,
+        monthly:     inv.monthly || 0,
+        stopAge:     inv.stopAge || 57,
+        rate:        inv.rate,
+        withdrawals: inv.withdrawals || []
     }));
 
     // DB incomes: fixed annual amount starting from stopAge (repurposed as "from age")
