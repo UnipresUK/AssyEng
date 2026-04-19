@@ -247,6 +247,27 @@
 </header>
 <div id="toast"></div>
 
+<datalist id="invNames">
+    <option value="Workplace Pension">
+    <option value="Personal Pension">
+    <option value="SIPP">
+    <option value="Stocks & Shares ISA">
+    <option value="Cash ISA">
+    <option value="Lifetime ISA (LISA)">
+    <option value="Junior ISA">
+    <option value="Cash Savings">
+    <option value="Investment Portfolio">
+    <option value="Property">
+    <option value="Inheritance">
+    <option value="Career Average Pension">
+    <option value="Final Salary Pension">
+    <option value="State Pension">
+    <option value="Bonus / Windfall">
+    <option value="Share Scheme">
+    <option value="Premium Bonds">
+    <option value="Other">
+</datalist>
+
 <nav class="tabs">
     <button class="tab-btn active" data-tab="people">👤 People &amp; Investments</button>
     <button class="tab-btn" data-tab="expenses">💷 Expenses &amp; Withdrawals</button>
@@ -613,7 +634,7 @@ function renderRow(p, inv) {
             <option value="db"${inv.type==='db'?' selected':''}>DB / Career Avg</option>
             <option value="sp"${inv.type==='sp'?' selected':''}>State Pension</option>
          </select></td>` +
-        `<td><input type="text" value="${esc(inv.name)}" placeholder="${inv.type==='sp'?'State Pension':isFixed?'e.g. Career Avg':'e.g. Pension'}" style="width:108px" oninput="setInv('${p}',${id},'name',this.value)"></td>` +
+        `<td><input type="text" list="invNames" value="${esc(inv.name)}" placeholder="${inv.type==='sp'?'State Pension':isFixed?'e.g. Career Avg':'e.g. Pension'}" style="width:140px" oninput="setInv('${p}',${id},'name',this.value)"></td>` +
         `<td><div class="sym-wrap l"><span class="sym-l">£</span>` +
             `<input type="number" value="${inv.value}" min="0" style="width:90px" ` +
             `placeholder="${isFixed?'Annual income':(inv.startAge>0?'Lump at start':'Current £')}" oninput="setInv('${p}',${id},'value',this.value)"></div></td>` +
