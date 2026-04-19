@@ -27,8 +27,8 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
         /* ── Layout ── */
-        header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
-        header h1 { font-size: 1.3rem; font-weight: 700; }
+        header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; }
+        header h1 { font-size: 1.3rem; font-weight: 700; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         header h1 span { color: #60a5fa; }
         .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; gap: 2px; overflow-x: auto; }
         .tab-btn { padding: 11px 18px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; font-size: 0.85rem; font-weight: 500; white-space: nowrap; transition: all .15s; }
@@ -196,29 +196,34 @@
         .sync-dot.err    { background: var(--danger); }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-        /* ── Header actions ── */
+        /* ── Header actions — never shrink, buttons always visible ── */
         .header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
         /* ── Scrollable table wrapper ── */
         .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
         /* ── Responsive ── */
+        /* Hide verbose status text as soon as space gets tight */
+        @media (max-width: 900px) {
+            #calc-time { display: none; }
+            #sync-label { display: none; }
+        }
         @media (max-width: 700px) {
-            header { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
-            header h1 { font-size: .95rem; flex: 1 1 100%; }
-            .header-actions { width: 100%; justify-content: flex-end; gap: 8px; }
-            #calc-time, #sync-label { display: none; }
+            header { padding: 10px 14px; gap: 8px; }
+            header h1 { font-size: 1rem; }
             .sync-dot { display: none; }
-            .btn-lg { padding: 8px 14px; font-size: .84rem; }
-            .btn-ghost { padding: 7px 12px; }
+            .header-actions { gap: 6px; }
+            .btn-lg { padding: 8px 12px; font-size: .84rem; }
+            .btn-ghost { padding: 7px 10px; font-size: .84rem; }
             .container { padding: 12px; }
             .card { padding: 14px; }
             .glob-bar { padding: 12px; gap: 10px; }
             .glob-bar input { width: 90px; }
-            .tabs { padding: 0 12px; }
-            .tab-btn { padding: 10px 12px; font-size: .78rem; }
+            .tabs { padding: 0 10px; }
+            .tab-btn { padding: 10px 10px; font-size: .78rem; }
         }
         @media (max-width: 480px) {
+            header { padding: 8px 10px; }
             header h1 { font-size: .85rem; }
             .btn-lg { padding: 7px 10px; font-size: .78rem; }
             .btn-ghost { padding: 6px 8px; font-size: .78rem; }
