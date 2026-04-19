@@ -427,6 +427,7 @@
             <span></span>
         </div>
         <div id="bandRows"></div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="addBand()" id="addBandBtn">+ Add Band</button>
     </div>
 
     <!-- Withdrawal + State Pension -->
@@ -812,7 +813,14 @@ function renderBands() {
 }
 
 function setBand(i, f, v) { bands[i][f] = +v || 0; }
-function delBand(i) { if (bands.length > 1) { bands.splice(i, 1); renderBands(); } }
+function delBand(i) { bands.splice(i, 1); renderBands(); }
+function addBand() {
+    if (bands.length >= 8) { alert('Maximum 8 expense bands.'); return; }
+    const last = bands[bands.length - 1] || { to: 20 };
+    bands.push({ from: last.to, to: Math.min(last.to + 10, 110), amount: 0 });
+    renderBands();
+    document.getElementById('addBandBtn').style.display = bands.length >= 8 ? 'none' : '';
+}
 
 // ═══════════════════════════════════════════════
 //  AGES
@@ -1435,9 +1443,11 @@ function toggleBreak(person) {
 }
 
 function renderBreak(r) {
-    const { c, h, w } = r;
+    const { c, h, w, k1, k2 } = r;
     const hn = name('h'), wn = name('w');
-    const wByYr = Object.fromEntries(w.map(x => [x.yr, x]));
+    const wByYr  = Object.fromEntries(w.map(x => [x.yr, x]));
+    const k1ByYr = Object.fromEntries((k1||[]).map(x => [x.yr, x]));
+    const k2ByYr = Object.fromEntries((k2||[]).map(x => [x.yr, x]));
 
     const firstW  = w[0] || {};
     const hPots   = h[0]?.potVals  || [];
@@ -1472,6 +1482,7 @@ function renderBreak(r) {
     for (const hRow of h) {
         const wRow = wByYr[hRow.yr] || {};
         const cPot        = hRow.pot + (wRow.pot||0);
+        const familyNet   = cPot + (k1ByYr[hRow.yr]?.pot||0) + (k2ByYr[hRow.yr]?.pot||0);
         const totalIncome = hRow.income + (wRow.income||0);
         const expense     = hRow.expense;
         const surplus     = totalIncome - expense;
@@ -1512,6 +1523,7 @@ function renderBreak(r) {
             ${hCells.join('')}
             ${wCells.join('')}
             <td class="cc" style="font-weight:600">${ff(cPot)}</td>
+            <td class="cc" style="font-weight:700">${ff(familyNet)}</td>
             <td>${expense>0?ff(expense):'—'}</td>
             <td>${totalIncome>0?ff(totalIncome):'—'}</td>
             ${surplusCell}
@@ -1528,7 +1540,8 @@ function renderBreak(r) {
                     <th>${wn} Age</th>
                     ${hHdrs.join('')}
                     ${wHdrs.join('')}
-                    <th class="cc">Combined</th>
+                    <th class="cc">Adults Combined</th>
+                    <th class="cc">Family Net Worth</th>
                     <th>Expenses</th>
                     <th>Income</th>
                     <th>Surplus</th>
