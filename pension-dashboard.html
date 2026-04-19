@@ -195,13 +195,43 @@
         .sync-dot.saving { background: var(--warning); animation: pulse .8s infinite; }
         .sync-dot.err    { background: var(--danger); }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        /* ── Header actions ── */
+        .header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+        /* ── Scrollable table wrapper ── */
+        .tbl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+        /* ── Responsive ── */
+        @media (max-width: 700px) {
+            header { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
+            header h1 { font-size: .95rem; flex: 1 1 100%; }
+            .header-actions { width: 100%; justify-content: flex-end; gap: 8px; }
+            #calc-time, #sync-label { display: none; }
+            .sync-dot { display: none; }
+            .btn-lg { padding: 8px 14px; font-size: .84rem; }
+            .btn-ghost { padding: 7px 12px; }
+            .container { padding: 12px; }
+            .card { padding: 14px; }
+            .glob-bar { padding: 12px; gap: 10px; }
+            .glob-bar input { width: 90px; }
+            .tabs { padding: 0 12px; }
+            .tab-btn { padding: 10px 12px; font-size: .78rem; }
+        }
+        @media (max-width: 480px) {
+            header h1 { font-size: .85rem; }
+            .btn-lg { padding: 7px 10px; font-size: .78rem; }
+            .btn-ghost { padding: 6px 8px; font-size: .78rem; }
+            .container { padding: 8px; }
+            .card { padding: 10px; }
+        }
     </style>
 </head>
 <body>
 
 <header>
     <h1>Investment &amp; <span>Pension</span> Dashboard</h1>
-    <div style="display:flex;align-items:center;gap:12px">
+    <div class="header-actions">
         <span id="calc-time" style="font-size:.78rem;color:var(--muted)"></span>
         <span id="sync-status" style="font-size:.78rem;color:var(--muted);display:flex;align-items:center">
             <span class="sync-dot" id="sync-dot"></span><span id="sync-label">Not saved</span>
