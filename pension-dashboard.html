@@ -1331,10 +1331,9 @@ function renderDash(r) {
     const k1ByYr   = Object.fromEntries(k1.map(x => [x.yr, x]));
     const k2ByYr   = Object.fromEntries(k2.map(x => [x.yr, x]));
     const hLabels  = h.map(x => {
-        const k1a = k1ByYr[x.yr]?.age;
-        const k2a = k2ByYr[x.yr]?.age;
-        const kLine = (k1a != null || k2a != null) ? `${k1a ?? '—'}/${k2a ?? '—'}` : '';
-        return kLine ? [String(x.age), kLine] : String(x.age);
+        const k1a = k1ByYr[x.yr]?.age ?? ageOnJan1('k1', x.yr);
+        const k2a = k2ByYr[x.yr]?.age ?? ageOnJan1('k2', x.yr);
+        return [String(x.age), `${k1a}/${k2a}`];
     });
 
     const wPots    = h.map(x => wByYr[x.yr]?.pot ?? null);
