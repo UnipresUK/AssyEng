@@ -435,7 +435,8 @@
             <div class="card-hdr">
                 <div class="card-title">Withdrawal Schedule</div>
             </div>
-            <p class="info">Withdrawals are configured per investment on the People &amp; Investments tab (use the ↓ button on each DC pot).</p>
+            <p class="info">Withdrawals are configured per investment on the People &amp; Investments tab using the ↓ button on each pot.</p>
+            <div id="wdrSummary"></div>
 
             <div class="w-box" style="margin-bottom:0">
                 <h4>State Pension</h4>
@@ -605,6 +606,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
         btn.classList.add('active');
         document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'expenses') renderWdrSummary();
     });
 });
 
@@ -709,6 +711,7 @@ function addWithdrawal(p, invId) {
     if (inv.withdrawals.length >= 4) { alert('Maximum 4 withdrawals per investment.'); return; }
     inv.withdrawals.push({ id: _uid++, fromAge: 57, toAge: 57, amount: 25, amtType: 'pct' });
     renderWithdrawals(p, inv);
+    renderWdrSummary();
 }
 
 function delWdr(p, invId, wdrId) {
@@ -716,6 +719,7 @@ function delWdr(p, invId, wdrId) {
     if (!inv) return;
     inv.withdrawals = inv.withdrawals.filter(w => w.id !== wdrId);
     renderWithdrawals(p, inv);
+    renderWdrSummary();
 }
 
 function setWdr(p, invId, wdrId, field, val) {
@@ -1146,6 +1150,55 @@ function renderQueryTable() {
 
     // Fill computed cells for any queries that already have values
     queries.forEach(q => { if (q.qVal) qRefreshRow(q.id); });
+}
+
+// ═══════════════════════════════════════════════
+//  WITHDRAWAL SUMMARY
+// ═══════════════════════════════════════════════
+
+function renderWdrSummary() {
+    const el = document.getElementById('wdrSummary');
+    if (!el) return;
+
+    const people = [
+        { key: 'h',  label: name('h'),  cls: 'ch' },
+        { key: 'w',  label: name('w'),  cls: 'cw' },
+        { key: 'k1', label: name('k1'), cls: 'ck' },
+        { key: 'k2', label: name('k2'), cls: 'ck' },
+    ];
+
+    let html = '';
+    for (const { key, label, cls } of people) {
+        const withWdr = (ppl[key] || []).filter(i => i.type !== 'db' && i.type !== 'sp' && (i.withdrawals || []).length > 0);
+        if (!withWdr.length) continue;
+
+        html += `<div style="margin-bottom:14px">
+            <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px" class="${cls}">${label}</div>`;
+
+        for (const inv of withWdr) {
+            html += `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;margin-bottom:6px">
+                <div style="font-size:.8rem;font-weight:600;margin-bottom:6px">${inv.name || 'Unnamed'}</div>`;
+
+            for (const wdr of inv.withdrawals) {
+                const isPct   = wdr.amtType === 'pct';
+                const amtStr  = isPct ? `${wdr.amount}% lump sum` : `£${Number(wdr.amount).toLocaleString()}/yr`;
+                const ageStr  = wdr.fromAge === wdr.toAge
+                    ? `Age ${wdr.fromAge}`
+                    : `Age ${wdr.fromAge} – ${wdr.toAge}`;
+                html += `<div style="display:flex;justify-content:space-between;font-size:.75rem;padding:2px 0;border-top:1px solid rgba(255,255,255,.05)">
+                    <span style="color:var(--muted)">${ageStr}</span>
+                    <span style="font-weight:600">${amtStr}</span>
+                </div>`;
+            }
+            html += `</div>`;
+        }
+        html += `</div>`;
+    }
+
+    if (!html) {
+        html = `<p style="font-size:.75rem;color:var(--muted);margin-bottom:12px">No withdrawals configured yet — use the ↓ button on each investment pot.</p>`;
+    }
+    el.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════
