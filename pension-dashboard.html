@@ -260,7 +260,7 @@
             <div style="overflow-x:auto">
                 <table class="inv-tbl">
                     <thead><tr>
-                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>Stop / From Age</th><th>Rate %</th><th></th>
+                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>From Age</th><th>To / From Age</th><th>Rate %</th><th></th>
                     </tr></thead>
                     <tbody id="hRows"></tbody>
                 </table>
@@ -286,7 +286,7 @@
             <div style="overflow-x:auto">
                 <table class="inv-tbl">
                     <thead><tr>
-                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>Stop / From Age</th><th>Rate %</th><th></th>
+                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>From Age</th><th>To / From Age</th><th>Rate %</th><th></th>
                     </tr></thead>
                     <tbody id="wRows"></tbody>
                 </table>
@@ -315,7 +315,7 @@
             <div style="overflow-x:auto">
                 <table class="inv-tbl">
                     <thead><tr>
-                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>Stop / From Age</th><th>Rate %</th><th></th>
+                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>From Age</th><th>To / From Age</th><th>Rate %</th><th></th>
                     </tr></thead>
                     <tbody id="k1Rows"></tbody>
                 </table>
@@ -341,7 +341,7 @@
             <div style="overflow-x:auto">
                 <table class="inv-tbl">
                     <thead><tr>
-                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>Stop / From Age</th><th>Rate %</th><th></th>
+                        <th>Type</th><th>Investment Name</th><th>Value / Annual £</th><th>Monthly</th><th>From Age</th><th>To / From Age</th><th>Rate %</th><th></th>
                     </tr></thead>
                     <tbody id="k2Rows"></tbody>
                 </table>
@@ -559,7 +559,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function addRow(p, d = {}) {
     if (ppl[p].length >= maxInv[p]) { alert(`Maximum ${maxInv[p]} investments for this person.`); return; }
     const id = _uid++;
-    const inv = { id, type: d.type||'dc', name: d.name||'', value: d.value||0, monthly: d.monthly||0, stopAge: d.stopAge||57, rate: d.rate!==undefined ? d.rate : '', withdrawals: d.withdrawals||[] };
+    const inv = { id, type: d.type||'dc', name: d.name||'', value: d.value||0, monthly: d.monthly||0, startAge: d.startAge||0, stopAge: d.stopAge||57, rate: d.rate!==undefined ? d.rate : '', withdrawals: d.withdrawals||[] };
     ppl[p].push(inv);
     renderRow(p, inv);
     updateCount(p);
@@ -581,12 +581,16 @@ function renderRow(p, inv) {
         `<td><input type="text" value="${esc(inv.name)}" placeholder="${inv.type==='sp'?'State Pension':isFixed?'e.g. Career Avg':'e.g. Pension'}" style="width:108px" oninput="setInv('${p}',${id},'name',this.value)"></td>` +
         `<td><div class="sym-wrap l"><span class="sym-l">£</span>` +
             `<input type="number" value="${inv.value}" min="0" style="width:90px" ` +
-            `placeholder="${isFixed?'Annual income':'Current £'}" oninput="setInv('${p}',${id},'value',this.value)"></div></td>` +
+            `placeholder="${isFixed?'Annual income':(inv.startAge>0?'Lump at start':'Current £')}" oninput="setInv('${p}',${id},'value',this.value)"></div></td>` +
         `<td>${isFixed
             ? `<span style="color:var(--muted);font-size:.75rem;padding:0 6px">—</span>`
             : `<div class="sym-wrap l"><span class="sym-l">£</span><input type="number" value="${inv.monthly}" min="0" style="width:78px" oninput="setInv('${p}',${id},'monthly',this.value)"></div>`
         }</td>` +
-        `<td><input type="number" value="${inv.stopAge}" min="16" max="95" style="width:54px" ` +
+        `<td>${isFixed
+            ? `<span style="color:var(--muted);font-size:.75rem;padding:0 6px">—</span>`
+            : `<input type="number" value="${inv.startAge||''}" min="0" max="110" style="width:54px" placeholder="now" title="Age this investment begins (blank = now)" oninput="setInv('${p}',${id},'startAge',this.value)">`
+        }</td>` +
+        `<td><input type="number" value="${inv.stopAge}" min="16" max="110" style="width:54px" ` +
             `title="${isFixed?'Age income starts':'Age contributions stop'}" ` +
             `oninput="setInv('${p}',${id},'stopAge',this.value)"></td>` +
         `<td>${isFixed
@@ -605,7 +609,7 @@ function renderRow(p, inv) {
         existing.insertAdjacentElement('afterend', wdrRow);
     }
     if (!isFixed) {
-        wdrRow.innerHTML = `<td colspan="7" style="padding:0">
+        wdrRow.innerHTML = `<td colspan="8" style="padding:0">
             <div class="wdr-panel">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
                     <span style="font-size:.73rem;font-weight:600;color:var(--muted)">WITHDRAWALS FROM THIS POT</span>
@@ -836,15 +840,20 @@ function project(key, c, isKid) {
     const dbInvs = ppl[key].filter(i => i.type === 'db' || i.type === 'sp');
 
     // Per-DC-investment pot tracking
-    const pots = dcInvs.map(inv => ({
-        id:          String(inv.id),
-        name:        inv.name || '',
-        val:         inv.value || 0,
-        monthly:     inv.monthly || 0,
-        stopAge:     inv.stopAge || 57,
-        rate:        inv.rate,
-        withdrawals: inv.withdrawals || []
-    }));
+    const pots = dcInvs.map(inv => {
+        const futureStart = inv.startAge && inv.startAge > projStart;
+        return {
+            id:          String(inv.id),
+            name:        inv.name || '',
+            val:         futureStart ? 0 : (inv.value || 0),
+            startVal:    inv.value || 0,
+            startAge:    futureStart ? inv.startAge : null, // null = already active
+            monthly:     inv.monthly || 0,
+            stopAge:     inv.stopAge || 57,
+            rate:        inv.rate,
+            withdrawals: inv.withdrawals || []
+        };
+    });
 
     // DB incomes: fixed annual amount starting from stopAge (repurposed as "from age")
     const dbIncomes = dbInvs.map(inv => ({
@@ -860,6 +869,13 @@ function project(key, c, isKid) {
         let totalGrowth = 0, totalContrib = 0, lump = 0, draw = 0;
 
         for (const pot of pots) {
+            // Skip until startAge; inject lump sum at startAge
+            if (pot.startAge !== null) {
+                if (age < pot.startAge) continue;
+                pot.val = pot.startVal;
+                pot.startAge = null; // mark as active
+            }
+
             // Grow
             const r = (pot.rate !== '' && pot.rate !== null && !isNaN(pot.rate)) ? pot.rate / 100 : c.ret;
             const g = Math.max(0, pot.val) * r;
