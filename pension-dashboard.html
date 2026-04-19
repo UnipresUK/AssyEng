@@ -690,7 +690,7 @@ function renderWithdrawals(p, inv) {
 function setInv(p, id, field, val) {
     const inv = ppl[p].find(i => i.id === id);
     if (!inv) return;
-    if (field === 'name') inv.name = val;
+    if (field === 'name' || field === 'type') inv[field] = val;
     else if (field === 'rate') inv.rate = val === '' ? '' : +val;
     else inv[field] = +val || 0;
 }
@@ -1022,10 +1022,15 @@ function renderDash(r) {
     chartRegistry = {};
 
     // Build aligned data on husband's age axis
-    const hLabels  = h.map(x => x.age);
     const wByYr    = Object.fromEntries(w.map(x  => [x.yr, x]));
     const k1ByYr   = Object.fromEntries(k1.map(x => [x.yr, x]));
     const k2ByYr   = Object.fromEntries(k2.map(x => [x.yr, x]));
+    const hLabels  = h.map(x => {
+        const k1a = k1ByYr[x.yr]?.age;
+        const k2a = k2ByYr[x.yr]?.age;
+        const kLine = (k1a != null || k2a != null) ? `${k1a ?? '—'}/${k2a ?? '—'}` : '';
+        return kLine ? [String(x.age), kLine] : String(x.age);
+    });
 
     const wPots    = h.map(x => wByYr[x.yr]?.pot ?? null);
     const combined = h.map(x => x.pot + (wByYr[x.yr]?.pot || 0));
