@@ -623,14 +623,20 @@ function addRow(p, d = {}) {
 
 function renderRow(p, inv) {
     const id   = inv.id;
-    const isFixed = inv.type === 'db' || inv.type === 'sp'; // DB or State Pension — fixed income, no pot
+    const isFixed = inv.type === 'db' || inv.type === 'sp';
     const tbody = document.getElementById(p + 'Rows');
     let existing = document.getElementById('r' + id);
     if (!existing) { existing = document.createElement('tr'); existing.id = 'r' + id; tbody.appendChild(existing); }
 
     existing.innerHTML =
         `<td><select style="width:108px;padding:4px 5px;font-size:.72rem" onchange="setInv('${p}',${id},'type',this.value);reRenderRow('${p}',${id})">
-            <option value="dc"${inv.type==='dc'?' selected':''}>DC Pot</option>
+            <option value="dc"${inv.type==='dc'?' selected':''}>Pension (DC)</option>
+            <option value="isa"${inv.type==='isa'?' selected':''}>ISA</option>
+            <option value="savings"${inv.type==='savings'?' selected':''}>Cash Savings</option>
+            <option value="investment"${inv.type==='investment'?' selected':''}>Investment</option>
+            <option value="inheritance"${inv.type==='inheritance'?' selected':''}>Inheritance</option>
+            <option value="property"${inv.type==='property'?' selected':''}>Property</option>
+            <option value="other"${inv.type==='other'?' selected':''}>Other</option>
             <option value="db"${inv.type==='db'?' selected':''}>DB / Career Avg</option>
             <option value="sp"${inv.type==='sp'?' selected':''}>State Pension</option>
          </select></td>` +
@@ -892,7 +898,7 @@ function project(key, c, isKid) {
     const endAge    = isKid ? Math.min(c.endAge, 25) : c.endAge;
 
     // Split DC (pot-based) from fixed-income investments (DB / State Pension)
-    const dcInvs = ppl[key].filter(i => (i.type || 'dc') === 'dc');
+    const dcInvs = ppl[key].filter(i => i.type !== 'db' && i.type !== 'sp');
     const dbInvs = ppl[key].filter(i => i.type === 'db' || i.type === 'sp');
 
     // Per-DC-investment pot tracking
