@@ -119,6 +119,14 @@
         .inv-col { font-size: .72rem; opacity: .85; }
         .db-col { font-style: italic; }
 
+        /* ── Query table ── */
+        .q-type-sel { padding: 4px 6px; font-size: .78rem; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); color: var(--text); width: 100%; }
+        .q-val-inp { width: 130px; padding: 5px 9px; font-size: .84rem; background: #fff; color: #0f172a; border: 1px solid var(--border); border-radius: var(--r); font-weight: 600; }
+        .q-val-inp:focus { outline: 2px solid #60a5fa; }
+        .q-val-inp::placeholder { color: #94a3b8; font-weight: 400; }
+        .q-out { color: var(--muted); font-size: .8rem; }
+        .q-out.live { color: var(--text); font-weight: 600; }
+
         /* ── Per-investment withdrawal panel ── */
         .wdr-tog { font-size: .7rem; padding: 2px 7px; }
         .wdr-panel-row td { padding: 0; }
@@ -393,6 +401,7 @@
     <div id="dashContent">
         <div class="empty"><p>No projection yet</p><p>Set up your investments and click <strong>Calculate →</strong></p></div>
     </div>
+    <div id="querySection" class="card" style="display:none;margin-top:20px"></div>
 </div>
 </div>
 
@@ -916,6 +925,152 @@ function project(key, c, isKid) {
 
 
 // ═══════════════════════════════════════════════
+//  WHAT-IF QUERIES
+// ═══════════════════════════════════════════════
+
+let queries = [];
+let _qid = 1;
+
+function addQuery() {
+    queries.push({ id: _qid++, qType: 'age', qVal: '' });
+    renderQueryTable();
+}
+
+function delQuery(id) {
+    queries = queries.filter(q => q.id !== id);
+    renderQueryTable();
+}
+
+function setQType(id, val) {
+    const q = queries.find(q => q.id === id);
+    if (!q) return;
+    q.qType = val;
+    q.qVal = '';
+    renderQueryTable();
+}
+
+function setQVal(id, val) {
+    const q = queries.find(q => q.id === id);
+    if (!q) return;
+    q.qVal = val;
+    qRefreshRow(id);
+}
+
+function resolveQuery(q) {
+    if (!result || !String(q.qVal).trim()) return null;
+    const { c, h, w } = result;
+    const wByYr = Object.fromEntries(w.map(x => [x.yr, x]));
+    let hRow, wRow;
+
+    if (q.qType === 'age') {
+        const age = Math.round(parseFloat(q.qVal));
+        if (isNaN(age)) return null;
+        hRow = h.find(r => r.age === age);
+        if (!hRow) return null;
+        wRow = wByYr[hRow.yr] || {};
+    } else {
+        const target = parseFloat(String(q.qVal).replace(/[£,\s]/g, ''));
+        if (isNaN(target)) return null;
+        for (const row of h) {
+            const wr = wByYr[row.yr] || {};
+            if ((row.pot + (wr.pot || 0)) >= target) { hRow = row; wRow = wr; break; }
+        }
+        if (!hRow) return null;
+    }
+
+    const cPot    = hRow.pot + (wRow.pot || 0);
+    const income  = hRow.income + (wRow.income || 0);
+    const yrs     = hRow.yr - c.yr;
+    return {
+        pot: cPot, hAge: hRow.age, wAge: wRow.age ?? '—',
+        yr: hRow.yr, yrs,
+        income,
+        realIncome: Math.round(income / Math.pow(1.025, Math.max(0, yrs)))
+    };
+}
+
+function qRefreshRow(id) {
+    const q = queries.find(q => q.id === id);
+    if (!q) return;
+    const r = resolveQuery(q);
+    const set = (sfx, text, live) => {
+        const el = document.getElementById(`qq-${sfx}-${id}`);
+        if (!el) return;
+        el.textContent = text;
+        el.classList.toggle('live', !!live);
+    };
+    if (!r) {
+        ['pot','hAge','wAge','yr','yrs','inc','real'].forEach(k => set(k, '—', false));
+        return;
+    }
+    set('pot',  ff(r.pot),                                  true);
+    set('hAge', String(r.hAge),                             true);
+    set('wAge', String(r.wAge),                             true);
+    set('yr',   String(r.yr),                               true);
+    set('yrs',  r.yrs === 0 ? 'Now' : `+${r.yrs} yrs`,    true);
+    set('inc',  ff(r.income),                               true);
+    set('real', ff(r.realIncome),                           true);
+}
+
+function renderQueryTable() {
+    const sec = document.getElementById('querySection');
+    if (!sec) return;
+    const hn = name('h'), wn = name('w');
+
+    const thead = `<thead><tr>
+        <th style="min-width:90px">Query by</th>
+        <th style="min-width:140px">Value</th>
+        <th class="cc">Combined Pot</th>
+        <th class="ch">${hn} Age</th>
+        <th class="cw">${wn} Age</th>
+        <th>Year</th>
+        <th>From Now</th>
+        <th>Annual Income</th>
+        <th>Real Income <span style="font-weight:400;opacity:.6">(2.5% inflation)</span></th>
+        <th></th>
+    </tr></thead>`;
+
+    const tbody = queries.map(q => {
+        const r = resolveQuery(q);
+        const cell = (sfx, cls='q-out') =>
+            `<td class="${cls}" id="qq-${sfx}-${q.id}">${r ? '' : '—'}</td>`;
+        return `<tr>
+            <td><select class="q-type-sel" onchange="setQType(${q.id},this.value)">
+                <option value="age"${q.qType==='age'?' selected':''}>By Age</option>
+                <option value="pot"${q.qType==='pot'?' selected':''}>By Pot £</option>
+            </select></td>
+            <td><input class="q-val-inp" type="text"
+                placeholder="${q.qType==='age'?'e.g. 57':'e.g. 500000'}"
+                value="${q.qVal}"
+                oninput="setQVal(${q.id},this.value)"></td>
+            ${cell('pot','q-out cc')}
+            ${cell('hAge','q-out ch')}
+            ${cell('wAge','q-out cw')}
+            ${cell('yr')}
+            ${cell('yrs')}
+            ${cell('inc')}
+            ${cell('real')}
+            <td><button class="btn-del" onclick="delQuery(${q.id})">✕</button></td>
+        </tr>`;
+    }).join('');
+
+    const empty = !queries.length
+        ? `<p style="font-size:.78rem;color:var(--muted);margin-top:8px">No queries yet — click <strong>+ Add query</strong> to start.</p>`
+        : `<div class="scroll-tbl" style="margin-top:10px"><table class="bk-tbl">${thead}<tbody>${tbody}</tbody></table></div>`;
+
+    sec.innerHTML = `
+        <div class="card-hdr">
+            <div class="card-title">What-If Queries</div>
+            <button class="btn btn-ghost btn-sm" onclick="addQuery()">+ Add query</button>
+        </div>
+        <p style="font-size:.78rem;color:var(--muted)">Type an age <em>or</em> a pot value — the row fills in automatically.</p>
+        ${empty}`;
+
+    // Fill computed cells for any queries that already have values
+    queries.forEach(q => { if (q.qVal) qRefreshRow(q.id); });
+}
+
+// ═══════════════════════════════════════════════
 //  CALCULATE
 // ═══════════════════════════════════════════════
 
@@ -932,6 +1087,8 @@ function calculate() {
     };
     renderDash(result);
     renderBreak(result);
+    renderQueryTable();
+    document.getElementById('querySection').style.display = '';
     document.getElementById('calc-time').textContent = 'Updated ' + new Date().toLocaleTimeString();
     // Switch to dashboard
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
