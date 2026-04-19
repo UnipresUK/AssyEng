@@ -113,6 +113,12 @@
         .w-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 12px; }
         .w-box h4 { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
 
+        /* ── Year by Year expand/collapse ── */
+        .tog-break { font-size: .65rem; padding: 1px 5px; background: rgba(255,255,255,.08); color: var(--muted); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; margin-left: 4px; vertical-align: middle; }
+        .tog-break:hover { color: var(--text); background: rgba(255,255,255,.14); }
+        .inv-col { font-size: .72rem; opacity: .85; }
+        .db-col { font-style: italic; }
+
         /* ── Per-investment withdrawal panel ── */
         .wdr-tog { font-size: .7rem; padding: 2px 7px; }
         .wdr-panel-row td { padding: 0; }
@@ -899,7 +905,9 @@ function project(key, c, isKid) {
             sp:       Math.round(sp),
             dbIncome: Math.round(dbIncome),
             income:   Math.round(lump + draw + sp + dbIncome),
-            expense:  isKid ? 0 : expenseAt(age, c.bands)
+            expense:  isKid ? 0 : expenseAt(age, c.bands),
+            potVals:  pots.map(p => ({ name: p.name, val: Math.round(p.val) })),
+            dbVals:   dbIncomes.map(d => ({ name: d.name, income: age >= d.fromAge ? Math.round(d.annual) : 0 }))
         });
     }
     return rows;
@@ -1130,43 +1138,90 @@ function miniChart(id, labels, data, color, fill) {
 //  BREAKDOWN TABLE
 // ═══════════════════════════════════════════════
 
+let breakExpanded = { h: false, w: false };
+
+function toggleBreak(person) {
+    breakExpanded[person] = !breakExpanded[person];
+    if (result) renderBreak(result);
+}
+
 function renderBreak(r) {
     const { c, h, w } = r;
     const hn = name('h'), wn = name('w');
-
     const wByYr = Object.fromEntries(w.map(x => [x.yr, x]));
 
+    const firstW  = w[0] || {};
+    const hPots   = h[0]?.potVals  || [];
+    const wPots   = firstW.potVals  || [];
+    const hDbs    = h[0]?.dbVals   || [];
+    const wDbs    = firstW.dbVals   || [];
+    const hExp    = breakExpanded.h;
+    const wExp    = breakExpanded.w;
+
+    const togBtn = (person, open) =>
+        `<button class="tog-break" onclick="toggleBreak('${person}')" title="${open?'Collapse':'Expand investments'}">${open?'◀':'▶'}</button>`;
+
+    // ── Header cells per person ──
+    const hHdrs = hExp
+        ? [ ...hPots.map(p => `<th class="ch inv-col">${p.name||'Investment'}</th>`),
+            ...hDbs.map(d  => `<th class="ch inv-col db-col">${d.name||'DB'}</th>`),
+            `<th class="ch">${hn} Total ${togBtn('h',true)}</th>`,
+            `<th class="ch">Contribs</th><th class="ch">Growth</th><th class="ch">Withdrawn</th>` ]
+        : [ `<th class="ch">${hn} ${togBtn('h',false)}</th>`,
+            `<th class="ch">Contribs</th><th class="ch">Growth</th><th class="ch">Withdrawn</th>` ];
+
+    const wHdrs = wExp
+        ? [ ...wPots.map(p => `<th class="cw inv-col">${p.name||'Investment'}</th>`),
+            ...wDbs.map(d  => `<th class="cw inv-col db-col">${d.name||'DB'}</th>`),
+            `<th class="cw">${wn} Total ${togBtn('w',true)}</th>`,
+            `<th class="cw">Contribs</th><th class="cw">Growth</th><th class="cw">Withdrawn</th>` ]
+        : [ `<th class="cw">${wn} ${togBtn('w',false)}</th>`,
+            `<th class="cw">Contribs</th><th class="cw">Growth</th><th class="cw">Withdrawn</th>` ];
+
+    // ── Rows ──
     let rows = '';
     for (const hRow of h) {
         const wRow = wByYr[hRow.yr] || {};
-        const cPot = hRow.pot + (wRow.pot||0);
-        const totalIncome  = hRow.income  + (wRow.income||0);
-        const expense      = hRow.expense;
-        const surplus      = totalIncome - expense;
-
-        const isKey = hRow.age === c.spAge || hRow.lump > 0 || (wRow.lump||0) > 0;
+        const cPot        = hRow.pot + (wRow.pot||0);
+        const totalIncome = hRow.income + (wRow.income||0);
+        const expense     = hRow.expense;
+        const surplus     = totalIncome - expense;
+        const isKey       = hRow.age === c.spAge || hRow.lump > 0 || (wRow.lump||0) > 0;
 
         const notes = [];
-        if (hRow.lump > 0) notes.push(`<span class="note-pill">${hn} lump sum ${ff(hRow.lump)}</span>`);
-        if ((wRow.lump||0) > 0) notes.push(`<span class="note-pill">${wn} lump sum ${ff(wRow.lump)}</span>`);
+        if (hRow.lump > 0)       notes.push(`<span class="note-pill">${hn} lump sum ${ff(hRow.lump)}</span>`);
+        if ((wRow.lump||0) > 0)  notes.push(`<span class="note-pill">${wn} lump sum ${ff(wRow.lump)}</span>`);
         if (hRow.sp > 0 && hRow.age === c.spAge) notes.push(`<span class="note-pill green">State pension starts</span>`);
 
         const surplusCell = expense > 0
             ? `<td class="${surplus >= 0 ? 'cg' : 'cd'}">${surplus >= 0 ? '+' : ''}${ff(surplus)}</td>`
             : `<td>—</td>`;
 
+        const hWithdrawn = (hRow.lump + hRow.draw) > 0 ? ff(hRow.lump + hRow.draw) : '—';
+        const wWithdrawn = (wRow.lump||0)+(wRow.draw||0) > 0 ? ff((wRow.lump||0)+(wRow.draw||0)) : '—';
+
+        const hCells = hExp
+            ? [ ...(hRow.potVals||[]).map(p => `<td class="ch inv-col">${ff(p.val)}</td>`),
+                ...(hRow.dbVals||[]).map(d  => `<td class="ch inv-col db-col">${d.income > 0 ? ff(d.income)+'/yr' : '—'}</td>`),
+                `<td class="ch" style="font-weight:600">${ff(hRow.pot)}</td>`,
+                `<td class="ch">${ff(hRow.contrib)}</td><td class="ch">${ff(hRow.growth)}</td><td class="ch">${hWithdrawn}</td>` ]
+            : [ `<td class="ch">${ff(hRow.pot)}</td>`,
+                `<td class="ch">${ff(hRow.contrib)}</td><td class="ch">${ff(hRow.growth)}</td><td class="ch">${hWithdrawn}</td>` ];
+
+        const wCells = wExp
+            ? [ ...(wRow.potVals||[]).map(p => `<td class="cw inv-col">${ff(p.val)}</td>`),
+                ...(wRow.dbVals||[]).map(d  => `<td class="cw inv-col db-col">${d.income > 0 ? ff(d.income)+'/yr' : '—'}</td>`),
+                `<td class="cw" style="font-weight:600">${wRow.pot!=null?ff(wRow.pot):'—'}</td>`,
+                `<td class="cw">${wRow.contrib!=null?ff(wRow.contrib):'—'}</td><td class="cw">${wRow.growth!=null?ff(wRow.growth):'—'}</td><td class="cw">${wWithdrawn}</td>` ]
+            : [ `<td class="cw">${wRow.pot!=null?ff(wRow.pot):'—'}</td>`,
+                `<td class="cw">${wRow.contrib!=null?ff(wRow.contrib):'—'}</td><td class="cw">${wRow.growth!=null?ff(wRow.growth):'—'}</td><td class="cw">${wWithdrawn}</td>` ];
+
         rows += `<tr class="${isKey?'key-row':''}">
             <td>${hRow.yr}</td>
             <td>${hRow.age}</td>
             <td>${wRow.age ?? '—'}</td>
-            <td class="ch">${ff(hRow.pot)}</td>
-            <td class="ch">${ff(hRow.contrib)}</td>
-            <td class="ch">${ff(hRow.growth)}</td>
-            <td class="ch">${(hRow.lump+hRow.draw)>0 ? ff(hRow.lump+hRow.draw) : '—'}</td>
-            <td class="cw">${wRow.pot!=null?ff(wRow.pot):'—'}</td>
-            <td class="cw">${wRow.contrib!=null?ff(wRow.contrib):'—'}</td>
-            <td class="cw">${wRow.growth!=null?ff(wRow.growth):'—'}</td>
-            <td class="cw">${(wRow.lump||0)+(wRow.draw||0)>0?ff((wRow.lump||0)+(wRow.draw||0)):'—'}</td>
+            ${hCells.join('')}
+            ${wCells.join('')}
             <td class="cc" style="font-weight:600">${ff(cPot)}</td>
             <td>${expense>0?ff(expense):'—'}</td>
             <td>${totalIncome>0?ff(totalIncome):'—'}</td>
@@ -1179,18 +1234,12 @@ function renderBreak(r) {
         <div class="scroll-tbl">
             <table class="bk-tbl">
                 <thead><tr>
-                    <th style="text-align:left">Year</th>
+                    <th style="position:sticky;left:0;background:var(--surface);z-index:2">Year</th>
                     <th>${hn} Age</th>
                     <th>${wn} Age</th>
-                    <th class="ch">${hn} Pot</th>
-                    <th class="ch">Contribs</th>
-                    <th class="ch">Growth</th>
-                    <th class="ch">Withdrawn</th>
-                    <th class="cw">${wn} Pot</th>
-                    <th class="cw">Contribs</th>
-                    <th class="cw">Growth</th>
-                    <th class="cw">Withdrawn</th>
-                    <th class="cc">Combined Pot</th>
+                    ${hHdrs.join('')}
+                    ${wHdrs.join('')}
+                    <th class="cc">Combined</th>
                     <th>Expenses</th>
                     <th>Income</th>
                     <th>Surplus</th>
