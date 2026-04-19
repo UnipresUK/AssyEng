@@ -113,6 +113,16 @@
         .w-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 14px; margin-bottom: 12px; }
         .w-box h4 { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px; }
 
+        /* ── Per-investment withdrawal panel ── */
+        .wdr-tog { font-size: .7rem; padding: 2px 7px; }
+        .wdr-panel-row td { padding: 0; }
+        .wdr-panel { background: var(--surface2); border-top: 1px solid var(--border); padding: 10px 12px; }
+        .wdr-hdr { display: grid; grid-template-columns: 70px 70px 100px 90px 32px; gap: 6px; align-items: center; margin-bottom: 4px; }
+        .wdr-hdr span { font-size: .68rem; color: var(--muted); }
+        .wdr-row { display: grid; grid-template-columns: 70px 70px 100px 90px 32px; gap: 6px; align-items: center; margin-bottom: 4px; }
+        .wdr-row input, .wdr-row select { padding: 4px 6px; font-size: .75rem; }
+        .wdr-add { font-size: .72rem; margin-top: 6px; }
+
         /* ── Stat cards ── */
         .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl); padding: 16px 18px; }
         .stat-lbl { font-size: .72rem; color: var(--muted); margin-bottom: 5px; }
@@ -355,45 +365,7 @@
             <div class="card-hdr">
                 <div class="card-title">Withdrawal Schedule</div>
             </div>
-            <p class="info">Applied per person based on their individual age. Withdrawals reduce the investment pot.</p>
-
-            <div class="w-box">
-                <h4>Phase 0 — Tax-Free Lump Sum</h4>
-                <div class="g2">
-                    <div class="fg" style="margin:0"><label>Withdraw at Age</label><input type="number" id="wLumpAge" value="57" min="50" max="75"></div>
-                    <div class="fg" style="margin:0"><label>Percentage of Pot</label><div class="sym-wrap r"><input type="number" id="wLumpPct" value="25" min="0" max="100"><span class="sym-r">%</span></div></div>
-                </div>
-                <div class="src-row">
-                    <div><label id="lumpSrc_h_lbl">Husband — draw from</label><select id="lumpSrc_h"><option value="all">All (proportional)</option></select></div>
-                    <div><label id="lumpSrc_w_lbl">Wife — draw from</label><select id="lumpSrc_w"><option value="all">All (proportional)</option></select></div>
-                </div>
-            </div>
-
-            <div class="w-box">
-                <h4>Phase 1 — Bridge Withdrawals</h4>
-                <div class="g3">
-                    <div class="fg" style="margin:0"><label>From Age</label><input type="number" id="w1From" value="58"></div>
-                    <div class="fg" style="margin:0"><label>To Age</label><input type="number" id="w1To" value="62"></div>
-                    <div class="fg" style="margin:0"><label>Per Year</label><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" id="w1Amt" value="10000"></div></div>
-                </div>
-                <div class="src-row">
-                    <div><label id="w1Src_h_lbl">Husband — draw from</label><select id="w1Src_h"><option value="all">All (proportional)</option></select></div>
-                    <div><label id="w1Src_w_lbl">Wife — draw from</label><select id="w1Src_w"><option value="all">All (proportional)</option></select></div>
-                </div>
-            </div>
-
-            <div class="w-box">
-                <h4>Phase 2 — Reduced Withdrawals</h4>
-                <div class="g3">
-                    <div class="fg" style="margin:0"><label>From Age</label><input type="number" id="w2From" value="63"></div>
-                    <div class="fg" style="margin:0"><label>To Age</label><input type="number" id="w2To" value="67"></div>
-                    <div class="fg" style="margin:0"><label>Per Year</label><div class="sym-wrap l"><span class="sym-l">£</span><input type="number" id="w2Amt" value="6000"></div></div>
-                </div>
-                <div class="src-row">
-                    <div><label id="w2Src_h_lbl">Husband — draw from</label><select id="w2Src_h"><option value="all">All (proportional)</option></select></div>
-                    <div><label id="w2Src_w_lbl">Wife — draw from</label><select id="w2Src_w"><option value="all">All (proportional)</option></select></div>
-                </div>
-            </div>
+            <p class="info">Withdrawals are configured per investment on the People &amp; Investments tab (use the ↓ button on each DC pot).</p>
 
             <div class="w-box" style="margin-bottom:0">
                 <h4>State Pension</h4>
@@ -452,10 +424,7 @@ function setSyncStatus(state) {
 
 function collectState() {
     const ids = ['gReturn','gYear','gEndAge','hName','hDob','wName','wDob',
-                 'k1Name','k1Dob','k2Name','k2Dob',
-                 'wLumpAge','wLumpPct','w1From','w1To','w1Amt',
-                 'w2From','w2To','w2Amt','spAge','spAmt',
-                 'lumpSrc_h','lumpSrc_w','w1Src_h','w1Src_w','w2Src_h','w2Src_w'];
+                 'k1Name','k1Dob','k2Name','k2Dob','spAge','spAmt'];
     const config = {};
     ids.forEach(id => { const el = document.getElementById(id); if (el) config[id] = el.value; });
     return { config, investments: { h: ppl.h, w: ppl.w, k1: ppl.k1, k2: ppl.k2 }, bands };
@@ -463,11 +432,8 @@ function collectState() {
 
 function applyState(s) {
     if (!s) return;
-    // Apply non-source config fields first
-    const srcIds = new Set(['lumpSrc_h','lumpSrc_w','w1Src_h','w1Src_w','w2Src_h','w2Src_w']);
     if (s.config) {
         Object.entries(s.config).forEach(([id, val]) => {
-            if (srcIds.has(id)) return; // handle after investments are loaded
             const el = document.getElementById(id);
             if (el) el.value = val;
         });
@@ -481,14 +447,6 @@ function applyState(s) {
         });
         ['h','w','k1','k2'].forEach(p => {
             (s.investments[p] || []).forEach(inv => addRow(p, inv));
-        });
-    }
-    // Populate source dropdowns with investment names, then restore saved selections
-    populateSourceDropdowns();
-    if (s.config) {
-        srcIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el && s.config[id]) el.value = s.config[id];
         });
     }
     // Expense bands
@@ -586,7 +544,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function addRow(p, d = {}) {
     if (ppl[p].length >= maxInv[p]) { alert(`Maximum ${maxInv[p]} investments for this person.`); return; }
     const id = _uid++;
-    const inv = { id, type: d.type||'dc', name: d.name||'', value: d.value||0, monthly: d.monthly||0, stopAge: d.stopAge||57, rate: d.rate!==undefined ? d.rate : '' };
+    const inv = { id, type: d.type||'dc', name: d.name||'', value: d.value||0, monthly: d.monthly||0, stopAge: d.stopAge||57, rate: d.rate!==undefined ? d.rate : '', withdrawals: d.withdrawals||[] };
     ppl[p].push(inv);
     renderRow(p, inv);
     updateCount(p);
@@ -620,12 +578,113 @@ function renderRow(p, inv) {
             ? `<span style="color:var(--muted);font-size:.75rem;padding:0 6px">—</span>`
             : `<div class="sym-wrap r"><input type="number" value="${inv.rate}" min="0" max="30" step="0.1" placeholder="global" style="width:65px" oninput="setInv('${p}',${id},'rate',this.value)"><span class="sym-r">%</span></div>`
         }</td>` +
-        `<td><button class="btn-del" onclick="delRow('${p}',${id})">✕</button></td>`;
+        `<td style="white-space:nowrap">` +
+        (!isFixed ? `<button class="btn-ghost btn-sm wdr-tog" id="wdrBtn${id}" onclick="toggleWdr(${id})" title="Withdrawals">↓ <span id="wdrCount${id}"></span></button> ` : '') +
+        `<button class="btn-del" onclick="delRow('${p}',${id})">✕</button></td>`;
+
+    // Withdrawal panel row (sibling <tr>, only for DC pots)
+    let wdrRow = document.getElementById('wdrPanel' + id);
+    if (!wdrRow) {
+        wdrRow = document.createElement('tr');
+        wdrRow.id = 'wdrPanel' + id;
+        existing.insertAdjacentElement('afterend', wdrRow);
+    }
+    if (!isFixed) {
+        wdrRow.innerHTML = `<td colspan="7" style="padding:0">
+            <div class="wdr-panel">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                    <span style="font-size:.73rem;font-weight:600;color:var(--muted)">WITHDRAWALS FROM THIS POT</span>
+                    <button class="btn btn-ghost btn-sm" onclick="addWithdrawal('${p}',${id})">+ Add withdrawal</button>
+                </div>
+                <div id="wdrList${id}"></div>
+            </div>
+        </td>`;
+        renderWithdrawals(p, inv);
+        wdrRow.style.display = 'none';
+    } else {
+        wdrRow.innerHTML = '';
+        wdrRow.style.display = 'none';
+    }
 }
 
 function reRenderRow(p, id) {
     const inv = ppl[p].find(i => i.id === id);
     if (inv) renderRow(p, inv);
+}
+
+function toggleWdr(id) {
+    const panel = document.getElementById('wdrPanel' + id);
+    const btn   = document.getElementById('wdrBtn' + id);
+    if (!panel) return;
+    const open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : '';
+    if (btn) btn.classList.toggle('active', !open);
+}
+
+function addWithdrawal(p, invId) {
+    const inv = ppl[p].find(i => i.id === invId);
+    if (!inv) return;
+    if (!inv.withdrawals) inv.withdrawals = [];
+    if (inv.withdrawals.length >= 4) { alert('Maximum 4 withdrawals per investment.'); return; }
+    inv.withdrawals.push({ id: _uid++, fromAge: 57, toAge: 57, amount: 25, amtType: 'pct' });
+    renderWithdrawals(p, inv);
+}
+
+function delWdr(p, invId, wdrId) {
+    const inv = ppl[p].find(i => i.id === invId);
+    if (!inv) return;
+    inv.withdrawals = inv.withdrawals.filter(w => w.id !== wdrId);
+    renderWithdrawals(p, inv);
+}
+
+function setWdr(p, invId, wdrId, field, val) {
+    const inv = ppl[p].find(i => i.id === invId);
+    if (!inv) return;
+    const wdr = inv.withdrawals.find(w => w.id === wdrId);
+    if (!wdr) return;
+    wdr[field] = (field === 'amtType') ? val : (+val || 0);
+    if (field === 'amtType') renderWithdrawals(p, inv);
+}
+
+function renderWithdrawals(p, inv) {
+    const list = document.getElementById('wdrList' + inv.id);
+    if (!list) return;
+    const wdrs = inv.withdrawals || [];
+
+    // Update button badge
+    const cnt = document.getElementById('wdrCount' + inv.id);
+    if (cnt) cnt.textContent = wdrs.length ? `(${wdrs.length}/4)` : '';
+
+    if (!wdrs.length) {
+        list.innerHTML = `<p style="font-size:.75rem;color:var(--muted);margin:0">No withdrawals yet — click <strong>+ Add withdrawal</strong> to define up to 4.</p>`;
+        return;
+    }
+
+    const inp = (val, field, wdrId, extra='') =>
+        `<input type="number" value="${val}" min="0" ${extra} style="width:100%;padding:5px 7px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.8rem"
+         onchange="setWdr('${p}',${inv.id},${wdrId},'${field}',this.value)">`;
+
+    list.innerHTML =
+        `<div class="wdr-hdr"><span>From Age</span><span>To Age</span><span>Amount</span><span>Type</span><span></span></div>` +
+        wdrs.map(w => {
+            const isPct = w.amtType === 'pct';
+            return `<div class="wdr-row">
+                ${inp(w.fromAge, 'fromAge', w.id, 'max="110"')}
+                ${inp(w.toAge,   'toAge',   w.id, 'max="110"')}
+                <div class="sym-wrap ${isPct?'r':'l'}" style="width:100%">
+                    <span class="${isPct?'sym-r':'sym-l'}">${isPct?'%':'£'}</span>
+                    <input type="number" value="${w.amount}" min="0" ${isPct?'max="100"':''}
+                        style="width:100%;padding:5px ${isPct?18:18}px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.8rem"
+                        onchange="setWdr('${p}',${inv.id},${w.id},'amount',this.value)">
+                </div>
+                <select style="width:100%;padding:5px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.8rem"
+                    onchange="setWdr('${p}',${inv.id},${w.id},'amtType',this.value)">
+                    <option value="fixed"${!isPct?' selected':''}>£ per year</option>
+                    <option value="pct"${isPct?' selected':''}>% lump sum</option>
+                </select>
+                <button class="btn-del" onclick="delWdr('${p}',${inv.id},${w.id})">✕</button>
+            </div>`;
+        }).join('');
 }
 
 function setInv(p, id, field, val) {
@@ -692,22 +751,8 @@ function cfg() {
         yr:        +gv('gYear')    || 2026,
         ret:       (+gv('gReturn') || 7) / 100,
         endAge:    +gv('gEndAge') || 90,
-        lumpAge:   +gv('wLumpAge') || 57,
-        lumpPct:   (+gv('wLumpPct') || 25) / 100,
-        w1From:    +gv('w1From') || 58,
-        w1To:      +gv('w1To')   || 62,
-        w1Amt:     +gv('w1Amt')  || 10000,
-        w2From:    +gv('w2From') || 63,
-        w2To:      +gv('w2To')   || 67,
-        w2Amt:     +gv('w2Amt')  || 6000,
         spAge:     +gv('spAge')  || 67,
         spAmt:     +gv('spAmt')  || 11502,
-        lumpSrc_h: gv('lumpSrc_h') || 'all',
-        lumpSrc_w: gv('lumpSrc_w') || 'all',
-        w1Src_h:   gv('w1Src_h')   || 'all',
-        w1Src_w:   gv('w1Src_w')   || 'all',
-        w2Src_h:   gv('w2Src_h')   || 'all',
-        w2Src_w:   gv('w2Src_w')   || 'all',
         bands:     bands.slice()
     };
 }
@@ -792,58 +837,57 @@ function project(key, c, isKid) {
         name:    inv.name || 'DB Pension'
     }));
 
-    const lumpSrc = isKid ? 'all' : (key === 'h' ? c.lumpSrc_h : c.lumpSrc_w);
-    const w1Src   = isKid ? 'all' : (key === 'h' ? c.w1Src_h   : c.w1Src_w);
-    const w2Src   = isKid ? 'all' : (key === 'h' ? c.w2Src_h   : c.w2Src_w);
-
-    let lumpDone = false;
     const rows = [];
+    const lumpDones = new Set(); // track which % withdrawals have fired
 
     for (let age = projStart; age <= endAge; age++) {
-        // Grow each pot and add contributions individually
-        let totalGrowth = 0, totalContrib = 0;
-        for (const p of pots) {
-            const r = (p.rate !== '' && p.rate !== null && !isNaN(p.rate)) ? p.rate / 100 : c.ret;
-            const g = Math.max(0, p.val) * r;
+        let totalGrowth = 0, totalContrib = 0, lump = 0, draw = 0;
+
+        for (const pot of pots) {
+            // Grow
+            const r = (pot.rate !== '' && pot.rate !== null && !isNaN(pot.rate)) ? pot.rate / 100 : c.ret;
+            const g = Math.max(0, pot.val) * r;
             totalGrowth += g;
-            p.val += g;
-            if (age <= p.stopAge) {
-                const mc = p.monthly * 12;
+            pot.val += g;
+
+            // Contributions
+            if (age <= pot.stopAge) {
+                const mc = pot.monthly * 12;
                 totalContrib += mc;
-                p.val += mc;
+                pot.val += mc;
+            }
+
+            // Per-investment withdrawals (up to 4)
+            for (const wdr of (pot.withdrawals || [])) {
+                if (age < wdr.fromAge || age > wdr.toAge) continue;
+                const key2 = `${pot.id}-${wdr.id}`;
+                if (wdr.amtType === 'pct') {
+                    // % lump sum fires once at fromAge
+                    if (age === wdr.fromAge && !lumpDones.has(key2)) {
+                        const amt = Math.max(0, pot.val) * (wdr.amount / 100);
+                        pot.val = Math.max(0, pot.val - amt);
+                        lump += amt;
+                        lumpDones.add(key2);
+                    }
+                } else {
+                    // Fixed annual draw
+                    const amt = Math.min(wdr.amount, Math.max(0, pot.val));
+                    pot.val = Math.max(0, pot.val - amt);
+                    draw += amt;
+                }
             }
         }
 
-        // Lump sum (% of chosen pot)
-        let lump = 0;
-        if (!isKid && age === c.lumpAge && !lumpDone) {
-            if (!lumpSrc || lumpSrc === 'all') {
-                lump = potTotal(pots) * c.lumpPct;
-                pots.forEach(p => { p.val = Math.max(0, p.val * (1 - c.lumpPct)); });
-            } else {
-                const p = pots.find(x => x.id === String(lumpSrc));
-                if (p) { lump = p.val * c.lumpPct; p.val = Math.max(0, p.val * (1 - c.lumpPct)); }
-            }
-            lumpDone = true;
-        }
-
-        // Annual withdrawal from chosen pot
-        let draw = 0;
-        if (!isKid) {
-            if      (age >= c.w1From && age <= c.w1To) draw = drawFrom(pots, w1Src, c.w1Amt);
-            else if (age >= c.w2From && age <= c.w2To) draw = drawFrom(pots, w2Src, c.w2Amt);
-        }
-
-        // State pension
-        const sp = (!isKid && age >= c.spAge) ? c.spAmt : 0;
-
-        // DB / Career Average pension income
+        // DB / Career Average / State Pension income
         let dbIncome = 0;
         if (!isKid) {
             for (const db of dbIncomes) {
                 if (age >= db.fromAge) dbIncome += db.annual;
             }
         }
+
+        // Global state pension (Expenses tab)
+        const sp = (!isKid && age >= c.spAge) ? c.spAmt : 0;
 
         rows.push({
             age, yr: c.yr + (age - projStart),
@@ -861,29 +905,6 @@ function project(key, c, isKid) {
     return rows;
 }
 
-function populateSourceDropdowns() {
-    [['h', 'lumpSrc_h', 'w1Src_h', 'w2Src_h'],
-     ['w', 'lumpSrc_w', 'w1Src_w', 'w2Src_w']].forEach(([person, ...selIds]) => {
-        const pName = name(person);
-        selIds.forEach(selId => {
-            const sel = document.getElementById(selId);
-            if (!sel) return;
-            const prev = sel.value;
-            sel.innerHTML = '<option value="all">All (proportional)</option>';
-            ppl[person].filter(inv => (inv.type || 'dc') === 'dc').forEach(inv => {
-                const opt = document.createElement('option');
-                opt.value = String(inv.id);
-                opt.textContent = inv.name || `Investment ${inv.id}`;
-                sel.appendChild(opt);
-            });
-            // Restore previous selection if still valid
-            if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
-            // Update label
-            const lbl = document.getElementById(selId + '_lbl');
-            if (lbl) lbl.textContent = pName + ' — draw from';
-        });
-    });
-}
 
 // ═══════════════════════════════════════════════
 //  CALCULATE
@@ -892,7 +913,6 @@ function populateSourceDropdowns() {
 let result = null;
 
 function calculate() {
-    populateSourceDropdowns();
     const c = cfg();
     result = {
         c,
@@ -1119,8 +1139,7 @@ function renderBreak(r) {
         const expense      = hRow.expense;
         const surplus      = totalIncome - expense;
 
-        const isKey = hRow.age === c.lumpAge || hRow.age === c.spAge ||
-                      hRow.age === c.w1From   || hRow.age === c.w2From;
+        const isKey = hRow.age === c.spAge || hRow.lump > 0 || (wRow.lump||0) > 0;
 
         const notes = [];
         if (hRow.lump > 0) notes.push(`<span class="note-pill">${hn} lump sum ${ff(hRow.lump)}</span>`);
