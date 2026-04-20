@@ -131,9 +131,9 @@
         .wdr-tog { font-size: .7rem; padding: 2px 7px; }
         .wdr-panel-row td { padding: 0; }
         .wdr-panel { background: var(--surface2); border-top: 1px solid var(--border); padding: 10px 12px; }
-        .wdr-hdr { display: grid; grid-template-columns: 70px 70px 100px 90px 32px; gap: 6px; align-items: center; margin-bottom: 4px; }
+        .wdr-hdr { display: grid; grid-template-columns: 70px 70px 100px 110px 90px 32px; gap: 6px; align-items: center; margin-bottom: 4px; }
         .wdr-hdr span { font-size: .68rem; color: var(--muted); }
-        .wdr-row { display: grid; grid-template-columns: 70px 70px 100px 90px 32px; gap: 6px; align-items: center; margin-bottom: 4px; }
+        .wdr-row { display: grid; grid-template-columns: 70px 70px 100px 110px 90px 32px; gap: 6px; align-items: center; margin-bottom: 4px; }
         .wdr-row input, .wdr-row select { padding: 4px 6px; font-size: .75rem; }
         .wdr-add { font-size: .72rem; margin-top: 6px; }
 
@@ -723,7 +723,7 @@ function addWithdrawal(p, invId) {
     if (!inv) return;
     if (!inv.withdrawals) inv.withdrawals = [];
     if (inv.withdrawals.length >= 4) { alert('Maximum 4 withdrawals per investment.'); return; }
-    inv.withdrawals.push({ id: _uid++, fromAge: 57, toAge: 57, amount: 25, amtType: 'pct' });
+    inv.withdrawals.push({ id: _uid++, fromAge: 57, toAge: 67, amount: 25, amtType: 'pct', cap: 0 });
     renderWithdrawals(p, inv);
     renderWdrSummary();
 }
@@ -764,26 +764,40 @@ function renderWithdrawals(p, inv) {
          onchange="setWdr('${p}',${inv.id},${wdrId},'${field}',this.value)">`;
 
     list.innerHTML =
-        `<div class="wdr-hdr"><span>From Age</span><span>To Age</span><span>Amount</span><span>Type</span><span></span></div>` +
+        `<div class="wdr-hdr"><span>From Age</span><span>To Age</span><span>Amount</span><span>Type</span><span>Cap £ <span title="Max lump to take (e.g. 268275 for tax-free limit). 0 = no cap." style="cursor:help;opacity:.6">ⓘ</span></span><span></span></div>` +
         wdrs.map(w => {
-            const isPct = w.amtType === 'pct';
+            const isPct    = w.amtType === 'pct';
+            const isSpread = w.amtType === 'spread';
+            const showPct  = isPct || isSpread;
+            const capCell  = isSpread
+                ? `<div class="sym-wrap l" style="width:100%"><span class="sym-l">£</span>
+                    <input type="number" value="${w.cap||0}" min="0"
+                        style="width:100%;padding:5px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.8rem"
+                        placeholder="0 = none"
+                        onchange="setWdr('${p}',${inv.id},${w.id},'cap',this.value)"></div>`
+                : `<span style="color:var(--muted);font-size:.75rem;padding:0 4px">—</span>`;
             return `<div class="wdr-row">
                 ${inp(w.fromAge, 'fromAge', w.id, 'max="110"')}
                 ${inp(w.toAge,   'toAge',   w.id, 'max="110"')}
-                <div class="sym-wrap ${isPct?'r':'l'}" style="width:100%">
-                    <span class="${isPct?'sym-r':'sym-l'}">${isPct?'%':'£'}</span>
-                    <input type="number" value="${w.amount}" min="0" ${isPct?'max="100"':''}
-                        style="width:100%;padding:5px ${isPct?18:18}px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.8rem"
+                <div class="sym-wrap ${showPct?'r':'l'}" style="width:100%">
+                    <span class="${showPct?'sym-r':'sym-l'}">${showPct?'%':'£'}</span>
+                    <input type="number" value="${w.amount}" min="0" ${showPct?'max="100"':''}
+                        style="width:100%;padding:5px 18px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.8rem"
                         onchange="setWdr('${p}',${inv.id},${w.id},'amount',this.value)">
                 </div>
                 <select style="width:100%;padding:5px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.8rem"
                     onchange="setWdr('${p}',${inv.id},${w.id},'amtType',this.value)">
-                    <option value="fixed"${!isPct?' selected':''}>£ per year</option>
-                    <option value="pct"${isPct?' selected':''}>% lump sum</option>
+                    <option value="fixed" ${w.amtType==='fixed'?'selected':''}>£ / year draw</option>
+                    <option value="pct"   ${isPct   ?'selected':''}>% one-off lump</option>
+                    <option value="spread"${isSpread?'selected':''}>% lump → spread income</option>
                 </select>
+                ${capCell}
                 <button class="btn-del" onclick="delWdr('${p}',${inv.id},${w.id})">✕</button>
             </div>`;
-        }).join('');
+        }).join('') +
+        `<p style="font-size:.7rem;color:var(--muted);margin-top:8px;line-height:1.5">
+            <strong style="color:var(--text)">% lump → spread income</strong>: takes the lump from the pot at <em>From Age</em>, then pays it as equal annual income up to <em>To Age</em>. Set a Cap to limit the lump (e.g. £268,275 tax-free cash limit).
+        </p>`;
 }
 
 function setInv(p, id, field, val) {
@@ -950,7 +964,8 @@ function project(key, c, isKid) {
     }));
 
     const rows = [];
-    const lumpDones = new Set(); // track which % withdrawals have fired
+    const lumpDones    = new Set();  // track which % / spread withdrawals have fired
+    const spreadReserve = {};        // key: `${potId}-${wdrId}` → remaining reserve
 
     for (let age = projStart; age <= endAge; age++) {
         let totalGrowth = 0, totalContrib = 0, lump = 0, draw = 0;
@@ -978,18 +993,35 @@ function project(key, c, isKid) {
 
             // Per-investment withdrawals (up to 4)
             for (const wdr of (pot.withdrawals || [])) {
-                if (age < wdr.fromAge || age > wdr.toAge) continue;
                 const key2 = `${pot.id}-${wdr.id}`;
+
                 if (wdr.amtType === 'pct') {
-                    // % lump sum fires once at fromAge
+                    // % lump sum — fires once at fromAge
                     if (age === wdr.fromAge && !lumpDones.has(key2)) {
                         const amt = Math.max(0, pot.val) * (wdr.amount / 100);
                         pot.val = Math.max(0, pot.val - amt);
                         lump += amt;
                         lumpDones.add(key2);
                     }
+
+                } else if (wdr.amtType === 'spread') {
+                    // % lump taken once at fromAge, then paid out as equal annual income to toAge
+                    if (age === wdr.fromAge && !lumpDones.has(key2)) {
+                        let amt = Math.max(0, pot.val) * (wdr.amount / 100);
+                        if (wdr.cap > 0) amt = Math.min(amt, wdr.cap);
+                        pot.val = Math.max(0, pot.val - amt);
+                        spreadReserve[key2] = amt;
+                        lumpDones.add(key2);
+                    }
+                    if (age >= wdr.fromAge && age <= wdr.toAge && spreadReserve[key2] > 0) {
+                        const years  = Math.max(1, wdr.toAge - wdr.fromAge + 1);
+                        const annual = spreadReserve[key2] / years;
+                        draw += annual;
+                    }
+
                 } else {
                     // Fixed annual draw
+                    if (age < wdr.fromAge || age > wdr.toAge) continue;
                     const amt = Math.min(wdr.amount, Math.max(0, pot.val));
                     pot.val = Math.max(0, pot.val - amt);
                     draw += amt;
