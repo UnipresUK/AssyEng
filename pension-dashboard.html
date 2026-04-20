@@ -1271,24 +1271,38 @@ function updateIncomeChart() {
         return [String(x.age), `${k1a}/${k2a}`];
     });
 
-    const lumpData    = filtered.map(x => x.lump     + (wByYr[x.yr]?.lump     || 0));
-    const drawData    = filtered.map(x => x.draw     + (wByYr[x.yr]?.draw     || 0));
-    const dbData      = filtered.map(x => x.dbIncome + (wByYr[x.yr]?.dbIncome || 0));
-    const spData      = filtered.map(x => x.sp       + (wByYr[x.yr]?.sp       || 0));
+    // Person initials from their configured names
+    const hi = (name('h')[0] || 'H').toUpperCase();
+    const wi = (name('w')[0] || 'W').toUpperCase();
+
+    // Per-person, per-type datasets
+    const hLump = filtered.map(x => x.lump);
+    const hDraw = filtered.map(x => x.draw);
+    const hDb   = filtered.map(x => x.dbIncome);
+    const hSp   = filtered.map(x => x.sp);
+    const wLump = filtered.map(x => wByYr[x.yr]?.lump     || 0);
+    const wDraw = filtered.map(x => wByYr[x.yr]?.draw     || 0);
+    const wDb   = filtered.map(x => wByYr[x.yr]?.dbIncome || 0);
+    const wSp   = filtered.map(x => wByYr[x.yr]?.sp       || 0);
     const expenseData = filtered.map(x => x.expense);
 
     if (chartRegistry.income) chartRegistry.income.destroy();
 
+    // Husband = blue shades (dark → light), Wife = pink shades (dark → light)
     chartRegistry.income = new Chart(document.getElementById('cIncome'), {
         type: 'bar',
         data: {
             labels,
             datasets: [
-                { label: 'Lump Sums',          data: lumpData,    backgroundColor: 'rgba(249,115,22,.85)',  stack: 'inc' },
-                { label: 'Annual Drawdown',     data: drawData,    backgroundColor: 'rgba(59,130,246,.85)',  stack: 'inc' },
-                { label: 'DB / Career Avg',     data: dbData,      backgroundColor: 'rgba(139,92,246,.85)', stack: 'inc' },
-                { label: 'State Pension',       data: spData,      backgroundColor: 'rgba(34,197,94,.85)',   stack: 'inc' },
-                { label: 'Household Expenses',  data: expenseData, type: 'line',
+                { label: `${hi} - Lump Sum`,     data: hLump, backgroundColor: 'rgba(29,78,216,.95)',   stack: 'inc' },
+                { label: `${hi} - Drawdown`,      data: hDraw, backgroundColor: 'rgba(59,130,246,.85)',  stack: 'inc' },
+                { label: `${hi} - DB/Career`,     data: hDb,   backgroundColor: 'rgba(96,165,250,.8)',   stack: 'inc' },
+                { label: `${hi} - State Pension`, data: hSp,   backgroundColor: 'rgba(147,197,253,.75)', stack: 'inc' },
+                { label: `${wi} - Lump Sum`,      data: wLump, backgroundColor: 'rgba(190,24,93,.95)',   stack: 'inc' },
+                { label: `${wi} - Drawdown`,      data: wDraw, backgroundColor: 'rgba(236,72,153,.85)',  stack: 'inc' },
+                { label: `${wi} - DB/Career`,     data: wDb,   backgroundColor: 'rgba(244,114,182,.8)',  stack: 'inc' },
+                { label: `${wi} - State Pension`, data: wSp,   backgroundColor: 'rgba(251,207,232,.75)', stack: 'inc' },
+                { label: 'Household Expenses',    data: expenseData, type: 'line',
                   borderColor: '#ef4444', backgroundColor: 'transparent',
                   borderWidth: 2, pointRadius: 0, tension: .3, order: 0 }
             ]
@@ -1297,8 +1311,16 @@ function updateIncomeChart() {
             responsive: true, maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { labels: { color: '#f1f5f9', boxWidth: 12, font: { size: 11 } } },
-                tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ff(ctx.raw||0)}` } }
+                legend: { labels: { color: '#f1f5f9', boxWidth: 10, font: { size: 10 },
+                    filter: item => item.datasetIndex === 0 || item.datasetIndex >= 4
+                        ? true  // always show husband block start + wife block start
+                        : true  // show all — keeps it explicit
+                } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ctx.raw > 0 ? ` ${ctx.dataset.label}: ${ff(ctx.raw)}` : null
+                    }
+                }
             },
             scales: {
                 x: { stacked: true,
