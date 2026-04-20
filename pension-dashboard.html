@@ -597,6 +597,7 @@ let bands = [
 
 let chartRegistry = {};
 let incomeChartRange = { fromAge: null, toAge: null };
+let growthChartRange  = { fromAge: null, toAge: null };
 
 // Defaults chosen for maximum contrast on a dark background
 let incomeColours = {
@@ -1294,6 +1295,49 @@ function fm(n) {
 function ff(n) { return '£' + Math.round(n).toLocaleString(); }
 
 // ═══════════════════════════════════════════════
+//  GROWTH CHART (filterable by age range)
+// ═══════════════════════════════════════════════
+
+function updateGrowthChart() {
+    if (!result) return;
+    const { h, w, k1, k2 } = result;
+    const hn = name('h'), wn = name('w');
+    const wByYr  = Object.fromEntries(w.map(x  => [x.yr, x]));
+    const k1ByYr = Object.fromEntries((k1||[]).map(x => [x.yr, x]));
+    const k2ByYr = Object.fromEntries((k2||[]).map(x => [x.yr, x]));
+
+    const fromAge = growthChartRange.fromAge ?? h[0]?.age ?? 0;
+    const toAge   = growthChartRange.toAge   ?? h[h.length-1]?.age ?? 90;
+
+    const filtered = h.filter(x => x.age >= fromAge && x.age <= toAge);
+
+    const labels = filtered.map(x => {
+        const k1a = k1ByYr[x.yr]?.age ?? ageOnJan1('k1', x.yr);
+        const k2a = k2ByYr[x.yr]?.age ?? ageOnJan1('k2', x.yr);
+        return [String(x.age), `${k1a}/${k2a}`];
+    });
+
+    const hPots    = filtered.map(x => x.pot);
+    const wPots    = filtered.map(x => wByYr[x.yr]?.pot ?? null);
+    const combined = filtered.map(x => x.pot + (wByYr[x.yr]?.pot || 0));
+
+    if (chartRegistry.growth) chartRegistry.growth.destroy();
+
+    chartRegistry.growth = new Chart(document.getElementById('cGrowth'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                lineDS(hn,        hPots,    '#3b82f6', 'rgba(59,130,246,0)'),
+                lineDS(wn,        wPots,    '#ec4899', 'rgba(236,72,153,0)'),
+                lineDS('Combined', combined,'#8b5cf6', 'rgba(139,92,246,.06)', 3),
+            ]
+        },
+        options: chartOpts('£ Value', true)
+    });
+}
+
+// ═══════════════════════════════════════════════
 //  INCOME CHART (stacked, filterable by age range)
 // ═══════════════════════════════════════════════
 
@@ -1427,7 +1471,19 @@ function renderDash(r) {
         <!-- Main charts -->
         <div class="g2" style="margin-bottom:20px">
             <div class="card">
-                <div class="card-hdr"><div class="card-title">Portfolio Growth Over Time</div></div>
+                <div class="card-hdr">
+                    <div class="card-title">Portfolio Growth Over Time</div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                        <span style="font-size:.72rem;color:var(--muted);white-space:nowrap">Ages</span>
+                        <input type="number" id="grwFromAge" value="${h[0]?.age??0}" min="0" max="110"
+                            style="width:54px;padding:4px 6px;font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text)"
+                            onchange="growthChartRange.fromAge=+this.value;updateGrowthChart()">
+                        <span style="font-size:.72rem;color:var(--muted)">–</span>
+                        <input type="number" id="grwToAge" value="${h[h.length-1]?.age??90}" min="0" max="110"
+                            style="width:54px;padding:4px 6px;font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text)"
+                            onchange="growthChartRange.toAge=+this.value;updateGrowthChart()">
+                    </div>
+                </div>
                 <div class="chart-wrap"><canvas id="cGrowth"></canvas></div>
             </div>
             <div class="card">
@@ -1513,19 +1569,9 @@ function renderDash(r) {
     const wPots    = h.map(x => wByYr[x.yr]?.pot ?? null);
     const combined = h.map(x => x.pot + (wByYr[x.yr]?.pot || 0));
 
-    // Growth chart
-    chartRegistry.growth = new Chart(document.getElementById('cGrowth'), {
-        type: 'line',
-        data: {
-            labels: hLabels,
-            datasets: [
-                lineDS(hn,       h.map(x=>x.pot),  '#3b82f6', 'rgba(59,130,246,0)'),
-                lineDS(wn,       wPots,             '#ec4899', 'rgba(236,72,153,0)'),
-                lineDS('Combined', combined,        '#8b5cf6', 'rgba(139,92,246,.06)', 3),
-            ]
-        },
-        options: chartOpts('£ Value', true)
-    });
+    // Growth chart — built via updateGrowthChart() for range filtering
+    growthChartRange = { fromAge: h[0]?.age ?? 0, toAge: h[h.length-1]?.age ?? 90 };
+    updateGrowthChart();
 
     // Income vs Expenses chart — stacked bar by income source, filterable by age range
     // Reset range to full extent on every new calculation
