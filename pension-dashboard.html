@@ -598,6 +598,18 @@ let bands = [
 let chartRegistry = {};
 let incomeChartRange = { fromAge: null, toAge: null };
 
+// Defaults chosen for maximum contrast on a dark background
+let incomeColours = {
+    hLump: '#1d4ed8', hDraw: '#0ea5e9', hDb: '#14b8a6', hSp: '#22d3ee',
+    wLump: '#be185d', wDraw: '#f43f5e', wDb: '#f97316', wSp: '#fbbf24',
+    expense: '#ef4444'
+};
+
+function toggleIncomeColours() {
+    const p = document.getElementById('incColourPanel');
+    if (p) p.style.display = p.style.display === 'none' ? '' : 'none';
+}
+
 // ═══════════════════════════════════════════════
 //  TABS
 // ═══════════════════════════════════════════════
@@ -1288,22 +1300,22 @@ function updateIncomeChart() {
 
     if (chartRegistry.income) chartRegistry.income.destroy();
 
-    // Husband = blue shades (dark → light), Wife = pink shades (dark → light)
+    // Colours from incomeColours (user-customisable via 🎨 picker panel)
     chartRegistry.income = new Chart(document.getElementById('cIncome'), {
         type: 'bar',
         data: {
             labels,
             datasets: [
-                { label: `${hi} - Lump Sum`,     data: hLump, backgroundColor: 'rgba(29,78,216,.95)',   stack: 'inc' },
-                { label: `${hi} - Drawdown`,      data: hDraw, backgroundColor: 'rgba(59,130,246,.85)',  stack: 'inc' },
-                { label: `${hi} - DB/Career`,     data: hDb,   backgroundColor: 'rgba(96,165,250,.8)',   stack: 'inc' },
-                { label: `${hi} - State Pension`, data: hSp,   backgroundColor: 'rgba(147,197,253,.75)', stack: 'inc' },
-                { label: `${wi} - Lump Sum`,      data: wLump, backgroundColor: 'rgba(190,24,93,.95)',   stack: 'inc' },
-                { label: `${wi} - Drawdown`,      data: wDraw, backgroundColor: 'rgba(236,72,153,.85)',  stack: 'inc' },
-                { label: `${wi} - DB/Career`,     data: wDb,   backgroundColor: 'rgba(244,114,182,.8)',  stack: 'inc' },
-                { label: `${wi} - State Pension`, data: wSp,   backgroundColor: 'rgba(251,207,232,.75)', stack: 'inc' },
+                { label: `${hi} - Lump Sum`,     data: hLump, backgroundColor: incomeColours.hLump, stack: 'inc' },
+                { label: `${hi} - Drawdown`,      data: hDraw, backgroundColor: incomeColours.hDraw, stack: 'inc' },
+                { label: `${hi} - DB/Career`,     data: hDb,   backgroundColor: incomeColours.hDb,   stack: 'inc' },
+                { label: `${hi} - State Pension`, data: hSp,   backgroundColor: incomeColours.hSp,   stack: 'inc' },
+                { label: `${wi} - Lump Sum`,      data: wLump, backgroundColor: incomeColours.wLump, stack: 'inc' },
+                { label: `${wi} - Drawdown`,      data: wDraw, backgroundColor: incomeColours.wDraw, stack: 'inc' },
+                { label: `${wi} - DB/Career`,     data: wDb,   backgroundColor: incomeColours.wDb,   stack: 'inc' },
+                { label: `${wi} - State Pension`, data: wSp,   backgroundColor: incomeColours.wSp,   stack: 'inc' },
                 { label: 'Household Expenses',    data: expenseData, type: 'line',
-                  borderColor: '#ef4444', backgroundColor: 'transparent',
+                  borderColor: incomeColours.expense, backgroundColor: 'transparent',
                   borderWidth: 2, pointRadius: 0, tension: .3, order: 0 }
             ]
         },
@@ -1390,6 +1402,7 @@ function renderDash(r) {
                 <div class="card-hdr">
                     <div class="card-title">Annual Income vs Household Expenses</div>
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                        <button class="btn btn-ghost btn-sm" onclick="toggleIncomeColours()" title="Customise colours">🎨</button>
                         <span style="font-size:.72rem;color:var(--muted);white-space:nowrap">Ages</span>
                         <input type="number" id="incFromAge" value="${h[0]?.age??0}" min="0" max="110"
                             style="width:54px;padding:4px 6px;font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text)"
@@ -1398,6 +1411,36 @@ function renderDash(r) {
                         <input type="number" id="incToAge" value="${h[h.length-1]?.age??90}" min="0" max="110"
                             style="width:54px;padding:4px 6px;font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text)"
                             onchange="incomeChartRange.toAge=+this.value;updateIncomeChart()">
+                    </div>
+                </div>
+                <!-- Colour picker panel (hidden by default) -->
+                <div id="incColourPanel" style="display:none;border-top:1px solid var(--border);padding:10px 0 6px;margin-bottom:8px">
+                    <div style="font-size:.68rem;color:var(--muted);margin-bottom:8px">Click a swatch to change colour — updates live</div>
+                    ${(['h','w']).map(p => {
+                        const initial = (name(p)[0]||p).toUpperCase();
+                        const fullName = name(p);
+                        const keys = [`${p}Lump`,`${p}Draw`,`${p}Db`,`${p}Sp`];
+                        const lbls = ['Lump Sum','Drawdown','DB/Career','State Pension'];
+                        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                            <span style="font-size:.72rem;font-weight:600;width:72px;flex-shrink:0;color:var(--text)">${fullName}</span>
+                            ${keys.map((k,i) => `<label style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer">
+                                <input type="color" value="${incomeColours[k]}"
+                                    oninput="incomeColours['${k}']=this.value;updateIncomeChart()"
+                                    style="width:36px;height:28px;border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:2px;background:var(--surface2)">
+                                <span style="font-size:.62rem;color:var(--muted)">${lbls[i]}</span>
+                            </label>`).join('')}
+                        </div>`;
+                    }).join('')}
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <span style="font-size:.72rem;font-weight:600;width:72px;flex-shrink:0;color:var(--text)">Expenses</span>
+                        <label style="display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer">
+                            <input type="color" value="${incomeColours.expense}"
+                                oninput="incomeColours.expense=this.value;updateIncomeChart()"
+                                style="width:36px;height:28px;border:1px solid var(--border);border-radius:4px;cursor:pointer;padding:2px;background:var(--surface2)">
+                            <span style="font-size:.62rem;color:var(--muted)">Line</span>
+                        </label>
+                        <button class="btn btn-ghost btn-sm" style="margin-left:8px"
+                            onclick="incomeColours={hLump:'#1d4ed8',hDraw:'#0ea5e9',hDb:'#14b8a6',hSp:'#22d3ee',wLump:'#be185d',wDraw:'#f43f5e',wDb:'#f97316',wSp:'#fbbf24',expense:'#ef4444'};renderDash(result)">↺ Reset</button>
                     </div>
                 </div>
                 <div class="chart-wrap"><canvas id="cIncome"></canvas></div>
