@@ -596,6 +596,7 @@ let bands = [
 ];
 
 let chartRegistry = {};
+let incomeChartRange = { fromAge: null, toAge: null };
 
 // ═══════════════════════════════════════════════
 //  TABS
@@ -1249,6 +1250,70 @@ function fm(n) {
 function ff(n) { return '£' + Math.round(n).toLocaleString(); }
 
 // ═══════════════════════════════════════════════
+//  INCOME CHART (stacked, filterable by age range)
+// ═══════════════════════════════════════════════
+
+function updateIncomeChart() {
+    if (!result) return;
+    const { h, w, k1, k2 } = result;
+    const wByYr  = Object.fromEntries(w.map(x  => [x.yr, x]));
+    const k1ByYr = Object.fromEntries((k1||[]).map(x => [x.yr, x]));
+    const k2ByYr = Object.fromEntries((k2||[]).map(x => [x.yr, x]));
+
+    const fromAge = incomeChartRange.fromAge ?? h[0]?.age ?? 0;
+    const toAge   = incomeChartRange.toAge   ?? h[h.length-1]?.age ?? 90;
+
+    const filtered = h.filter(x => x.age >= fromAge && x.age <= toAge);
+
+    const labels = filtered.map(x => {
+        const k1a = k1ByYr[x.yr]?.age ?? ageOnJan1('k1', x.yr);
+        const k2a = k2ByYr[x.yr]?.age ?? ageOnJan1('k2', x.yr);
+        return [String(x.age), `${k1a}/${k2a}`];
+    });
+
+    const lumpData    = filtered.map(x => x.lump     + (wByYr[x.yr]?.lump     || 0));
+    const drawData    = filtered.map(x => x.draw     + (wByYr[x.yr]?.draw     || 0));
+    const dbData      = filtered.map(x => x.dbIncome + (wByYr[x.yr]?.dbIncome || 0));
+    const spData      = filtered.map(x => x.sp       + (wByYr[x.yr]?.sp       || 0));
+    const expenseData = filtered.map(x => x.expense);
+
+    if (chartRegistry.income) chartRegistry.income.destroy();
+
+    chartRegistry.income = new Chart(document.getElementById('cIncome'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [
+                { label: 'Lump Sums',          data: lumpData,    backgroundColor: 'rgba(249,115,22,.85)',  stack: 'inc' },
+                { label: 'Annual Drawdown',     data: drawData,    backgroundColor: 'rgba(59,130,246,.85)',  stack: 'inc' },
+                { label: 'DB / Career Avg',     data: dbData,      backgroundColor: 'rgba(139,92,246,.85)', stack: 'inc' },
+                { label: 'State Pension',       data: spData,      backgroundColor: 'rgba(34,197,94,.85)',   stack: 'inc' },
+                { label: 'Household Expenses',  data: expenseData, type: 'line',
+                  borderColor: '#ef4444', backgroundColor: 'transparent',
+                  borderWidth: 2, pointRadius: 0, tension: .3, order: 0 }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { labels: { color: '#f1f5f9', boxWidth: 12, font: { size: 11 } } },
+                tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ff(ctx.raw||0)}` } }
+            },
+            scales: {
+                x: { stacked: true,
+                     ticks: { color: '#94a3b8', maxTicksLimit: 16, font: { size: 11 } },
+                     grid:  { color: 'rgba(255,255,255,.04)' } },
+                y: { stacked: true,
+                     ticks: { color: '#94a3b8', font: { size: 11 },
+                              callback: v => v >= 1000000 ? `£${(v/1e6).toFixed(1)}m` : v >= 1000 ? `£${(v/1000).toFixed(0)}k` : `£${v}` },
+                     grid: { color: 'rgba(255,255,255,.04)' } }
+            }
+        }
+    });
+}
+
+// ═══════════════════════════════════════════════
 //  DASHBOARD RENDER
 // ═══════════════════════════════════════════════
 
@@ -1300,7 +1365,19 @@ function renderDash(r) {
                 <div class="chart-wrap"><canvas id="cGrowth"></canvas></div>
             </div>
             <div class="card">
-                <div class="card-hdr"><div class="card-title">Annual Income vs Household Expenses</div></div>
+                <div class="card-hdr">
+                    <div class="card-title">Annual Income vs Household Expenses</div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                        <span style="font-size:.72rem;color:var(--muted);white-space:nowrap">Ages</span>
+                        <input type="number" id="incFromAge" value="${h[0]?.age??0}" min="0" max="110"
+                            style="width:54px;padding:4px 6px;font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text)"
+                            onchange="incomeChartRange.fromAge=+this.value;updateIncomeChart()">
+                        <span style="font-size:.72rem;color:var(--muted)">–</span>
+                        <input type="number" id="incToAge" value="${h[h.length-1]?.age??90}" min="0" max="110"
+                            style="width:54px;padding:4px 6px;font-size:.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text)"
+                            onchange="incomeChartRange.toAge=+this.value;updateIncomeChart()">
+                    </div>
+                </div>
                 <div class="chart-wrap"><canvas id="cIncome"></canvas></div>
             </div>
         </div>
@@ -1353,21 +1430,10 @@ function renderDash(r) {
         options: chartOpts('£ Value', true)
     });
 
-    // Income vs Expenses chart (husband age axis)
-    const totalIncome  = h.map(x => x.income + (wByYr[x.yr]?.income || 0));
-    const totalExpense = h.map(x => x.expense);
-
-    chartRegistry.income = new Chart(document.getElementById('cIncome'), {
-        type: 'bar',
-        data: {
-            labels: hLabels,
-            datasets: [
-                { label: 'Investment Income + State Pension', data: totalIncome, backgroundColor: 'rgba(34,197,94,.5)', borderColor: '#22c55e', borderWidth: 1 },
-                { label: 'Household Expenses', data: totalExpense, type: 'line', borderColor: '#ef4444', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, tension: .3 }
-            ]
-        },
-        options: chartOpts('£ / Year', false)
-    });
+    // Income vs Expenses chart — stacked bar by income source, filterable by age range
+    // Reset range to full extent on every new calculation
+    incomeChartRange = { fromAge: h[0]?.age ?? 0, toAge: h[h.length-1]?.age ?? 90 };
+    updateIncomeChart();
 
     // Individual mini charts
     chartRegistry.cH = miniChart('cH', h.map(x=>x.age), h.map(x=>x.pot), '#3b82f6', 'rgba(59,130,246,.15)');
