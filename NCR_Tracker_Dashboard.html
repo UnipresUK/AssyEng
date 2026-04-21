@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PZ1D NCR Tracker — Week 17</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161b24;
+    --surface2: #1e2532;
+    --border: #2a3347;
+    --text: #e2e8f0;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59,130,246,0.15);
+
+    --s-investigated: #f59e0b;
+    --s-countermeasure: #8b5cf6;
+    --s-failed: #ef4444;
+    --s-complete: #10b981;
+    --s-unallocated: #334155;
+
+    --sam: #06b6d4;
+    --chris: #f97316;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600; font-size: 13px; color: #fff;
+  }
+  header h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.02em; }
+  header p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .export-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .export-btn:hover { border-color: var(--accent); color: var(--text); }
+
+  /* ── Sync status ── */
+  .sync-indicator {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    min-width: 130px;
+  }
+  .sync-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text-muted);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .sync-dot.synced  { background: var(--s-complete); }
+  .sync-dot.syncing { background: var(--s-investigated); animation: pulse 1s infinite; }
+  .sync-dot.error   { background: var(--s-failed); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    display: flex;
+    gap: 1px;
+    background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .stat {
+    flex: 1;
+    background: var(--surface);
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+  .stat-value { font-size: 24px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .stat-sub { font-size: 11px; color: var(--text-muted); }
+  .stat.investigated .stat-value { color: var(--s-investigated); }
+  .stat.countermeasure .stat-value { color: var(--s-countermeasure); }
+  .stat.failed .stat-value { color: var(--s-failed); }
+  .stat.complete .stat-value { color: var(--s-complete); }
+
+  /* ── Controls ── */
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 14px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .filter-group { display: flex; gap: 6px; align-items: center; }
+  .filter-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .pill:hover { border-color: var(--text-muted); color: var(--text); }
+  .pill.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+  .pill.sam.active  { background: rgba(6,182,212,0.12); border-color: var(--sam); color: var(--sam); }
+  .pill.chris.active{ background: rgba(249,115,22,0.12); border-color: var(--chris); color: var(--chris); }
+
+  .search-box {
+    margin-left: auto;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    width: 220px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-box::placeholder { color: var(--text-muted); }
+  .search-box:focus { border-color: var(--accent); }
+
+  /* ── Import strip ── */
+  .import-strip {
+    padding: 10px 28px;
+    background: rgba(59,130,246,0.06);
+    border-bottom: 1px solid rgba(59,130,246,0.2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .import-strip label { cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .import-strip input { display: none; }
+
+  /* ── Category filter chips ── */
+  .category-bar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 10px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .cat-chip {
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .cat-chip:hover { border-color: var(--text-muted); color: var(--text); }
+  .cat-chip.active { background: rgba(139,92,246,0.15); border-color: #8b5cf6; color: #8b5cf6; }
+
+  /* ── Table ── */
+  .table-wrap {
+    overflow-x: auto;
+    padding: 0 0 40px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--surface);
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    position: sticky; top: 0; z-index: 10;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--text-dim); }
+  thead th.sorted { color: var(--accent); }
+  thead th.sorted::after { content: ' ↕'; }
+  thead th.no-sort { cursor: default; }
+  thead th.no-sort:hover { color: var(--text-muted); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: rgba(255,255,255,0.025); }
+  td { padding: 10px 16px; vertical-align: middle; }
+
+  .ncr-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+  .assignee-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .assignee-badge.sam  { background: rgba(6,182,212,0.12);  color: var(--sam);   border: 1px solid rgba(6,182,212,0.3); }
+  .assignee-badge.chris{ background: rgba(249,115,22,0.12); color: var(--chris); border: 1px solid rgba(249,115,22,0.3); }
+
+  .fault-code { font-size: 11px; color: var(--text-dim); max-width: 200px; }
+  .part-num   { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+
+  /* ── Investigator assign ── */
+  .investigator-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 4px 8px;
+    cursor: pointer;
+    outline: none;
+    min-width: 130px;
+    transition: border-color 0.15s;
+  }
+  .investigator-select:focus { border-color: var(--accent); }
+
+  /* ── Category select ── */
+  .category-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 11px;
+    padding: 4px 8px;
+    cursor: pointer;
+    outline: none;
+    min-width: 120px;
+    transition: border-color 0.15s;
+  }
+  .category-select:focus { border-color: #8b5cf6; }
+  .cat-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .cat-weld        { background: rgba(239,68,68,0.15);   color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+  .cat-assembly    { background: rgba(245,158,11,0.15);  color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+  .cat-thread      { background: rgba(139,92,246,0.15);  color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+  .cat-laser       { background: rgba(6,182,212,0.15);   color: #22d3ee; border: 1px solid rgba(6,182,212,0.3); }
+  .cat-dimensional { background: rgba(59,130,246,0.15);  color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .cat-other       { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
+
+  /* ── Progress buttons ── */
+  .progress-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+  .prog-btn {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+    background: var(--surface2);
+    color: var(--text-muted);
+    border-color: var(--border);
+  }
+  .prog-btn:hover { opacity: 0.85; }
+  .prog-btn.investigated.active   { background: rgba(245,158,11,0.15); color: var(--s-investigated); border-color: var(--s-investigated); }
+  .prog-btn.countermeasure.active { background: rgba(139,92,246,0.15); color: var(--s-countermeasure); border-color: var(--s-countermeasure); }
+  .prog-btn.failed.active         { background: rgba(239,68,68,0.15);  color: var(--s-failed);        border-color: var(--s-failed); }
+  .prog-btn.complete.active       { background: rgba(16,185,129,0.15); color: var(--s-complete);      border-color: var(--s-complete); }
+
+  .notes-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 11px;
+    padding: 4px 8px;
+    width: 160px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .notes-input:focus { border-color: var(--accent); }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* ── Loading overlay ── */
+  .loading-bar {
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), #8b5cf6);
+    width: 0;
+    transition: width 0.4s ease;
+    position: fixed; top: 0; left: 0; z-index: 9999;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--text);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .date-col       { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+  .workcentre-col { font-size: 11px; color: var(--text-muted); }
+
+  .row-complete { opacity: 0.5; }
+
+  /* ── Progress dot ── */
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+    flex-shrink: 0;
+  }
+  .dot-none           { background: var(--s-unallocated); }
+  .dot-investigated   { background: var(--s-investigated); }
+  .dot-countermeasure { background: var(--s-countermeasure); }
+  .dot-failed         { background: var(--s-failed); }
+  .dot-complete       { background: var(--s-complete); }
+
+  .col-count { color: var(--text-muted); font-size: 12px; padding-left: 8px; }
+</style>
+</head>
+<body>
+
+<div class="loading-bar" id="loading-bar"></div>
+
+<header>
+  <div class="header-left">
+    <div class="logo-mark">NCR</div>
+    <div>
+      <h1>PZ1D Live Trial — NCR Action Tracker</h1>
+      <p id="subtitle">Week 17 · 68 open items · Sam Pascoe &amp; Chris Wilson</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sync-indicator" id="sync-indicator">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">Loading…</span>
+    </div>
+    <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+    <button class="export-btn" onclick="clearAllProgress()" style="color:#ef4444;border-color:#ef4444;">✕ Reset Progress</button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-label">Total Open</span>
+    <span class="stat-value" id="stat-total">—</span>
+    <span class="stat-sub">NCRs assigned</span>
+  </div>
+  <div class="stat investigated">
+    <span class="stat-label">Investigated</span>
+    <span class="stat-value" id="stat-investigated">0</span>
+    <span class="stat-sub">in progress</span>
+  </div>
+  <div class="stat countermeasure">
+    <span class="stat-label">Countermeasure</span>
+    <span class="stat-value" id="stat-countermeasure">0</span>
+    <span class="stat-sub">implemented</span>
+  </div>
+  <div class="stat failed">
+    <span class="stat-label">Failed CM</span>
+    <span class="stat-value" id="stat-failed">0</span>
+    <span class="stat-sub">needs review</span>
+  </div>
+  <div class="stat complete">
+    <span class="stat-label">Complete</span>
+    <span class="stat-value" id="stat-complete">0</span>
+    <span class="stat-sub">closed out</span>
+  </div>
+</div>
+
+<div class="import-strip">
+  ℹ Import a new export to refresh NCR data — your allocations &amp; progress are preserved by NCR number.
+  <label>📂 Import new XLSX export <input type="file" id="file-import" accept=".csv" onchange="importCSV(this)"></label>
+  <span style="color:var(--text-muted)">(Export the NCR system as CSV first)</span>
+</div>
+
+<div class="controls">
+  <span class="filter-label">Assignee</span>
+  <div class="filter-group">
+    <button class="pill active" data-filter="assignee" data-value="all"         onclick="setFilter('assignee','all',this)">All</button>
+    <button class="pill sam"   data-filter="assignee" data-value="Sam Pascoe"   onclick="setFilter('assignee','Sam Pascoe',this)">Sam Pascoe</button>
+    <button class="pill chris" data-filter="assignee" data-value="Chris Wilson" onclick="setFilter('assignee','Chris Wilson',this)">Chris Wilson</button>
+  </div>
+
+  <span class="filter-label" style="margin-left:16px">Progress</span>
+  <div class="filter-group">
+    <button class="pill active" data-filter="progress" data-value="all"            onclick="setFilter('progress','all',this)">All</button>
+    <button class="pill"        data-filter="progress" data-value=""               onclick="setFilter('progress','',this)">Unstarted</button>
+    <button class="pill"        data-filter="progress" data-value="investigated"   onclick="setFilter('progress','investigated',this)">Investigated</button>
+    <button class="pill"        data-filter="progress" data-value="countermeasure" onclick="setFilter('progress','countermeasure',this)">Countermeasure</button>
+    <button class="pill"        data-filter="progress" data-value="failed"         onclick="setFilter('progress','failed',this)">Failed CM</button>
+    <button class="pill"        data-filter="progress" data-value="complete"       onclick="setFilter('progress','complete',this)">Complete</button>
+  </div>
+
+  <input class="search-box" type="text" placeholder="Search NCR / part / fault..." oninput="applySearch(this.value)">
+</div>
+
+<!-- Fault code category filter bar -->
+<div class="category-bar">
+  <span class="filter-label">Category</span>
+  <button class="cat-chip active" data-cat="all"         onclick="setCatFilter('all',this)">All</button>
+  <button class="cat-chip"        data-cat="Weld Defect"  onclick="setCatFilter('Weld Defect',this)">Weld Defect</button>
+  <button class="cat-chip"        data-cat="Assembly"     onclick="setCatFilter('Assembly',this)">Assembly</button>
+  <button class="cat-chip"        data-cat="Thread"       onclick="setCatFilter('Thread',this)">Thread</button>
+  <button class="cat-chip"        data-cat="Laser"        onclick="setCatFilter('Laser',this)">Laser</button>
+  <button class="cat-chip"        data-cat="Dimensional"  onclick="setCatFilter('Dimensional',this)">Dimensional</button>
+  <button class="cat-chip"        data-cat="Other"        onclick="setCatFilter('Other',this)">Other</button>
+  <span style="margin-left:8px;font-size:11px;color:var(--text-muted)">— filters by category assigned in col AC of the sheet</span>
+</div>
+
+<div class="table-wrap">
+  <table id="ncr-table">
+    <thead>
+      <tr>
+        <th onclick="sortBy('NCR Number')">NCR #</th>
+        <th onclick="sortBy('Logged Date')">Logged</th>
+        <th onclick="sortBy('To')">Assigned To</th>
+        <th onclick="sortBy('Part Number')">Part Number</th>
+        <th onclick="sortBy('Fault Code')">Fault Code</th>
+        <th onclick="sortBy('Workcentre Found')">Workcentre</th>
+        <th onclick="sortBy('Disposition')">Disposition</th>
+        <th class="no-sort">Member Allocated</th>
+        <th class="no-sort">Category (col AC)</th>
+        <th class="no-sort">Progress</th>
+        <th class="no-sort">Comment</th>
+      </tr>
+    </thead>
+    <tbody id="ncr-body"></tbody>
+  </table>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Configuration ──────────────────────────────────────────────
+const SHEETS_URL  = 'https://script.google.com/macros/s/AKfycbyud4E6WR-Phea3nJINhg0G6rK1miw8xC2_vyCETIVrx2qDxSLVbaDldMCHNSSF4wfOBg/exec';
+const STORAGE_KEY = 'pz1d_ncr_progress_v1';
+
+// ── Embedded NCR data ──────────────────────────────────────────
+const NCR_DATA = [{"NCR Number": "16443", "Author": "Barry Callaghan", "Logged Date": "07/11/2025 01:25:26", "Part Number": "67402 7TA0A", "Fault Code": "FS - Failed Spotweld", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Ultrasonic", "Name of person who found concern": "MANDY", "Disposition": "HoldAwaitDisposition"}, {"NCR Number": "16634", "Author": "James Buzzard", "Logged Date": "09/12/2025 19:54:34", "Part Number": "67402 7TH0A", "Fault Code": "IA - Incorrect Assembly (nuts on wrong side etc.)", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "305", "Name of person who found concern": "T.Austin", "Disposition": "Scrap"}, {"NCR Number": "16696", "Author": "Terry Patterson", "Logged Date": "19/12/2025 10:25:56", "Part Number": "67402 7TH0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "OUTFLOW", "Disposition": "HoldAwaitDisposition"}, {"NCR Number": "16530", "Author": "James Buzzard", "Logged Date": "25/11/2025 17:10:46", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "306", "Name of person who found concern": "Yasser", "Disposition": "HoldAwaitDisposition"}, {"NCR Number": "16624", "Author": "Gary McMahon", "Logged Date": "09/12/2025 08:38:51", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "306", "Name of person who found concern": "YASSA", "Disposition": "Rework"}, {"NCR Number": "16747", "Author": "Gary McMahon", "Logged Date": "07/01/2026 08:52:08", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "MAJOR", "Disposition": "Na"}, {"NCR Number": "16719", "Author": "Michael Turley", "Logged Date": "23/12/2025 13:38:07", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "306", "Name of person who found concern": "PHIL RIDLEY", "Disposition": "Rework"}, {"NCR Number": "16513", "Author": "Michael Turley", "Logged Date": "21/11/2025 16:40:08", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "NAJ", "Disposition": "Rework"}, {"NCR Number": "16727", "Author": "Michael Turley", "Logged Date": "05/01/2026 14:44:21", "Part Number": "74370 7TA1A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "308", "Name of person who found concern": "D. RIDLEY", "Disposition": "Rework"}, {"NCR Number": "16449", "Author": "Michael Turley", "Logged Date": "07/11/2025 15:35:38", "Part Number": "75153 7TA0A 0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "MAJOR", "Disposition": "Rework"}, {"NCR Number": "16695", "Author": "Michael Turley", "Logged Date": "18/12/2025 21:49:27", "Part Number": "75170 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "JATIN KUMAR", "Disposition": "Rework"}, {"NCR Number": "16745", "Author": "Terry Patterson", "Logged Date": "07/01/2026 00:43:46", "Part Number": "75170 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "334", "Name of person who found concern": "G LAMB", "Disposition": "Rework"}, {"NCR Number": "16721", "Author": "Terry Patterson", "Logged Date": "23/12/2025 15:51:38", "Part Number": "75430 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "317", "Name of person who found concern": "N FERRY", "Disposition": "Rework"}, {"NCR Number": "16528", "Author": "Michael Turley", "Logged Date": "25/11/2025 12:47:58", "Part Number": "75430 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "317", "Name of person who found concern": "YASSER", "Disposition": "Rework"}, {"NCR Number": "16630", "Author": "William Crew", "Logged Date": "09/12/2025 14:29:30", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "Major", "Disposition": "Rework"}, {"NCR Number": "16544", "Author": "Gary McMahon", "Logged Date": "27/11/2025 12:34:56", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "318", "Name of person who found concern": "W QUINN", "Disposition": "Rework"}, {"NCR Number": "16666", "Author": "James Buzzard", "Logged Date": "15/12/2025 13:37:19", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "S Jacques", "Disposition": "Rework"}, {"NCR Number": "16587", "Author": "Terry Patterson", "Logged Date": "03/12/2025 10:06:48", "Part Number": "75510 7TA0A", "Fault Code": "IA - Incorrect Assembly (nuts on wrong side etc.)", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "318", "Name of person who found concern": "P TINLIN", "Disposition": "Scrap"}, {"NCR Number": "16653", "Author": "Michael Turley", "Logged Date": "12/12/2025 10:12:43", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "MAJOR", "Disposition": "Rework"}, {"NCR Number": "16507", "Author": "Gary McMahon", "Logged Date": "20/11/2025 18:44:05", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "MAJOR", "Disposition": "Rework"}, {"NCR Number": "16322", "Author": "Michael Turley", "Logged Date": "09/10/2025 23:34:54", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "MAJOR", "Disposition": "Rework"}, {"NCR Number": "16652", "Author": "Michael Turley", "Logged Date": "12/12/2025 09:46:06", "Part Number": "75511 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "JATIN", "Disposition": "Rework"}, {"NCR Number": "16654", "Author": "Brett Carr", "Logged Date": "12/12/2025 10:46:19", "Part Number": "75511 7TA0A", "Fault Code": "DT - Damaged Threads", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "Jatin", "Disposition": "Rework"}, {"NCR Number": "16466", "Author": "Michael Turley", "Logged Date": "12/11/2025 14:31:10", "Part Number": "76240 7TH0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "322", "Name of person who found concern": "A. FOOTES", "Disposition": "Rework"}, {"NCR Number": "16661", "Author": "Brett Carr", "Logged Date": "13/12/2025 10:57:17", "Part Number": "76241 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "Jatin", "Disposition": "Rework"}, {"NCR Number": "16329", "Author": "James Buzzard", "Logged Date": "10/10/2025 13:43:14", "Part Number": "76241 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Quality", "Name of person who found concern": "J.BUZZARD", "Disposition": "HoldAwaitDisposition"}, {"NCR Number": "16623", "Author": "Terry Patterson", "Logged Date": "08/12/2025 21:51:46", "Part Number": "76241 7TH0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "OUTFLOW", "Disposition": "Rework"}, {"NCR Number": "16736", "Author": "Terry Patterson", "Logged Date": "06/01/2026 00:41:27", "Part Number": "76751 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "327", "Name of person who found concern": "C SPARKS", "Disposition": "Rework"}, {"NCR Number": "16742", "Author": "Terry Patterson", "Logged Date": "06/01/2026 19:49:39", "Part Number": "76751 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "OUTFLOW", "Disposition": "Rework"}, {"NCR Number": "16698", "Author": "kevin sheriff", "Logged Date": "19/12/2025 13:00:38", "Part Number": "76760 7TA0A", "Fault Code": "FM - Failed Migweld", "Status": "Open", "To": "Chris Wilson", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Quality", "Name of person who found concern": "k sheriff", "Disposition": "Na"}, {"NCR Number": "17302", "Author": "Gary McMahon", "Logged Date": "20/04/2026 20:20:00", "Part Number": "64120 7TA0A", "Fault Code": "MH - Hole in Migweld", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "INDUET", "Disposition": "Rework"}, {"NCR Number": "16905", "Author": "Jack Hoey", "Logged Date": "30/01/2026 13:25:04", "Part Number": "64180 7TA0A", "Fault Code": "DE - Dimensional error (Assy/Press) (position of nuts / components out of spec.)", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Quality", "Name of person who found concern": "Jack Hoey", "Disposition": "HoldAwaitDisposition"}, {"NCR Number": "17297", "Author": "James Buzzard", "Logged Date": "20/04/2026 10:23:25", "Part Number": "64180 7TA0A", "Fault Code": "DE - Dimensional error (Assy/Press) (position of nuts / components out of spec.)", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "302", "Name of person who found concern": "K.Adamson", "Disposition": "HoldAwaitDisposition"}, {"NCR Number": "17070", "Author": "Harry Sales", "Logged Date": "03/03/2026 11:00:20", "Part Number": "64180 7ZA0A", "Fault Code": "DE - Dimensional error (Assy/Press) (position of nuts / components out of spec.)", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Quality", "Name of person who found concern": "QA", "Disposition": "Rework"}, {"NCR Number": "17011", "Author": "Kevin Sheriff", "Logged Date": "20/02/2026 21:45:50", "Part Number": "67402 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "IFEANYI", "Disposition": "Na"}, {"NCR Number": "17216", "Author": "Gary McMahon", "Logged Date": "31/03/2026 09:56:02", "Part Number": "67402 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Ultrasonic", "Name of person who found concern": "F Mc Mahon", "Disposition": "Rework"}, {"NCR Number": "17229", "Author": "Michael Turley", "Logged Date": "02/04/2026 09:13:18", "Part Number": "67402 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "305", "Name of person who found concern": "D. LYNN", "Disposition": "Rework"}, {"NCR Number": "16827", "Author": "Michael Turley", "Logged Date": "16/01/2026 20:53:42", "Part Number": "67402 7TH0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "SEAN PERRYMAN", "Disposition": "Rework"}, {"NCR Number": "17244", "Author": "Michael Turley", "Logged Date": "07/04/2026 17:14:06", "Part Number": "67408 7TA0A", "Fault Code": "LB - Laser Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Quality", "Name of person who found concern": "J. HOEY", "Disposition": "Rework"}, {"NCR Number": "16808", "Author": "Terry Patterson", "Logged Date": "15/01/2026 07:42:59", "Part Number": "67413 7TA1A", "Fault Code": "LB - Laser Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "895D", "Name of person who found concern": "S FOSTER", "Disposition": "Rework"}, {"NCR Number": "17278", "Author": "Michael Turley", "Logged Date": "15/04/2026 10:49:22", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "MAJOR", "Disposition": "Rework"}, {"NCR Number": "17220", "Author": "Gary McMahon", "Logged Date": "31/03/2026 14:31:51", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "306", "Name of person who found concern": "A CHORLEY", "Disposition": "Rework"}, {"NCR Number": "17190", "Author": "Michael Turley", "Logged Date": "25/03/2026 19:43:22", "Part Number": "74370 7TA1A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "308", "Name of person who found concern": "IAN PROCTOR", "Disposition": "Rework"}, {"NCR Number": "17222", "Author": "Michael Turley", "Logged Date": "01/04/2026 13:15:39", "Part Number": "74370 7TA1A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "TONY NORTH", "Disposition": "Rework"}, {"NCR Number": "16781", "Author": "Terry Patterson", "Logged Date": "12/01/2026 11:03:02", "Part Number": "74370 7TA1A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "OUTFLOW", "Disposition": "Rework"}, {"NCR Number": "16847", "Author": "Terry Patterson", "Logged Date": "20/01/2026 21:20:34", "Part Number": "74370 7TH1A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "SAMMY", "Disposition": "Rework"}, {"NCR Number": "16787", "Author": "Michael Turley", "Logged Date": "12/01/2026 17:17:04", "Part Number": "74372 7TA1A 0A", "Fault Code": "NS - Nut Shrouding", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "Samuel Olasanoye", "Disposition": "Rework"}, {"NCR Number": "17236", "Author": "Michael Turley", "Logged Date": "02/04/2026 14:30:42", "Part Number": "74617 7TA0A", "Fault Code": "DT - Damaged Threads", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "PARVEEN", "Disposition": "Rework"}, {"NCR Number": "17233", "Author": "Brett Carr", "Logged Date": "02/04/2026 12:36:23", "Part Number": "75110 7TA0A", "Fault Code": "MH - Hole in Migweld", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "Inderjit", "Disposition": "Rework"}, {"NCR Number": "17287", "Author": "Kevin Sheriff", "Logged Date": "16/04/2026 18:07:47", "Part Number": "75110 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "SAM", "Disposition": "Na"}, {"NCR Number": "17249", "Author": "Kevin Sheriff", "Logged Date": "08/04/2026 11:15:18", "Part Number": "75111 7TA0A", "Fault Code": "SIT - Spatter in Threads", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "SAM", "Disposition": "Rework"}, {"NCR Number": "17221", "Author": "Gary McMahon", "Logged Date": "31/03/2026 14:41:39", "Part Number": "75111 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "313", "Name of person who found concern": "G SHEPARD", "Disposition": "Rework"}, {"NCR Number": "17231", "Author": "Michael Turley", "Logged Date": "02/04/2026 10:03:46", "Part Number": "75131 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "DAVID CHAPMAN", "Disposition": "Rework"}, {"NCR Number": "16772", "Author": "James Buzzard", "Logged Date": "09/01/2026 16:01:52", "Part Number": "75131 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "NAJE", "Disposition": "Rework"}, {"NCR Number": "16783", "Author": "Terry Patterson", "Logged Date": "12/01/2026 11:59:55", "Part Number": "75131 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "OUTFLOW", "Disposition": "Rework"}, {"NCR Number": "17199", "Author": "Michael Turley", "Logged Date": "26/03/2026 18:45:59", "Part Number": "75131 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "MAJOR", "Disposition": "Rework"}, {"NCR Number": "16962", "Author": "Gary McMahon", "Logged Date": "11/02/2026 20:51:25", "Part Number": "75510 7TA0A", "Fault Code": "IG - Incorrect Gap (Assy/Press)", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Quality", "Name of person who found concern": "J HOYE", "Disposition": "Rework"}, {"NCR Number": "17260", "Author": "Terry Patterson", "Logged Date": "10/04/2026 13:50:16", "Part Number": "75510 7TA0A", "Fault Code": "MH - Hole in Migweld", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "SAM", "Disposition": "Rework"}, {"NCR Number": "17294", "Author": "Michael Turley", "Logged Date": "17/04/2026 10:52:47", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "MAJOR", "Disposition": "Rework"}, {"NCR Number": "16861", "Author": "Jack Hoey", "Logged Date": "22/01/2026 13:31:54", "Part Number": "75511 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Quality", "Name of person who found concern": "Jack Hoey", "Disposition": "Rework"}, {"NCR Number": "17276", "Author": "Terry Patterson", "Logged Date": "14/04/2026 22:31:54", "Part Number": "75528 7TA0A", "Fault Code": "DE - Dimensional error (Assy/Press) (position of nuts / components out of spec.)", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "896", "Name of person who found concern": "J ORRELL", "Disposition": "Rework"}, {"NCR Number": "17253", "Author": "Michael Turley", "Logged Date": "09/04/2026 00:11:25", "Part Number": "755F3 7TA0A", "Fault Code": "C - Contamination", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Ultrasonic", "Name of person who found concern": "FINLEY MCMAHON", "Disposition": "Rework"}, {"NCR Number": "17296", "Author": "Terry Patterson", "Logged Date": "20/04/2026 10:18:14", "Part Number": "76241 7TA0A", "Fault Code": "IG - Incorrect Gap (Assy/Press)", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "323", "Name of person who found concern": "Curtis Lines ( Gauge checker )", "Disposition": "UseAsIsImprovementRequired"}, {"NCR Number": "17282", "Author": "Michael Turley", "Logged Date": "16/04/2026 10:29:12", "Part Number": "76751 7TA0A", "Fault Code": "IG - Incorrect Gap (Assy/Press)", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "INDIJET", "Disposition": "Rework"}, {"NCR Number": "17227", "Author": "Terry Patterson", "Logged Date": "02/04/2026 00:24:47", "Part Number": "76751 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "SAMMY", "Disposition": "Rework"}, {"NCR Number": "17280", "Author": "Michael Turley", "Logged Date": "16/04/2026 08:32:22", "Part Number": "76751 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "INDEJIT", "Disposition": "Rework"}, {"NCR Number": "16817", "Author": "Brett Carr", "Logged Date": "16/01/2026 00:01:02", "Part Number": "76751 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "Inderjit", "Disposition": "Rework"}, {"NCR Number": "16807", "Author": "Terry Patterson", "Logged Date": "15/01/2026 07:25:55", "Part Number": "76751 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Location": "Liable", "Department": "T - Trial", "Workcentre Found": "Outflow", "Name of person who found concern": "OUTFLOW", "Disposition": "Rework"}];
+
+const INVESTIGATORS = ['', 'Sam Pascoe', 'Chris Wilson', 'Gary Adamson', 'Mick Ballantine', 'Other'];
+
+const CATEGORIES = ['', 'Weld Defect', 'Assembly', 'Thread', 'Laser', 'Dimensional', 'Other'];
+
+// Auto-suggest a category from the fault code prefix
+function suggestCategory(faultCode) {
+  const fc = (faultCode || '').toUpperCase();
+  if (/^(BS|WS|FS|FM|MH)/.test(fc)) return 'Weld Defect';
+  if (/^(IA|IG|NS)/.test(fc))        return 'Assembly';
+  if (/^(DT|SIT)/.test(fc))          return 'Thread';
+  if (/^LB/.test(fc))                return 'Laser';
+  if (/^DE/.test(fc))                return 'Dimensional';
+  if (/^C /.test(fc))                return 'Other';
+  return '';
+}
+
+function catClass(cat) {
+  const map = { 'Weld Defect':'cat-weld', 'Assembly':'cat-assembly', 'Thread':'cat-thread', 'Laser':'cat-laser', 'Dimensional':'cat-dimensional', 'Other':'cat-other' };
+  return map[cat] || '';
+}
+
+// ── State ──────────────────────────────────────────────────────
+let progress    = {};
+let filters     = { assignee: 'all', progress: 'all' };
+let catFilter   = 'all';
+let searchTerm  = '';
+let sortCol     = 'NCR Number';
+let sortAsc     = true;
+let currentData = [...NCR_DATA];
+let syncPending = {};   // ncr → debounce timer
+
+// ── Sync indicator ─────────────────────────────────────────────
+function setSyncState(state, label) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + state;
+  lbl.textContent = label;
+}
+
+// ── Google Sheets: load all progress ──────────────────────────
+async function loadProgress() {
+  setSyncState('syncing', 'Loading…');
+  setLoadingBar(30);
+  try {
+    const res  = await fetch(SHEETS_URL + '?action=getAll');
+    const json = await res.json();
+    if (json.ok && Array.isArray(json.data)) {
+      progress = {};
+      json.data.forEach(r => {
+        progress[r.NCR_Number] = {
+          investigator: r.Investigator || '',
+          status:       r.Status       || '',
+          notes:        r.Notes        || '',
+          category:     r.Category     || '',
+        };
+      });
+      setSyncState('synced', 'Synced');
+    } else {
+      throw new Error(json.error || 'Bad response');
+    }
+  } catch (e) {
+    console.warn('Sheets unavailable, falling back to localStorage:', e);
+    try { progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { progress = {}; }
+    setSyncState('error', 'Offline (local)');
+  }
+  setLoadingBar(100);
+  render();
+}
+
+// ── Google Sheets: push one record (debounced) ─────────────────
+function scheduleSync(ncr) {
+  clearTimeout(syncPending[ncr]);
+  setSyncState('syncing', 'Saving…');
+  syncPending[ncr] = setTimeout(() => pushRecord(ncr), 600);
+}
+
+async function pushRecord(ncr) {
+  const p = getP(ncr);
+  // Also persist locally as fallback
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  const params = new URLSearchParams({
+    action:       'update',
+    ncr:          ncr,
+    investigator: p.investigator || '',
+    status:       p.status       || '',
+    notes:        p.notes        || '',
+    category:     p.category     || '',
+  });
+  try {
+    const res  = await fetch(SHEETS_URL + '?' + params.toString());
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    setSyncState('synced', 'Saved ✓');
+  } catch (e) {
+    console.warn('Sync failed for NCR', ncr, e);
+    setSyncState('error', 'Sync failed');
+  }
+}
+
+// ── Loading bar ────────────────────────────────────────────────
+let lbTimer;
+function setLoadingBar(pct) {
+  const bar = document.getElementById('loading-bar');
+  bar.style.width = pct + '%';
+  if (pct >= 100) { lbTimer = setTimeout(() => bar.style.width = '0', 600); }
+}
+
+// ── Progress helpers ───────────────────────────────────────────
+function getP(ncr) { return progress[ncr] || { investigator: '', status: '', notes: '', category: '' }; }
+
+// ── Filters ────────────────────────────────────────────────────
+function setFilter(type, value, btn) {
+  filters[type] = value;
+  document.querySelectorAll(`[data-filter="${type}"]`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function setCatFilter(cat, btn) {
+  catFilter = cat;
+  document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function applySearch(v) { searchTerm = v.toLowerCase(); render(); }
+
+function sortBy(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  render();
+}
+
+// ── Visible rows ───────────────────────────────────────────────
+function getVisible() {
+  return currentData.filter(r => {
+    if (filters.assignee !== 'all' && r['To'] !== filters.assignee) return false;
+    const p = getP(r['NCR Number']);
+    if (filters.progress !== 'all' && p.status !== filters.progress) return false;
+    if (catFilter !== 'all') {
+      const effectiveCat = p.category || suggestCategory(r['Fault Code']);
+      if (effectiveCat !== catFilter) return false;
+    }
+    if (searchTerm) {
+      const hay = [r['NCR Number'], r['Part Number'], r['Fault Code'], r['To'], r['Workcentre Found']].join(' ').toLowerCase();
+      if (!hay.includes(searchTerm)) return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    let va = a[sortCol] || '', vb = b[sortCol] || '';
+    if (sortCol === 'Logged Date') { va = parseDate(va); vb = parseDate(vb); }
+    else if (sortCol === 'NCR Number') { va = parseInt(va); vb = parseInt(vb); }
+    return sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+}
+
+function parseDate(s) {
+  if (!s) return 0;
+  const [d, t] = s.split(' ');
+  const [day, mon, yr] = d.split('/');
+  return new Date(`${yr}-${mon}-${day}T${t||'00:00:00'}`).getTime();
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function render() {
+  const rows  = getVisible();
+  const tbody = document.getElementById('ncr-body');
+
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state">No NCRs match the current filters.</div></td></tr>`;
+    updateStats();
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const n          = r['NCR Number'];
+    const p          = getP(n);
+    const isSam      = r['To'] === 'Sam Pascoe';
+    const badgeClass = isSam ? 'sam' : 'chris';
+    const isComplete = p.status === 'complete';
+    const dotClass   = p.status ? `dot-${p.status}` : 'dot-none';
+
+    const effectiveCat = p.category || suggestCategory(r['Fault Code']);
+    const catCls       = catClass(effectiveCat);
+
+    const progBtns = [
+      ['investigated',   '🔍 Investigated'],
+      ['countermeasure', '✅ Countermeasure'],
+      ['failed',         '❌ Failed CM'],
+      ['complete',       '🏁 Complete'],
+    ].map(([val, label]) =>
+      `<button class="prog-btn ${val} ${p.status === val ? 'active' : ''}" onclick="setStatus('${n}','${val}')">${label}</button>`
+    ).join('');
+
+    const invOptions = INVESTIGATORS.map(i =>
+      `<option value="${i}" ${p.investigator === i ? 'selected' : ''}>${i || '— allocate —'}</option>`
+    ).join('');
+
+    const catOptions = CATEGORIES.map(c =>
+      `<option value="${c}" ${(p.category||'') === c ? 'selected' : ''}>${c || '— category —'}</option>`
+    ).join('');
+
+    const dateShort   = r['Logged Date'] ? r['Logged Date'].split(' ')[0] : '';
+    const disposition = r['Disposition'] || '';
+
+    return `<tr class="${isComplete ? 'row-complete' : ''}" id="row-${n}">
+      <td><span class="status-dot ${dotClass}"></span><span class="ncr-num">${n}</span></td>
+      <td class="date-col">${dateShort}</td>
+      <td><span class="assignee-badge ${badgeClass}">${r['To']}</span></td>
+      <td class="part-num">${r['Part Number']}</td>
+      <td class="fault-code">${r['Fault Code']}</td>
+      <td class="workcentre-col">${r['Workcentre Found']}</td>
+      <td class="workcentre-col">${disposition}</td>
+      <td>
+        <select class="investigator-select" onchange="setInvestigator('${n}', this.value)">
+          ${invOptions}
+        </select>
+      </td>
+      <td>
+        <select class="category-select" onchange="setCategory('${n}', this.value)">
+          ${catOptions}
+        </select>
+        ${effectiveCat ? `<div><span class="cat-badge ${catCls}">${effectiveCat}</span></div>` : ''}
+      </td>
+      <td><div class="progress-btns">${progBtns}</div></td>
+      <td>
+        <input class="notes-input" type="text" placeholder="Add comment…" value="${escHtml(p.notes||'')}"
+          onchange="setNotes('${n}', this.value)" onblur="setNotes('${n}', this.value)">
+      </td>
+    </tr>`;
+  }).join('');
+
+  updateStats();
+}
+
+function escHtml(s) { return s.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function updateStats() {
+  const all = currentData;
+  document.getElementById('stat-total').textContent = all.length;
+  ['investigated','countermeasure','failed','complete'].forEach(s => {
+    document.getElementById(`stat-${s}`).textContent =
+      all.filter(r => getP(r['NCR Number']).status === s).length;
+  });
+}
+
+// ── Mutations ──────────────────────────────────────────────────
+function setStatus(ncr, val) {
+  const p  = getP(ncr);
+  p.status = (p.status === val) ? '' : val;
+  progress[ncr] = p;
+  scheduleSync(ncr);
+  render();
+  toast(`NCR ${ncr} → ${p.status || 'unset'}`);
+}
+
+function setInvestigator(ncr, val) {
+  const p         = getP(ncr);
+  p.investigator  = val;
+  progress[ncr]   = p;
+  scheduleSync(ncr);
+  toast(`NCR ${ncr} allocated to ${val || 'nobody'}`);
+}
+
+function setCategory(ncr, val) {
+  const p       = getP(ncr);
+  p.category    = val;
+  progress[ncr] = p;
+  scheduleSync(ncr);
+  render();
+  toast(`NCR ${ncr} category → ${val || 'cleared'}`);
+}
+
+function setNotes(ncr, val) {
+  const p = getP(ncr);
+  if (p.notes === val) return;
+  p.notes       = val;
+  progress[ncr] = p;
+  scheduleSync(ncr);
+}
+
+// ── Export ─────────────────────────────────────────────────────
+function exportCSV() {
+  const headers = ['NCR Number','Logged Date','Assigned To','Part Number','Fault Code','Workcentre Found','Disposition','Member Allocated','Category','Progress Status','Comment'];
+  const rows = currentData.map(r => {
+    const p = getP(r['NCR Number']);
+    return [r['NCR Number'], r['Logged Date'], r['To'], r['Part Number'], r['Fault Code'], r['Workcentre Found'], r['Disposition'], p.investigator, p.category || suggestCategory(r['Fault Code']), p.status, p.notes]
+      .map(v => `"${(v||'').replace(/"/g,'""')}"`).join(',');
+  });
+  const csv  = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `NCR_Tracker_Export_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast('CSV exported');
+}
+
+// ── Reset ──────────────────────────────────────────────────────
+function clearAllProgress() {
+  if (!confirm('Reset ALL member allocations, categories, progress and comments? This cannot be undone.')) return;
+  progress = {};
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+  toast('Progress cleared');
+}
+
+// ── Import CSV ─────────────────────────────────────────────────
+function importCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const text       = e.target.result;
+      const lines      = text.split('\n').map(l => l.trim()).filter(Boolean);
+      let headerIdx    = lines.findIndex(l => l.includes('NCR Number'));
+      if (headerIdx < 0) { alert('Could not find NCR Number column.'); return; }
+      const headers    = parseCSVRow(lines[headerIdx]);
+      const idx        = h => headers.findIndex(x => x.trim() === h);
+      const ncrIdx     = idx('NCR Number');
+      const toIdx      = idx('To');
+      const partIdx    = idx('Part Number');
+      const faultIdx   = idx('Fault Code');
+      const dateIdx    = idx('Logged Date');
+      const dispIdx    = idx('Disposition');
+      const wcIdx      = idx('Workcentre Found');
+
+      const newData = [];
+      for (let i = headerIdx + 1; i < lines.length; i++) {
+        const cols = parseCSVRow(lines[i]);
+        const to   = toIdx >= 0 ? cols[toIdx] : '';
+        if (!['Sam Pascoe','Chris Wilson'].includes(to)) continue;
+        newData.push({
+          'NCR Number':     cols[ncrIdx]  || '',
+          'Logged Date':    dateIdx >= 0  ? cols[dateIdx]  : '',
+          'To':             to,
+          'Part Number':    partIdx >= 0  ? cols[partIdx]  : '',
+          'Fault Code':     faultIdx >= 0 ? cols[faultIdx] : '',
+          'Disposition':    dispIdx >= 0  ? cols[dispIdx]  : '',
+          'Workcentre Found': wcIdx >= 0  ? cols[wcIdx]    : '',
+        });
+      }
+      currentData = newData;
+      document.getElementById('subtitle').textContent =
+        `Imported ${new Date().toLocaleDateString()} · ${newData.length} open items · Sam Pascoe & Chris Wilson`;
+      render();
+      toast(`Imported ${newData.length} NCRs — allocations preserved`);
+    } catch (err) {
+      alert('Error parsing CSV: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function parseCSVRow(line) {
+  const result = [];
+  let inQuotes = false, cur = '';
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === '"') { inQuotes = !inQuotes; }
+    else if (c === ',' && !inQuotes) { result.push(cur.trim()); cur = ''; }
+    else cur += c;
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Init ───────────────────────────────────────────────────────
+loadProgress();
+</script>
+</body>
+</html>
