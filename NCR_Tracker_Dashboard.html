@@ -394,6 +394,22 @@
   .dot-complete       { background: var(--s-complete); }
 
   .col-count { color: var(--text-muted); font-size: 12px; padding-left: 8px; }
+
+  /* ── NCR system status badges ── */
+  .sys-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 12px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .sys-open     { background: rgba(59,130,246,0.12);  color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+  .sys-signoff  { background: rgba(245,158,11,0.15);  color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
+  .sys-closed   { background: rgba(16,185,129,0.12);  color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .signoff-name { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+
+  .row-closed   { opacity: 0.38; }
+  .stat.signoff .stat-value { color: #f59e0b; }
+  .stat.closed  .stat-value { color: var(--s-complete); }
 </style>
 </head>
 <body>
@@ -444,6 +460,16 @@
     <span class="stat-value" id="stat-complete">0</span>
     <span class="stat-sub">closed out</span>
   </div>
+  <div class="stat signoff">
+    <span class="stat-label">Awaiting Sign Off</span>
+    <span class="stat-value" id="stat-signoff">0</span>
+    <span class="stat-sub">supervisor filled</span>
+  </div>
+  <div class="stat closed">
+    <span class="stat-label">NCR Closed</span>
+    <span class="stat-value" id="stat-ncrclosed">0</span>
+    <span class="stat-sub">status = Closed</span>
+  </div>
 </div>
 
 <div class="import-strip">
@@ -473,6 +499,16 @@
   <input class="search-box" type="text" placeholder="Search NCR / part / fault..." oninput="applySearch(this.value)">
 </div>
 
+<div class="controls" style="padding-top:10px;padding-bottom:10px;">
+  <span class="filter-label">NCR Status</span>
+  <div class="filter-group">
+    <button class="pill active" data-filter="sysstatus" data-value="all"      onclick="setFilter('sysstatus','all',this)">All</button>
+    <button class="pill"        data-filter="sysstatus" data-value="open"     onclick="setFilter('sysstatus','open',this)">🔵 Open</button>
+    <button class="pill"        data-filter="sysstatus" data-value="signoff"  onclick="setFilter('sysstatus','signoff',this)">🟡 Awaiting Sign Off</button>
+    <button class="pill"        data-filter="sysstatus" data-value="closed"   onclick="setFilter('sysstatus','closed',this)">✅ Closed</button>
+  </div>
+</div>
+
 <!-- Fault code category filter bar -->
 <div class="category-bar">
   <span class="filter-label">Category</span>
@@ -494,9 +530,11 @@
         <th onclick="sortBy('Logged Date')">Logged</th>
         <th onclick="sortBy('To')">Assigned To</th>
         <th onclick="sortBy('Part Number')">Part Number</th>
+        <th onclick="sortBy('Component Number')">Component</th>
         <th onclick="sortBy('Fault Code')">Fault Code</th>
-        <th onclick="sortBy('Workcentre Found')">Workcentre</th>
-        <th onclick="sortBy('Disposition')">Disposition</th>
+        <th onclick="sortBy('Liable Workcentre')">Liable WC</th>
+        <th onclick="sortBy('Workcentre Found')">Found At</th>
+        <th class="no-sort">NCR Status</th>
         <th class="no-sort">Member Allocated</th>
         <th class="no-sort">Category (col AC)</th>
         <th class="no-sort">Progress</th>
@@ -538,9 +576,17 @@ function catClass(cat) {
   return map[cat] || '';
 }
 
+// ── NCR system status helper ───────────────────────────────────
+// Returns 'closed' | 'signoff' | 'open'
+function getSysStatus(r) {
+  if ((r['Status'] || '').toLowerCase() === 'closed') return 'closed';
+  if ((r['Sign Off - Supervisor Name'] || '').trim() !== '') return 'signoff';
+  return 'open';
+}
+
 // ── State ──────────────────────────────────────────────────────
 let progress    = {};
-let filters     = { assignee: 'all', progress: 'all' };
+let filters     = { assignee: 'all', progress: 'all', sysstatus: 'all' };
 let catFilter   = 'all';
 let searchTerm  = '';
 let sortCol     = 'NCR Number';
@@ -656,6 +702,7 @@ function getVisible() {
     if (filters.assignee !== 'all' && r['To'] !== filters.assignee) return false;
     const p = getP(r['NCR Number']);
     if (filters.progress !== 'all' && p.status !== filters.progress) return false;
+    if (filters.sysstatus !== 'all' && getSysStatus(r) !== filters.sysstatus) return false;
     if (catFilter !== 'all') {
       const effectiveCat = p.category || suggestCategory(r['Fault Code']);
       if (effectiveCat !== catFilter) return false;
@@ -686,7 +733,7 @@ function render() {
   const tbody = document.getElementById('ncr-body');
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state">No NCRs match the current filters.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="13"><div class="empty-state">No NCRs match the current filters.</div></td></tr>`;
     updateStats();
     return;
   }
@@ -698,6 +745,11 @@ function render() {
     const badgeClass = isSam ? 'sam' : 'chris';
     const isComplete = p.status === 'complete';
     const dotClass   = p.status ? `dot-${p.status}` : 'dot-none';
+    const sysStatus  = getSysStatus(r);
+    const sysBadge   = sysStatus === 'closed'  ? `<span class="sys-badge sys-closed">✅ Closed</span>`
+                     : sysStatus === 'signoff' ? `<span class="sys-badge sys-signoff">🟡 Awaiting Sign Off</span><div class="signoff-name">${escHtml(r['Sign Off - Supervisor Name']||'')}</div>`
+                     : `<span class="sys-badge sys-open">🔵 Open</span>`;
+    const rowClass   = sysStatus === 'closed' ? 'row-closed' : (isComplete ? 'row-complete' : '');
 
     const effectiveCat = p.category || suggestCategory(r['Fault Code']);
     const catCls       = catClass(effectiveCat);
@@ -722,14 +774,16 @@ function render() {
     const dateShort   = r['Logged Date'] ? r['Logged Date'].split(' ')[0] : '';
     const disposition = r['Disposition'] || '';
 
-    return `<tr class="${isComplete ? 'row-complete' : ''}" id="row-${n}">
+    return `<tr class="${rowClass}" id="row-${n}">
       <td><span class="status-dot ${dotClass}"></span><span class="ncr-num">${n}</span></td>
       <td class="date-col">${dateShort}</td>
       <td><span class="assignee-badge ${badgeClass}">${r['To']}</span></td>
       <td class="part-num">${r['Part Number']}</td>
+      <td class="workcentre-col">${r['Component Number']||'—'}</td>
       <td class="fault-code">${r['Fault Code']}</td>
+      <td class="workcentre-col">${r['Liable Workcentre']||'—'}</td>
       <td class="workcentre-col">${r['Workcentre Found']}</td>
-      <td class="workcentre-col">${disposition}</td>
+      <td>${sysBadge}</td>
       <td>
         <select class="investigator-select" onchange="setInvestigator('${n}', this.value)">
           ${invOptions}
@@ -756,11 +810,13 @@ function escHtml(s) { return s.replace(/"/g,'&quot;').replace(/</g,'&lt;').repla
 
 function updateStats() {
   const all = currentData;
-  document.getElementById('stat-total').textContent = all.length;
+  document.getElementById('stat-total').textContent = all.filter(r => getSysStatus(r) !== 'closed').length;
   ['investigated','countermeasure','failed','complete'].forEach(s => {
     document.getElementById(`stat-${s}`).textContent =
       all.filter(r => getP(r['NCR Number']).status === s).length;
   });
+  document.getElementById('stat-signoff').textContent   = all.filter(r => getSysStatus(r) === 'signoff').length;
+  document.getElementById('stat-ncrclosed').textContent = all.filter(r => getSysStatus(r) === 'closed').length;
 }
 
 // ── Mutations ──────────────────────────────────────────────────
@@ -836,28 +892,41 @@ function importCSV(input) {
       let headerIdx    = lines.findIndex(l => l.includes('NCR Number'));
       if (headerIdx < 0) { alert('Could not find NCR Number column.'); return; }
       const headers    = parseCSVRow(lines[headerIdx]);
-      const idx        = h => headers.findIndex(x => x.trim() === h);
-      const ncrIdx     = idx('NCR Number');
-      const toIdx      = idx('To');
-      const partIdx    = idx('Part Number');
-      const faultIdx   = idx('Fault Code');
-      const dateIdx    = idx('Logged Date');
-      const dispIdx    = idx('Disposition');
-      const wcIdx      = idx('Workcentre Found');
+      // Case-insensitive column finder — trims whitespace
+      const idx = h => headers.findIndex(x => x.trim().toLowerCase() === h.toLowerCase());
+
+      // Columns we care about (exact names from the NCR system export)
+      const COLS = {
+        ncr:       idx('NCR Number'),
+        date:      idx('Logged Date'),
+        part:      idx('Part Number'),
+        component: idx('Component Number'),
+        faultCode: idx('Fault Code'),
+        status:    idx('Status'),
+        to:        idx('To'),
+        liableWC:  idx('Liable Workcentre'),
+        wcFound:   idx('Workcentre Found'),
+        signOff:   idx('Sign Off - Supervisor Name'),
+      };
+
+      const col = (cols, key) => COLS[key] >= 0 ? (cols[COLS[key]] || '') : '';
 
       const newData = [];
       for (let i = headerIdx + 1; i < lines.length; i++) {
         const cols = parseCSVRow(lines[i]);
-        const to   = toIdx >= 0 ? cols[toIdx] : '';
+        const to   = col(cols, 'to');
         if (!['Sam Pascoe','Chris Wilson'].includes(to)) continue;
         newData.push({
-          'NCR Number':     cols[ncrIdx]  || '',
-          'Logged Date':    dateIdx >= 0  ? cols[dateIdx]  : '',
-          'To':             to,
-          'Part Number':    partIdx >= 0  ? cols[partIdx]  : '',
-          'Fault Code':     faultIdx >= 0 ? cols[faultIdx] : '',
-          'Disposition':    dispIdx >= 0  ? cols[dispIdx]  : '',
-          'Workcentre Found': wcIdx >= 0  ? cols[wcIdx]    : '',
+          'NCR Number':                col(cols, 'ncr'),
+          'Logged Date':               col(cols, 'date'),
+          'To':                        to,
+          'Part Number':               col(cols, 'part'),
+          'Component Number':          col(cols, 'component'),
+          'Fault Code':                col(cols, 'faultCode'),
+          'Status':                    col(cols, 'status') || 'Open',
+          'Liable Workcentre':         col(cols, 'liableWC'),
+          'Workcentre Found':          col(cols, 'wcFound'),
+          'Sign Off - Supervisor Name': col(cols, 'signOff'),
         });
       }
       currentData = newData;
