@@ -28,6 +28,24 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* ── Shared nav ── */
+  .site-nav {
+    background:#0d1017;border-bottom:1px solid #1e2a3a;
+    padding:0 28px;display:flex;align-items:center;gap:4px;
+  }
+  .site-nav .nav-brand {
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    color:#3b82f6;padding:10px 14px 10px 0;margin-right:8px;
+    border-right:1px solid #1e2a3a;white-space:nowrap;
+  }
+  .site-nav a {
+    text-decoration:none;color:#64748b;font-size:12px;
+    padding:10px 14px;border-bottom:2px solid transparent;
+    transition:all .15s;white-space:nowrap;
+  }
+  .site-nav a:hover { color:#e2e8f0; }
+  .site-nav a.active { color:#e2e8f0;border-bottom-color:#3b82f6; }
+
   body {
     font-family: 'IBM Plex Sans', sans-serif;
     background: var(--bg);
@@ -211,6 +229,13 @@
 </head>
 <body>
 
+<nav class="site-nav">
+  <div class="nav-brand">PZ1D NCR</div>
+  <a href="NCR_Tracker_Dashboard.html">📋 Tracker</a>
+  <a href="NCR_Management_Dashboard.html" class="active">📊 Management Dashboard</a>
+  <a href="NCR_Gantt_Plan.html">📅 Timing Plan</a>
+</nav>
+
 <div class="page-header">
   <div class="header-brand">
     <div class="brand-mark">NCR</div>
@@ -233,11 +258,12 @@
     <div class="kpi-row" id="kpi-row"></div>
   </div>
 
-  <!-- Assignee split + Progress funnel -->
+  <!-- Workload + Progress funnel -->
   <div class="grid-2">
-    <div>
-      <div class="section-title">Allocation by Engineer</div>
-      <div class="assignee-split" id="assignee-split"></div>
+    <div class="card">
+      <div class="card-title">Workload by Manager</div>
+      <div class="card-desc">Open NCR count and fault category exposure per manager</div>
+      <div id="workload-panel" style="margin-top:8px"></div>
     </div>
     <div class="card">
       <div class="card-title">Investigation Progress Funnel</div>
@@ -413,33 +439,33 @@ document.getElementById('kpi-row').innerHTML = kpis.map(k => `
   </div>`).join('');
 
 // ── Assignee split ────────────────────────────────────────────
-function apBars(arr) {
-  const cs = catList.map(c => ({ label:c, n:arr.filter(r=>suggestCat(r['Fault Code'])===c).length }))
-    .filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,3);
-  return cs.map(c=>`
-    <div class="ap-bar-wrap">
-      <div class="ap-bar-label">${c.label}</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <div class="ap-bar-track" style="flex:1">
-          <div class="ap-bar-fill" style="width:${(c.n/arr.length*100).toFixed(0)}%;background:currentColor"></div>
-        </div>
-        <span style="font-size:11px;font-family:monospace;width:20px;text-align:right">${c.n}</span>
+// Build workload rows (no split styling — same department, two managers)
+const managers = [
+  { name:'Sam Pascoe',  data:bySam,   color:'#06b6d4' },
+  { name:'Chris Wilson',data:byChris, color:'#f97316' },
+];
+document.getElementById('workload-panel').innerHTML = managers.map(m => {
+  const topCats = catList
+    .map(c=>({ c, n:m.data.filter(r=>suggestCat(r['Fault Code'])===c).length }))
+    .filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,4);
+  const bars = topCats.map(x=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="width:90px;font-size:10px;color:#94a3b8">${x.c}</span>
+      <div style="flex:1;background:#1a2030;border-radius:3px;height:5px;overflow:hidden">
+        <div style="width:${(x.n/m.data.length*100).toFixed(0)}%;height:100%;background:${m.color};border-radius:3px"></div>
       </div>
+      <span style="font-size:11px;font-family:monospace;color:#94a3b8;width:18px;text-align:right">${x.n}</span>
     </div>`).join('');
-}
-document.getElementById('assignee-split').innerHTML = `
-  <div class="assignee-panel sam">
-    <div class="ap-name sam-color">Sam Pascoe</div>
-    <div class="ap-count sam-color">${bySam.length}</div>
-    <div class="ap-sub">open NCRs assigned</div>
-    <div style="color:var(--sam)">${apBars(bySam)}</div>
-  </div>
-  <div class="assignee-panel chris">
-    <div class="ap-name chris-color">Chris Wilson</div>
-    <div class="ap-count chris-color">${byChris.length}</div>
-    <div class="ap-sub">open NCRs assigned</div>
-    <div style="color:var(--chris)">${apBars(byChris)}</div>
-  </div>`;
+  return `
+    <div style="padding:14px 0;border-bottom:1px solid #242e42">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px">
+        <span style="font-size:14px;font-weight:600;color:${m.color}">${m.name}</span>
+        <span style="font-family:monospace;font-size:24px;font-weight:600;color:${m.color}">${m.data.length}</span>
+        <span style="font-size:11px;color:#64748b">open NCRs (${(m.data.length/total*100).toFixed(0)}% of total)</span>
+      </div>
+      ${bars}
+    </div>`;
+}).join('');
 
 // ── Progress funnel (uses localStorage progress if available) ──
 const stored = (() => { try { return JSON.parse(localStorage.getItem('pz1d_ncr_progress_v1')||'{}'); } catch{return{};} })();

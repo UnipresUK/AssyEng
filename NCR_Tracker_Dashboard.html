@@ -395,6 +395,24 @@
 
   .col-count { color: var(--text-muted); font-size: 12px; padding-left: 8px; }
 
+  /* ── Shared nav ── */
+  .site-nav {
+    background:#0d1017;border-bottom:1px solid #1e2a3a;
+    padding:0 28px;display:flex;align-items:center;gap:4px;
+  }
+  .site-nav .nav-brand {
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    color:#3b82f6;padding:10px 14px 10px 0;margin-right:8px;
+    border-right:1px solid #1e2a3a;white-space:nowrap;
+  }
+  .site-nav a {
+    text-decoration:none;color:#64748b;font-size:12px;
+    padding:10px 14px;border-bottom:2px solid transparent;
+    transition:all .15s;white-space:nowrap;
+  }
+  .site-nav a:hover { color:#e2e8f0; }
+  .site-nav a.active { color:#e2e8f0;border-bottom-color:#3b82f6; }
+
   /* ── NCR system status badges ── */
   .sys-badge {
     display: inline-flex; align-items: center; gap: 5px;
@@ -415,6 +433,13 @@
 <body>
 
 <div class="loading-bar" id="loading-bar"></div>
+
+<nav class="site-nav">
+  <div class="nav-brand">PZ1D NCR</div>
+  <a href="NCR_Tracker_Dashboard.html" class="active">📋 Tracker</a>
+  <a href="NCR_Management_Dashboard.html">📊 Management Dashboard</a>
+  <a href="NCR_Gantt_Plan.html">📅 Timing Plan</a>
+</nav>
 
 <header>
   <div class="header-left">
