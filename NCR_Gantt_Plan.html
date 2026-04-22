@@ -4,216 +4,214 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PZ1D NCR — Closure Timing Plan</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:       #0a0d12;
-    --surface:  #131720;
-    --surface2: #1a2030;
-    --border:   #242e42;
-    --text:     #e2e8f0;
-    --muted:    #64748b;
-    --dim:      #94a3b8;
-    --accent:   #3b82f6;
-    --green:    #10b981;
-    --amber:    #f59e0b;
-    --purple:   #8b5cf6;
-    --red:      #ef4444;
-    --sam:      #06b6d4;
-    --chris:    #f97316;
-    --col-w:    64px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family:'IBM Plex Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+:root {
+  --bg:      #0a0d12;
+  --surf:    #111520;
+  --surf2:   #161c28;
+  --border:  #1f2d42;
+  --border2: #263348;
+  --text:    #d4dbe8;
+  --muted:   #4e6278;
+  --dim:     #7a90a8;
+  --accent:  #2b6cb0;
+  --accentL: #3b82f6;
+  --green:   #10b981;
+  --amber:   #d97706;
+  --red:     #dc2626;
+  --col-w:   52px;
+  --row-h:   26px;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'IBM Plex Sans',sans-serif; font-size:12px; background:var(--bg); color:var(--text); min-height:100vh; }
 
-  /* ── Header ── */
-  header {
-    background:var(--surface); border-bottom:1px solid var(--border);
-    padding:16px 28px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
-  }
-  .header-left { display:flex; align-items:center; gap:14px; }
-  .logo { width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:9px;display:grid;place-items:center;font-family:monospace;font-weight:700;font-size:11px;color:#fff; }
-  header h1 { font-size:15px;font-weight:600; }
-  header p  { font-size:12px;color:var(--muted);margin-top:2px; }
-  .hdr-btns { display:flex;gap:8px;align-items:center;flex-wrap:wrap; }
-  .btn {
-    background:var(--surface2);border:1px solid var(--border);color:var(--dim);
-    padding:7px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s;
-  }
-  .btn:hover { border-color:var(--accent);color:var(--text); }
-  .btn.primary { background:rgba(59,130,246,.15);border-color:var(--accent);color:#60a5fa; }
+/* ── Shared nav ── */
+.site-nav {
+  background:#080b10; border-bottom:1px solid #151e2b;
+  padding:0 24px; display:flex; align-items:center; gap:2px;
+}
+.site-nav .nav-brand {
+  font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600;
+  color:#3b82f6; padding:9px 12px 9px 0; margin-right:6px;
+  border-right:1px solid #151e2b; white-space:nowrap;
+}
+.site-nav a {
+  text-decoration:none; color:#4e6278; font-size:11px;
+  padding:9px 12px; border-bottom:2px solid transparent; transition:all .15s; white-space:nowrap;
+}
+.site-nav a:hover { color:#d4dbe8; }
+.site-nav a.active { color:#d4dbe8; border-bottom-color:#3b82f6; }
 
-  /* ── Stats strip ── */
-  .stats { display:flex;gap:1px;background:var(--border);border-bottom:1px solid var(--border); }
-  .stat { flex:1;background:var(--surface);padding:12px 18px;display:flex;flex-direction:column;gap:3px; }
-  .stat-lbl { font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted); }
-  .stat-val { font-size:22px;font-family:'IBM Plex Mono',monospace;font-weight:600; }
-  .stat-sub { font-size:10px;color:var(--muted); }
-  .c-blue   { color:var(--accent); }
-  .c-green  { color:var(--green); }
-  .c-amber  { color:var(--amber); }
-  .c-red    { color:var(--red); }
+/* ── Header ── */
+header {
+  background:var(--surf); border-bottom:1px solid var(--border);
+  padding:12px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+}
+.hdr-left { display:flex; align-items:center; gap:12px; }
+.logo { width:32px; height:32px; background:linear-gradient(135deg,#2563eb,#7c3aed); border-radius:7px; display:grid; place-items:center; font-family:monospace; font-weight:700; font-size:10px; color:#fff; }
+header h1 { font-size:14px; font-weight:600; }
+header p  { font-size:11px; color:var(--muted); margin-top:1px; }
+.hdr-btns { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.btn {
+  background:var(--surf2); border:1px solid var(--border2); color:var(--dim);
+  padding:5px 12px; border-radius:5px; font-size:11px; cursor:pointer; font-family:inherit; transition:all .15s;
+}
+.btn:hover { border-color:var(--accentL); color:var(--text); }
+.btn.primary { background:rgba(43,108,176,.2); border-color:var(--accentL); color:#60a5fa; }
 
-  /* ── Controls ── */
-  .controls {
-    display:flex;gap:10px;align-items:center;padding:12px 28px;
-    background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;
-  }
-  .filter-lbl { font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted); }
-  .pill {
-    padding:4px 12px;border-radius:20px;font-size:11px;cursor:pointer;
-    border:1px solid var(--border);background:transparent;color:var(--dim);font-family:inherit;transition:all .15s;
-  }
-  .pill:hover { border-color:var(--dim);color:var(--text); }
-  .pill.active     { background:rgba(59,130,246,.12);border-color:var(--accent);color:var(--accent); }
-  .pill.sam.active { background:rgba(6,182,212,.12);border-color:var(--sam);color:var(--sam); }
-  .pill.chr.active { background:rgba(249,115,22,.12);border-color:var(--chris);color:var(--chris); }
+/* ── Stats bar ── */
+.stats { display:flex; gap:1px; background:var(--border); border-bottom:1px solid var(--border); }
+.stat  { flex:1; background:var(--surf); padding:10px 16px; }
+.stat-lbl { font-size:9px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:3px; }
+.stat-val { font-size:20px; font-family:'IBM Plex Mono',monospace; font-weight:600; }
+.stat-sub { font-size:10px; color:var(--muted); margin-top:1px; }
+.cv-blue  { color:#3b82f6; } .cv-green { color:var(--green); }
+.cv-amber { color:var(--amber); } .cv-red { color:var(--red); }
 
-  .bulk-date { display:flex;align-items:center;gap:8px;margin-left:auto; }
-  .bulk-date label { font-size:11px;color:var(--muted); }
-  input[type=date] {
-    background:var(--surface2);border:1px solid var(--border);color:var(--text);
-    font-family:inherit;font-size:12px;padding:5px 10px;border-radius:6px;outline:none;
-    transition:border-color .15s;
-  }
-  input[type=date]:focus { border-color:var(--accent); }
-  input[type=date]::-webkit-calendar-picker-indicator { filter:invert(.5); }
+/* ── Toolbar ── */
+.toolbar {
+  background:var(--surf); border-bottom:1px solid var(--border);
+  padding:8px 24px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+}
+.tbar-lbl { font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); }
+.pill {
+  padding:3px 10px; border-radius:20px; font-size:11px; cursor:pointer;
+  border:1px solid var(--border2); background:transparent; color:var(--dim); font-family:inherit; transition:all .15s;
+}
+.pill:hover { border-color:var(--dim); color:var(--text); }
+.pill.active { background:rgba(59,130,246,.12); border-color:#3b82f6; color:#60a5fa; }
+.sep { width:1px; height:18px; background:var(--border2); margin:0 4px; }
 
-  /* ── Gantt layout ── */
-  .gantt-wrap { overflow-x:auto; overflow-y:auto; max-height:calc(100vh - 260px); }
+input[type=date] {
+  background:var(--surf2); border:1px solid var(--border2); color:var(--text);
+  font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 8px; border-radius:4px; outline:none;
+}
+input[type=date]:focus { border-color:#3b82f6; }
+input[type=date]::-webkit-calendar-picker-indicator { filter:invert(.4); width:10px; }
 
-  /* sticky left panel */
-  table { border-collapse:collapse; width:max-content; }
-  thead th {
-    background:var(--surface);border-bottom:1px solid var(--border);
-    padding:8px 10px;font-size:9px;text-transform:uppercase;letter-spacing:.07em;
-    color:var(--muted);font-weight:500;white-space:nowrap;
-    position:sticky;top:0;z-index:20;
-  }
-  /* sticky info columns */
-  th.sticky, td.sticky {
-    position:sticky;left:0;z-index:15;background:var(--surface);
-  }
-  td.sticky { background:var(--bg); }
-  th.sticky { z-index:25; }
+/* ── Legend ── */
+.legend {
+  background:var(--surf); border-bottom:1px solid var(--border);
+  padding:6px 24px; display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+}
+.leg { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); }
+.leg-bar { height:8px; width:22px; border-radius:2px; }
 
-  /* extra sticky cols with offset */
-  th.s1,td.s1 { left:0; min-width:70px; }
-  th.s2,td.s2 { left:70px; min-width:100px; }
-  th.s3,td.s3 { left:170px; min-width:140px; }
-  th.s4,td.s4 { left:310px; min-width:90px; }
-  th.s5,td.s5 { left:400px; min-width:80px; }
+/* ── Gantt wrapper ── */
+.gantt-outer { overflow:auto; height:calc(100vh - 230px); }
 
-  tbody tr { border-bottom:1px solid var(--border); transition:background .1s; }
-  tbody tr:hover td { background:rgba(255,255,255,.025); }
-  tbody tr:hover td.sticky { background:rgba(30,37,50,.95); }
+/* ── Table ── */
+table { border-collapse:collapse; width:max-content; font-size:11px; }
 
-  td { padding:7px 10px; vertical-align:middle; font-size:12px; }
-  .ncr-num   { font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--dim); }
-  .part-cell { font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim); }
-  .fault-cell{ font-size:10px;color:var(--dim);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-  .badge { display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:500;white-space:nowrap; }
-  .sam-b  { background:rgba(6,182,212,.12);color:var(--sam);border:1px solid rgba(6,182,212,.3); }
-  .chr-b  { background:rgba(249,115,22,.12);color:var(--chris);border:1px solid rgba(249,115,22,.3); }
+/* Header row */
+thead th {
+  background:#0d1219;
+  border:1px solid var(--border);
+  padding:4px 6px;
+  font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--muted);
+  white-space:nowrap; position:sticky; top:0; z-index:20;
+  height:28px;
+}
+/* Month row */
+.month-th {
+  background:#0a0f18; border:1px solid var(--border);
+  font-size:10px; font-weight:600; color:var(--dim); text-align:center;
+  padding:3px 0; position:sticky; top:0; z-index:20;
+}
 
-  /* ── Week header ── */
-  .week-th {
-    min-width:var(--col-w);max-width:var(--col-w);width:var(--col-w);
-    text-align:center;border-left:1px solid var(--border);
-  }
-  .week-th.today-col { background:rgba(59,130,246,.08);border-left:1px solid rgba(59,130,246,.4); }
-  .week-th.past      { color:#334155; }
+/* Sticky info columns */
+.s1 { position:sticky; left:0;   min-width:62px;  max-width:62px;  z-index:15; }
+.s2 { position:sticky; left:62px; min-width:96px;  max-width:96px;  z-index:15; }
+.s3 { position:sticky; left:158px; min-width:128px; max-width:128px; z-index:15; }
+.s4 { position:sticky; left:286px; min-width:50px;  max-width:50px;  z-index:15; }
+.s5 { position:sticky; left:336px; min-width:95px;  max-width:95px;  z-index:15; }
+.s6 { position:sticky; left:431px; min-width:95px;  max-width:95px;  z-index:15; }
+.s7 { position:sticky; left:526px; min-width:58px;  max-width:58px;  z-index:15; }
 
-  /* ── Gantt cell ── */
-  td.gcell {
-    min-width:var(--col-w);max-width:var(--col-w);width:var(--col-w);
-    padding:0;position:relative;border-left:1px solid var(--border);height:38px;
-  }
-  td.gcell.today-col { background:rgba(59,130,246,.04);border-left:1px solid rgba(59,130,246,.3); }
+thead th.s1,thead th.s2,thead th.s3,thead th.s4,thead th.s5,thead th.s6,thead th.s7 { z-index:25; }
 
-  /* bar fills: open period (from logged date to today) */
-  .gbar {
-    position:absolute;top:50%;transform:translateY(-50%);
-    height:16px;border-radius:3px;min-width:3px;
-  }
-  .gbar-done   { opacity:.5; }     /* past portion */
-  .gbar-plan   { opacity:1; }      /* future portion (planned) }*/
-  .gbar-late   { background:rgba(239,68,68,.4)!important; border:1px dashed var(--red)!important; } /* overdue, no target */
+/* Body cells */
+td {
+  border:1px solid var(--border);
+  padding:3px 6px;
+  height:var(--row-h);
+  vertical-align:middle;
+  white-space:nowrap;
+  background:var(--bg);
+}
+tbody tr:nth-child(even) td { background:#0c1018; }
+tbody tr:nth-child(even) td.s1,
+tbody tr:nth-child(even) td.s2,
+tbody tr:nth-child(even) td.s3,
+tbody tr:nth-child(even) td.s4,
+tbody tr:nth-child(even) td.s5,
+tbody tr:nth-child(even) td.s6,
+tbody tr:nth-child(even) td.s7 { background:#0c1018; }
 
-  /* target marker */
-  .gtarget {
-    position:absolute;top:4px;bottom:4px;width:3px;border-radius:2px;
-    background:var(--green);z-index:5;
-  }
-  .gtarget::after {
-    content:'✓';position:absolute;top:-14px;left:-5px;
-    font-size:9px;color:var(--green);font-weight:700;
-  }
+tbody tr:hover td { background:#111827 !important; }
 
-  /* today line */
-  .today-line {
-    position:absolute;top:0;bottom:0;left:50%;width:2px;
-    background:rgba(59,130,246,.6);z-index:4;pointer-events:none;
-  }
+td.s1,td.s2,td.s3,td.s4,td.s5,td.s6,td.s7 { background:var(--bg); z-index:10; }
 
-  /* target date input cell */
-  .target-input {
-    background:var(--surface2);border:1px solid var(--border);
-    color:var(--text);font-family:inherit;font-size:10px;
-    padding:3px 6px;border-radius:4px;width:90px;outline:none;
-    transition:border-color .15s;
-  }
-  .target-input:focus { border-color:var(--accent); }
-  .target-input::-webkit-calendar-picker-indicator { filter:invert(.4);width:10px;height:10px; }
+.ncr-id    { font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#7aa2cc; }
+.part-txt  { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; display:block; max-width:90px; }
+.fault-txt { font-size:10px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; display:block; max-width:122px; }
+.mgr-txt   { font-size:10px; color:var(--muted); }
+.dur-txt   { font-family:'IBM Plex Mono',monospace; font-size:10px; text-align:right; }
 
-  /* status dot */
-  .sdot { width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0; }
-  .sd-none  { background:#334155; }
-  .sd-inv   { background:var(--amber); }
-  .sd-cm    { background:var(--purple); }
-  .sd-fail  { background:var(--red); }
-  .sd-done  { background:var(--green); }
-  .sd-closed{ background:var(--green); opacity:.5; }
+/* Date inputs inside cells */
+.cell-date {
+  background:transparent; border:none; color:var(--text);
+  font-family:'IBM Plex Mono',monospace; font-size:10px; padding:0; width:88px; outline:none; cursor:pointer;
+}
+.cell-date::-webkit-calendar-picker-indicator { filter:invert(.3); width:9px; height:9px; cursor:pointer; }
+.cell-date:hover { color:#60a5fa; }
+.cell-date:focus { color:#90caf9; }
+.cell-date.unset { color:var(--muted); }
 
-  /* legend */
-  .legend {
-    display:flex;gap:16px;align-items:center;padding:10px 28px;
-    background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;
-  }
-  .leg-item { display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted); }
-  .leg-bar  { height:10px;width:28px;border-radius:3px; }
+/* Status dot */
+.sdot { width:6px; height:6px; border-radius:50%; display:inline-block; margin-right:4px; vertical-align:middle; flex-shrink:0; }
+.sd-none { background:#2a3a50; } .sd-inv  { background:var(--amber); }
+.sd-cm   { background:#7c3aed; } .sd-fail { background:var(--red); }
+.sd-done { background:var(--green); }
 
-  /* toast */
-  .toast {
-    position:fixed;bottom:20px;right:20px;background:var(--surface2);
-    border:1px solid var(--border);border-radius:8px;padding:10px 16px;
-    font-size:12px;opacity:0;transform:translateY(6px);transition:all .2s;z-index:999;
-  }
-  .toast.show { opacity:1;transform:translateY(0); }
+/* Gantt week cells */
+td.gc {
+  min-width:var(--col-w); max-width:var(--col-w); width:var(--col-w);
+  padding:0; position:relative; border:1px solid var(--border);
+}
+td.gc.today-col { border-left:1px solid rgba(59,130,246,.5); background:rgba(59,130,246,.04) !important; }
+td.gc.weekend   { background:#09101a !important; }
+th.gc.today-col { border-left:1px solid rgba(59,130,246,.5); background:rgba(59,130,246,.08); }
 
-  /* ── Shared nav ── */
-  .site-nav {
-    background:#0d1017;border-bottom:1px solid #1e2a3a;
-    padding:0 28px;display:flex;align-items:center;gap:4px;
-  }
-  .site-nav .nav-brand {
-    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
-    color:#3b82f6;padding:10px 14px 10px 0;margin-right:8px;
-    border-right:1px solid #1e2a3a;white-space:nowrap;
-  }
-  .site-nav a {
-    text-decoration:none;color:#64748b;font-size:12px;
-    padding:10px 14px;border-bottom:2px solid transparent;
-    transition:all .15s;white-space:nowrap;
-  }
-  .site-nav a:hover { color:#e2e8f0; }
-  .site-nav a.active { color:#e2e8f0;border-bottom-color:#3b82f6; }
+/* Gantt bars */
+.gbar {
+  position:absolute; top:50%; transform:translateY(-50%);
+  height:13px; border-radius:2px; min-width:2px; pointer-events:none;
+}
+/* today line */
+.tline { position:absolute; top:0; bottom:0; width:2px; background:rgba(59,130,246,.7); z-index:3; pointer-events:none; }
+/* target marker */
+.tmark {
+  position:absolute; top:2px; bottom:2px; width:3px; border-radius:1px; background:var(--green); z-index:4;
+}
+.tmark::before { content:'▼'; position:absolute; top:-10px; left:-3px; font-size:8px; color:var(--green); }
 
-  @media print {
-    body { background:#fff;color:#111; }
-    header,table,th,td { background:#f8f9fa!important;color:#111!important; }
-    .hdr-btns,.controls { display:none; }
-  }
+/* Closed row fade */
+.row-closed td { opacity:.3; }
+
+/* Toast */
+.toast {
+  position:fixed; bottom:16px; right:16px;
+  background:var(--surf2); border:1px solid var(--border2); border-radius:7px;
+  padding:9px 14px; font-size:11px; opacity:0; transform:translateY(5px); transition:all .18s; z-index:999;
+}
+.toast.show { opacity:1; transform:translateY(0); }
+
+@media print {
+  .site-nav,.hdr-btns,.toolbar,.legend { display:none; }
+  .gantt-outer { height:auto; overflow:visible; }
+}
 </style>
 </head>
 <body>
@@ -226,325 +224,394 @@
 </nav>
 
 <header>
-  <div class="header-left">
+  <div class="hdr-left">
     <div class="logo">NCR</div>
     <div>
       <h1>PZ1D NCR — Closure Timing Plan</h1>
-      <p id="subtitle">Gantt view · Set target close dates per NCR</p>
+      <p id="hdr-sub">Set start &amp; target dates per NCR to plan closure</p>
     </div>
   </div>
   <div class="hdr-btns">
-    <button class="btn" onclick="shiftView(-4)">◀ 4 wks</button>
+    <button class="btn" onclick="shiftView(-4)">◀ 4w</button>
     <button class="btn" onclick="jumpToday()">Today</button>
-    <button class="btn" onclick="shiftView(4)">4 wks ▶</button>
-    <button class="btn primary" onclick="exportCSV()">⬇ Export Plan</button>
+    <button class="btn" onclick="shiftView(4)">4w ▶</button>
+    <button class="btn primary" onclick="exportCSV()">⬇ Export</button>
     <button class="btn" onclick="window.print()">🖨 Print</button>
   </div>
 </header>
 
 <div class="stats">
-  <div class="stat"><span class="stat-lbl">Total NCRs</span><span class="stat-val c-blue" id="s-total">—</span><span class="stat-sub">open items</span></div>
-  <div class="stat"><span class="stat-lbl">Planned</span><span class="stat-val c-green" id="s-planned">0</span><span class="stat-sub">target dates set</span></div>
-  <div class="stat"><span class="stat-lbl">Unplanned</span><span class="stat-val c-amber" id="s-unplanned">0</span><span class="stat-sub">no target date</span></div>
-  <div class="stat"><span class="stat-lbl">Closing This Month</span><span class="stat-val c-green" id="s-thismonth">0</span><span class="stat-sub">target in next 4 wks</span></div>
-  <div class="stat"><span class="stat-lbl">Overdue</span><span class="stat-val c-red" id="s-overdue">0</span><span class="stat-sub">past target date</span></div>
+  <div class="stat"><div class="stat-lbl">Open NCRs</div><div class="stat-val cv-blue" id="s-total">—</div><div class="stat-sub">in plan</div></div>
+  <div class="stat"><div class="stat-lbl">Fully Planned</div><div class="stat-val cv-green" id="s-full">0</div><div class="stat-sub">start + target set</div></div>
+  <div class="stat"><div class="stat-lbl">Avg Duration</div><div class="stat-val cv-blue" id="s-avgdur">—</div><div class="stat-sub">days (planned only)</div></div>
+  <div class="stat"><div class="stat-lbl">Closing ≤ 4 wks</div><div class="stat-val cv-green" id="s-soon">0</div><div class="stat-sub">target in next 28 days</div></div>
+  <div class="stat"><div class="stat-lbl">Overdue</div><div class="stat-val cv-red" id="s-late">0</div><div class="stat-sub">past target date</div></div>
 </div>
 
-<div class="controls">
-  <span class="filter-lbl">Assignee</span>
-  <button class="pill active" data-f="assignee" data-v="all"         onclick="setF('assignee','all',this)">All</button>
-  <button class="pill sam"    data-f="assignee" data-v="Sam Pascoe"  onclick="setF('assignee','Sam Pascoe',this)">Sam Pascoe</button>
-  <button class="pill chr"    data-f="assignee" data-v="Chris Wilson" onclick="setF('assignee','Chris Wilson',this)">Chris Wilson</button>
-
-  <span class="filter-lbl" style="margin-left:12px">Sort</span>
+<div class="toolbar">
+  <span class="tbar-lbl">Sort</span>
   <button class="pill active" data-f="sort" data-v="ncr"    onclick="setF('sort','ncr',this)">NCR #</button>
   <button class="pill"        data-f="sort" data-v="target" onclick="setF('sort','target',this)">Target Date</button>
-  <button class="pill"        data-f="sort" data-v="logged" onclick="setF('sort','logged',this)">Logged Date</button>
-  <button class="pill"        data-f="sort" data-v="assignee" onclick="setF('sort','assignee',this)">Assignee</button>
+  <button class="pill"        data-f="sort" data-v="start"  onclick="setF('sort','start',this)">Start Date</button>
+  <button class="pill"        data-f="sort" data-v="dur"    onclick="setF('sort','dur',this)">Duration</button>
+  <button class="pill"        data-f="sort" data-v="logged" onclick="setF('sort','logged',this)">Logged</button>
 
-  <div class="bulk-date">
-    <label>Bulk set target →</label>
-    <input type="date" id="bulk-date">
-    <button class="btn" onclick="bulkSetTarget()">Apply to visible</button>
-  </div>
+  <div class="sep"></div>
+  <span class="tbar-lbl">Bulk set</span>
+  <span style="font-size:10px;color:var(--muted)">Start:</span>
+  <input type="date" id="bulk-start" style="width:120px">
+  <span style="font-size:10px;color:var(--muted)">Target:</span>
+  <input type="date" id="bulk-target" style="width:120px">
+  <button class="btn" onclick="bulkSet()">Apply to all visible</button>
+  <button class="btn" style="color:var(--red);border-color:var(--red);margin-left:4px" onclick="clearAll()">✕ Clear all dates</button>
 </div>
 
 <div class="legend">
-  <span style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">Legend:</span>
-  <div class="leg-item"><div class="leg-bar" style="background:rgba(6,182,212,.5)"></div>Sam — active</div>
-  <div class="leg-item"><div class="leg-bar" style="background:rgba(249,115,22,.5)"></div>Chris — active</div>
-  <div class="leg-item"><div class="leg-bar" style="background:rgba(6,182,212,.25);border:1px dashed var(--sam)"></div>Sam — planned</div>
-  <div class="leg-item"><div class="leg-bar" style="background:rgba(249,115,22,.25);border:1px dashed var(--chris)"></div>Chris — planned</div>
-  <div class="leg-item"><div class="leg-bar" style="background:rgba(239,68,68,.3);border:1px dashed var(--red)"></div>No target (overdue)</div>
-  <div class="leg-item"><div class="leg-bar" style="background:var(--green)"></div>Target close date</div>
-  <div class="leg-item"><div class="leg-bar" style="background:rgba(59,130,246,.6)"></div>Today</div>
+  <span style="font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)">Legend</span>
+  <div class="leg"><div class="leg-bar" style="background:rgba(59,130,246,.6)"></div>In progress (past)</div>
+  <div class="leg"><div class="leg-bar" style="background:rgba(59,130,246,.25);border:1px dashed #3b82f6"></div>Planned (future)</div>
+  <div class="leg"><div class="leg-bar" style="background:rgba(220,38,38,.35);border:1px dashed var(--red)"></div>Overdue / no target</div>
+  <div class="leg"><div class="leg-bar" style="background:var(--green);width:4px"></div>Target close ▼</div>
+  <div class="leg"><div class="leg-bar" style="background:rgba(59,130,246,.7);width:2px"></div>Today</div>
 </div>
 
-<div class="gantt-wrap" id="gantt-wrap">
-  <table id="gantt-table">
-    <thead id="gantt-head"></thead>
-    <tbody id="gantt-body"></tbody>
+<div class="gantt-outer" id="gantt-outer">
+  <table id="gtable">
+    <thead id="gthead"></thead>
+    <tbody id="gtbody"></tbody>
   </table>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────
-const STORAGE_KEY    = 'pz1d_ncr_progress_v1';
-const TARGET_KEY     = 'pz1d_ncr_targets_v1';
-const TOTAL_WEEKS    = 24;    // weeks shown in grid
-let   viewOffset     = 0;     // weeks to shift view
+// ── Data ─────────────────────────────────────────────────────
+const NCR_DATA = [{"NCR Number":"16443","Logged Date":"07/11/2025 01:25:26","Part Number":"67402 7TA0A","Fault Code":"FS - Failed Spotweld","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16634","Logged Date":"09/12/2025 19:54:34","Part Number":"67402 7TH0A","Fault Code":"IA - Incorrect Assembly","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16696","Logged Date":"19/12/2025 10:25:56","Part Number":"67402 7TH0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16530","Logged Date":"25/11/2025 17:10:46","Part Number":"74330 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16624","Logged Date":"09/12/2025 08:38:51","Part Number":"74330 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16747","Logged Date":"07/01/2026 08:52:08","Part Number":"74330 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16719","Logged Date":"23/12/2025 13:38:07","Part Number":"74330 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16513","Logged Date":"21/11/2025 16:40:08","Part Number":"74330 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16727","Logged Date":"05/01/2026 14:44:21","Part Number":"74370 7TA1A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16449","Logged Date":"07/11/2025 15:35:38","Part Number":"75153 7TA0A 0A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16695","Logged Date":"18/12/2025 21:49:27","Part Number":"75170 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16745","Logged Date":"07/01/2026 00:43:46","Part Number":"75170 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16721","Logged Date":"23/12/2025 15:51:38","Part Number":"75430 7TA0A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16528","Logged Date":"25/11/2025 12:47:58","Part Number":"75430 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16630","Logged Date":"09/12/2025 14:29:30","Part Number":"75510 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16544","Logged Date":"27/11/2025 12:34:56","Part Number":"75510 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16666","Logged Date":"15/12/2025 13:37:19","Part Number":"75510 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16587","Logged Date":"03/12/2025 10:06:48","Part Number":"75510 7TA0A","Fault Code":"IA - Incorrect Assembly","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16653","Logged Date":"12/12/2025 10:12:43","Part Number":"75510 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16507","Logged Date":"20/11/2025 18:44:05","Part Number":"75510 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16322","Logged Date":"09/10/2025 23:34:54","Part Number":"75510 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16652","Logged Date":"12/12/2025 09:46:06","Part Number":"75511 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16654","Logged Date":"12/12/2025 10:46:19","Part Number":"75511 7TA0A","Fault Code":"DT - Damaged Threads","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16466","Logged Date":"12/11/2025 14:31:10","Part Number":"76240 7TH0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16661","Logged Date":"13/12/2025 10:57:17","Part Number":"76241 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16329","Logged Date":"10/10/2025 13:43:14","Part Number":"76241 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16623","Logged Date":"08/12/2025 21:51:46","Part Number":"76241 7TH0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16736","Logged Date":"06/01/2026 00:41:27","Part Number":"76751 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16742","Logged Date":"06/01/2026 19:49:39","Part Number":"76751 7TA0A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"16698","Logged Date":"19/12/2025 13:00:38","Part Number":"76760 7TA0A","Fault Code":"FM - Failed Migweld","Status":"Open","To":"Chris Wilson","Sign Off - Supervisor Name":""},{"NCR Number":"17302","Logged Date":"20/04/2026 20:20:00","Part Number":"64120 7TA0A","Fault Code":"MH - Hole in Migweld","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16905","Logged Date":"30/01/2026 13:25:04","Part Number":"64180 7TA0A","Fault Code":"DE - Dimensional error","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17297","Logged Date":"20/04/2026 10:23:25","Part Number":"64180 7TA0A","Fault Code":"DE - Dimensional error","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17070","Logged Date":"03/03/2026 11:00:20","Part Number":"64180 7ZA0A","Fault Code":"DE - Dimensional error","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17011","Logged Date":"20/02/2026 21:45:50","Part Number":"67402 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17216","Logged Date":"31/03/2026 09:56:02","Part Number":"67402 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17229","Logged Date":"02/04/2026 09:13:18","Part Number":"67402 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16827","Logged Date":"16/01/2026 20:53:42","Part Number":"67402 7TH0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17244","Logged Date":"07/04/2026 17:14:06","Part Number":"67408 7TA0A","Fault Code":"LB - Laser Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16808","Logged Date":"15/01/2026 07:42:59","Part Number":"67413 7TA1A","Fault Code":"LB - Laser Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17278","Logged Date":"15/04/2026 10:49:22","Part Number":"74330 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17220","Logged Date":"31/03/2026 14:31:51","Part Number":"74330 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17190","Logged Date":"25/03/2026 19:43:22","Part Number":"74370 7TA1A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17222","Logged Date":"01/04/2026 13:15:39","Part Number":"74370 7TA1A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16781","Logged Date":"12/01/2026 11:03:02","Part Number":"74370 7TA1A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16847","Logged Date":"20/01/2026 21:20:34","Part Number":"74370 7TH1A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16787","Logged Date":"12/01/2026 17:17:04","Part Number":"74372 7TA1A 0A","Fault Code":"NS - Nut Shrouding","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17236","Logged Date":"02/04/2026 14:30:42","Part Number":"74617 7TA0A","Fault Code":"DT - Damaged Threads","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17233","Logged Date":"02/04/2026 12:36:23","Part Number":"75110 7TA0A","Fault Code":"MH - Hole in Migweld","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17287","Logged Date":"16/04/2026 18:07:47","Part Number":"75110 7TA0A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17249","Logged Date":"08/04/2026 11:15:18","Part Number":"75111 7TA0A","Fault Code":"SIT - Spatter in Threads","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17221","Logged Date":"31/03/2026 14:41:39","Part Number":"75111 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17231","Logged Date":"02/04/2026 10:03:46","Part Number":"75131 7TA0A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16772","Logged Date":"09/01/2026 16:01:52","Part Number":"75131 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16783","Logged Date":"12/01/2026 11:59:55","Part Number":"75131 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17199","Logged Date":"26/03/2026 18:45:59","Part Number":"75131 7TA0A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16962","Logged Date":"11/02/2026 20:51:25","Part Number":"75510 7TA0A","Fault Code":"IG - Incorrect Gap","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17260","Logged Date":"10/04/2026 13:50:16","Part Number":"75510 7TA0A","Fault Code":"MH - Hole in Migweld","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17294","Logged Date":"17/04/2026 10:52:47","Part Number":"75510 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16861","Logged Date":"22/01/2026 13:31:54","Part Number":"75511 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17276","Logged Date":"14/04/2026 22:31:54","Part Number":"75528 7TA0A","Fault Code":"DE - Dimensional error","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17253","Logged Date":"09/04/2026 00:11:25","Part Number":"755F3 7TA0A","Fault Code":"C - Contamination","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17296","Logged Date":"20/04/2026 10:18:14","Part Number":"76241 7TA0A","Fault Code":"IG - Incorrect Gap","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17282","Logged Date":"16/04/2026 10:29:12","Part Number":"76751 7TA0A","Fault Code":"IG - Incorrect Gap","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17227","Logged Date":"02/04/2026 00:24:47","Part Number":"76751 7TA0A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"17280","Logged Date":"16/04/2026 08:32:22","Part Number":"76751 7TA0A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16817","Logged Date":"16/01/2026 00:01:02","Part Number":"76751 7TA0A","Fault Code":"BS - Spotweld Burr","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""},{"NCR Number":"16807","Logged Date":"15/01/2026 07:25:55","Part Number":"76751 7TA0A","Fault Code":"WS - Weld Spatter","Status":"Open","To":"Sam Pascoe","Sign Off - Supervisor Name":""}];
 
-// ── NCR Data ──────────────────────────────────────────────────
-const NCR_DATA = [{"NCR Number": "16443", "Logged Date": "07/11/2025 01:25:26", "Part Number": "67402 7TA0A", "Fault Code": "FS - Failed Spotweld", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Ultrasonic", "Sign Off - Supervisor Name": ""},{"NCR Number": "16634", "Logged Date": "09/12/2025 19:54:34", "Part Number": "67402 7TH0A", "Fault Code": "IA - Incorrect Assembly", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "305", "Sign Off - Supervisor Name": ""},{"NCR Number": "16696", "Logged Date": "19/12/2025 10:25:56", "Part Number": "67402 7TH0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16530", "Logged Date": "25/11/2025 17:10:46", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "306", "Sign Off - Supervisor Name": ""},{"NCR Number": "16624", "Logged Date": "09/12/2025 08:38:51", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "306", "Sign Off - Supervisor Name": ""},{"NCR Number": "16747", "Logged Date": "07/01/2026 08:52:08", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16719", "Logged Date": "23/12/2025 13:38:07", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "306", "Sign Off - Supervisor Name": ""},{"NCR Number": "16513", "Logged Date": "21/11/2025 16:40:08", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16727", "Logged Date": "05/01/2026 14:44:21", "Part Number": "74370 7TA1A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "308", "Sign Off - Supervisor Name": ""},{"NCR Number": "16449", "Logged Date": "07/11/2025 15:35:38", "Part Number": "75153 7TA0A 0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16695", "Logged Date": "18/12/2025 21:49:27", "Part Number": "75170 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16745", "Logged Date": "07/01/2026 00:43:46", "Part Number": "75170 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "334", "Sign Off - Supervisor Name": ""},{"NCR Number": "16721", "Logged Date": "23/12/2025 15:51:38", "Part Number": "75430 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "317", "Sign Off - Supervisor Name": ""},{"NCR Number": "16528", "Logged Date": "25/11/2025 12:47:58", "Part Number": "75430 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "317", "Sign Off - Supervisor Name": ""},{"NCR Number": "16630", "Logged Date": "09/12/2025 14:29:30", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16544", "Logged Date": "27/11/2025 12:34:56", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "318", "Sign Off - Supervisor Name": ""},{"NCR Number": "16666", "Logged Date": "15/12/2025 13:37:19", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16587", "Logged Date": "03/12/2025 10:06:48", "Part Number": "75510 7TA0A", "Fault Code": "IA - Incorrect Assembly", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "318", "Sign Off - Supervisor Name": ""},{"NCR Number": "16653", "Logged Date": "12/12/2025 10:12:43", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16507", "Logged Date": "20/11/2025 18:44:05", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16322", "Logged Date": "09/10/2025 23:34:54", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16652", "Logged Date": "12/12/2025 09:46:06", "Part Number": "75511 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16654", "Logged Date": "12/12/2025 10:46:19", "Part Number": "75511 7TA0A", "Fault Code": "DT - Damaged Threads", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16466", "Logged Date": "12/11/2025 14:31:10", "Part Number": "76240 7TH0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "322", "Sign Off - Supervisor Name": ""},{"NCR Number": "16661", "Logged Date": "13/12/2025 10:57:17", "Part Number": "76241 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16329", "Logged Date": "10/10/2025 13:43:14", "Part Number": "76241 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Quality", "Sign Off - Supervisor Name": ""},{"NCR Number": "16623", "Logged Date": "08/12/2025 21:51:46", "Part Number": "76241 7TH0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16736", "Logged Date": "06/01/2026 00:41:27", "Part Number": "76751 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "327", "Sign Off - Supervisor Name": ""},{"NCR Number": "16742", "Logged Date": "06/01/2026 19:49:39", "Part Number": "76751 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16698", "Logged Date": "19/12/2025 13:00:38", "Part Number": "76760 7TA0A", "Fault Code": "FM - Failed Migweld", "Status": "Open", "To": "Chris Wilson", "Workcentre Found": "Quality", "Sign Off - Supervisor Name": ""},{"NCR Number": "17302", "Logged Date": "20/04/2026 20:20:00", "Part Number": "64120 7TA0A", "Fault Code": "MH - Hole in Migweld", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16905", "Logged Date": "30/01/2026 13:25:04", "Part Number": "64180 7TA0A", "Fault Code": "DE - Dimensional error", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Quality", "Sign Off - Supervisor Name": ""},{"NCR Number": "17297", "Logged Date": "20/04/2026 10:23:25", "Part Number": "64180 7TA0A", "Fault Code": "DE - Dimensional error", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "302", "Sign Off - Supervisor Name": ""},{"NCR Number": "17070", "Logged Date": "03/03/2026 11:00:20", "Part Number": "64180 7ZA0A", "Fault Code": "DE - Dimensional error", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Quality", "Sign Off - Supervisor Name": ""},{"NCR Number": "17011", "Logged Date": "20/02/2026 21:45:50", "Part Number": "67402 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17216", "Logged Date": "31/03/2026 09:56:02", "Part Number": "67402 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Ultrasonic", "Sign Off - Supervisor Name": ""},{"NCR Number": "17229", "Logged Date": "02/04/2026 09:13:18", "Part Number": "67402 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "305", "Sign Off - Supervisor Name": ""},{"NCR Number": "16827", "Logged Date": "16/01/2026 20:53:42", "Part Number": "67402 7TH0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17244", "Logged Date": "07/04/2026 17:14:06", "Part Number": "67408 7TA0A", "Fault Code": "LB - Laser Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Quality", "Sign Off - Supervisor Name": ""},{"NCR Number": "16808", "Logged Date": "15/01/2026 07:42:59", "Part Number": "67413 7TA1A", "Fault Code": "LB - Laser Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "895D", "Sign Off - Supervisor Name": ""},{"NCR Number": "17278", "Logged Date": "15/04/2026 10:49:22", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17220", "Logged Date": "31/03/2026 14:31:51", "Part Number": "74330 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "306", "Sign Off - Supervisor Name": ""},{"NCR Number": "17190", "Logged Date": "25/03/2026 19:43:22", "Part Number": "74370 7TA1A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "308", "Sign Off - Supervisor Name": ""},{"NCR Number": "17222", "Logged Date": "01/04/2026 13:15:39", "Part Number": "74370 7TA1A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16781", "Logged Date": "12/01/2026 11:03:02", "Part Number": "74370 7TA1A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16847", "Logged Date": "20/01/2026 21:20:34", "Part Number": "74370 7TH1A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16787", "Logged Date": "12/01/2026 17:17:04", "Part Number": "74372 7TA1A 0A", "Fault Code": "NS - Nut Shrouding", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17236", "Logged Date": "02/04/2026 14:30:42", "Part Number": "74617 7TA0A", "Fault Code": "DT - Damaged Threads", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17233", "Logged Date": "02/04/2026 12:36:23", "Part Number": "75110 7TA0A", "Fault Code": "MH - Hole in Migweld", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17287", "Logged Date": "16/04/2026 18:07:47", "Part Number": "75110 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17249", "Logged Date": "08/04/2026 11:15:18", "Part Number": "75111 7TA0A", "Fault Code": "SIT - Spatter in Threads", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17221", "Logged Date": "31/03/2026 14:41:39", "Part Number": "75111 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "313", "Sign Off - Supervisor Name": ""},{"NCR Number": "17231", "Logged Date": "02/04/2026 10:03:46", "Part Number": "75131 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16772", "Logged Date": "09/01/2026 16:01:52", "Part Number": "75131 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16783", "Logged Date": "12/01/2026 11:59:55", "Part Number": "75131 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17199", "Logged Date": "26/03/2026 18:45:59", "Part Number": "75131 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16962", "Logged Date": "11/02/2026 20:51:25", "Part Number": "75510 7TA0A", "Fault Code": "IG - Incorrect Gap", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Quality", "Sign Off - Supervisor Name": ""},{"NCR Number": "17260", "Logged Date": "10/04/2026 13:50:16", "Part Number": "75510 7TA0A", "Fault Code": "MH - Hole in Migweld", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17294", "Logged Date": "17/04/2026 10:52:47", "Part Number": "75510 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16861", "Logged Date": "22/01/2026 13:31:54", "Part Number": "75511 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Quality", "Sign Off - Supervisor Name": ""},{"NCR Number": "17276", "Logged Date": "14/04/2026 22:31:54", "Part Number": "75528 7TA0A", "Fault Code": "DE - Dimensional error", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "896", "Sign Off - Supervisor Name": ""},{"NCR Number": "17253", "Logged Date": "09/04/2026 00:11:25", "Part Number": "755F3 7TA0A", "Fault Code": "C - Contamination", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Ultrasonic", "Sign Off - Supervisor Name": ""},{"NCR Number": "17296", "Logged Date": "20/04/2026 10:18:14", "Part Number": "76241 7TA0A", "Fault Code": "IG - Incorrect Gap", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "323", "Sign Off - Supervisor Name": ""},{"NCR Number": "17282", "Logged Date": "16/04/2026 10:29:12", "Part Number": "76751 7TA0A", "Fault Code": "IG - Incorrect Gap", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17227", "Logged Date": "02/04/2026 00:24:47", "Part Number": "76751 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "17280", "Logged Date": "16/04/2026 08:32:22", "Part Number": "76751 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16817", "Logged Date": "16/01/2026 00:01:02", "Part Number": "76751 7TA0A", "Fault Code": "BS - Spotweld Burr", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""},{"NCR Number": "16807", "Logged Date": "15/01/2026 07:25:55", "Part Number": "76751 7TA0A", "Fault Code": "WS - Weld Spatter", "Status": "Open", "To": "Sam Pascoe", "Workcentre Found": "Outflow", "Sign Off - Supervisor Name": ""}];
+const PROGRESS_KEY = 'pz1d_ncr_progress_v1';
+const PLAN_KEY     = 'pz1d_ncr_plan_v2';
+const TOTAL_WEEKS  = 22;
+let   viewOffset   = 0;
+let   sortMode     = 'ncr';
+let   plan         = {};   // { ncr: { start, target } }
+let   progress     = {};
 
-// ── Helpers ───────────────────────────────────────────────────
-function parseD(s) {
+// ── Date utils ───────────────────────────────────────────────
+const MS_DAY  = 86400000;
+const MS_WEEK = MS_DAY * 7;
+function parseNCRDate(s) {
   if (!s) return null;
-  const [d] = s.split(' '); const [day,mo,yr] = d.split('/');
-  return new Date(+yr, +mo-1, +day);
+  const [d] = s.split(' '), [dd,mm,yyyy] = d.split('/');
+  return new Date(+yyyy, +mm-1, +dd);
 }
-function isoToDate(s) { if (!s) return null; const [yr,mo,d]=s.split('-'); return new Date(+yr,+mo-1,+d); }
-function dateToIso(d) { if (!d) return ''; return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function weekStart(d) { const c=new Date(d); c.setDate(c.getDate()-c.getDay()+1); c.setHours(0,0,0,0); return c; }
-function addWeeks(d,n) { const c=new Date(d); c.setDate(c.getDate()+n*7); return c; }
-function sameWeek(a,b) { return weekStart(a).getTime()===weekStart(b).getTime(); }
-function fmtWeek(d) {
-  const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return `${d.getDate()} ${m[d.getMonth()]}`;
+function isoDate(s)    { if (!s) return null; const [y,m,d]=s.split('-'); return new Date(+y,+m-1,+d); }
+function toIso(d)      { if (!d) return ''; return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function mondayOf(d)   { const c=new Date(d); c.setDate(c.getDate()-((c.getDay()+6)%7)); c.setHours(0,0,0,0); return c; }
+function addWeeks(d,n) { return new Date(d.getTime()+n*MS_WEEK); }
+function daysBetween(a,b) { return Math.round((b-a)/MS_DAY); }
+function fmtD(d)       { const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${d.getDate()} ${M[d.getMonth()]}`; }
+function fmtMon(d)     { const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${M[d.getMonth()]} ${d.getFullYear()}`; }
+
+// ── Storage ──────────────────────────────────────────────────
+function load() {
+  try { plan     = JSON.parse(localStorage.getItem(PLAN_KEY)     || '{}'); } catch { plan={}; }
+  try { progress = JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}'); } catch { progress={}; }
 }
+function save() { localStorage.setItem(PLAN_KEY, JSON.stringify(plan)); }
 
-// ── State ─────────────────────────────────────────────────────
-let targets  = {};
-let progress = {};
-let filters  = { assignee:'all', sort:'ncr' };
+function getPlan(ncr) { return plan[ncr] || { start:'', target:'' }; }
+function getStatus(ncr) { return (progress[ncr]||{}).status||''; }
 
-function loadStored() {
-  try { targets  = JSON.parse(localStorage.getItem(TARGET_KEY)  || '{}'); } catch{ targets={}; }
-  try { progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch{ progress={}; }
-}
-function saveTargets() { localStorage.setItem(TARGET_KEY, JSON.stringify(targets)); }
-
-function getProgress(ncr) { return progress[ncr]||{status:'',investigator:''}; }
 function getSysStatus(r) {
   if ((r.Status||'').toLowerCase()==='closed') return 'closed';
-  if ((r['Sign Off - Supervisor Name']||'').trim()!=='') return 'signoff';
+  if ((r['Sign Off - Supervisor Name']||'').trim()) return 'signoff';
   return 'open';
 }
 
-// ── Filters ───────────────────────────────────────────────────
-function setF(type,val,btn) {
-  filters[type]=val;
-  document.querySelectorAll(`[data-f="${type}"]`).forEach(b=>b.classList.remove('active'));
+// ── Sort / filter ────────────────────────────────────────────
+function setF(type, val, btn) {
+  sortMode = val;
+  document.querySelectorAll('[data-f="sort"]').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   render();
 }
 
-function getVisible() {
+function getRows() {
   let rows = [...NCR_DATA];
-  if (filters.assignee!=='all') rows=rows.filter(r=>r['To']===filters.assignee);
-  if (filters.sort==='target') rows.sort((a,b)=>{
-    const ta=targets[a['NCR Number']]?new Date(targets[a['NCR Number']]):new Date('9999-12-31');
-    const tb=targets[b['NCR Number']]?new Date(targets[b['NCR Number']]):new Date('9999-12-31');
+  const FAR = new Date('2099-12-31');
+  if (sortMode==='target') rows.sort((a,b)=>{
+    const ta = isoDate(getPlan(a['NCR Number']).target)||FAR;
+    const tb = isoDate(getPlan(b['NCR Number']).target)||FAR;
     return ta-tb;
   });
-  else if (filters.sort==='logged') rows.sort((a,b)=>(parseD(a['Logged Date'])||0)-(parseD(b['Logged Date'])||0));
-  else if (filters.sort==='assignee') rows.sort((a,b)=>a['To'].localeCompare(b['To']));
+  else if (sortMode==='start') rows.sort((a,b)=>{
+    const ta = isoDate(getPlan(a['NCR Number']).start)||FAR;
+    const tb = isoDate(getPlan(b['NCR Number']).start)||FAR;
+    return ta-tb;
+  });
+  else if (sortMode==='dur') rows.sort((a,b)=>{
+    const da = getDuration(a['NCR Number']) ?? 9999;
+    const db = getDuration(b['NCR Number']) ?? 9999;
+    return da-db;
+  });
+  else if (sortMode==='logged') rows.sort((a,b)=>(parseNCRDate(a['Logged Date'])||0)-(parseNCRDate(b['Logged Date'])||0));
   else rows.sort((a,b)=>parseInt(a['NCR Number'])-parseInt(b['NCR Number']));
   return rows;
 }
 
-// ── Render ────────────────────────────────────────────────────
+function getDuration(ncr) {
+  const p = getPlan(ncr);
+  if (!p.start || !p.target) return null;
+  const s = isoDate(p.start), t = isoDate(p.target);
+  if (!s||!t||t<=s) return null;
+  return daysBetween(s, t);
+}
+
+// ── Render ───────────────────────────────────────────────────
 function render() {
-  const TODAY     = new Date(); TODAY.setHours(0,0,0,0);
-  const gridBase  = weekStart(addWeeks(TODAY, -4 + viewOffset));
-  const rows      = getVisible();
+  const TODAY   = new Date(); TODAY.setHours(0,0,0,0);
+  const gridMon = mondayOf(addWeeks(TODAY, -3 + viewOffset));
+  const rows    = getRows();
 
-  // Build week array
-  const weeks = [];
-  for (let i=0;i<TOTAL_WEEKS;i++) weeks.push(addWeeks(gridBase,i));
-  const todayWkIdx = weeks.findIndex(w=>sameWeek(w,TODAY));
+  // Build weeks array
+  const weeks = Array.from({length:TOTAL_WEEKS}, (_,i) => addWeeks(gridMon,i));
 
-  // ── Header ──
-  const infoThs = `
-    <th class="sticky s1" style="z-index:26">NCR #</th>
-    <th class="sticky s2" style="z-index:26">Part Number</th>
-    <th class="sticky s3" style="z-index:26">Fault Code</th>
-    <th class="sticky s4" style="z-index:26">Assignee</th>
-    <th class="sticky s5" style="z-index:26;min-width:110px;left:400px">Target Date</th>`;
-  const weekThs = weeks.map((w,i)=>{
-    const isTod = i===todayWkIdx;
-    const isPast= w < weekStart(TODAY) && !isTod;
-    return `<th class="week-th${isTod?' today-col':''}${isPast?' past':''}">${fmtWeek(w)}</th>`;
-  }).join('');
-  document.getElementById('gantt-head').innerHTML = `<tr>${infoThs}${weekThs}</tr>`;
-
-  // ── Rows ──
-  const MS_PER_WEEK = 7*24*60*60*1000;
-  let nPlanned=0, nUnplanned=0, nThisMonth=0, nOverdue=0;
-  const fourWeeks = new Date(TODAY); fourWeeks.setDate(fourWeeks.getDate()+28);
-
-  const bodyHtml = rows.map(r => {
-    const ncr      = r['NCR Number'];
-    const logDate  = parseD(r['Logged Date']) || TODAY;
-    const target   = targets[ncr] ? isoToDate(targets[ncr]) : null;
-    const isSam    = r['To']==='Sam Pascoe';
-    const samC     = isSam ? 'var(--sam)' : 'var(--chris)';
-    const prog     = getProgress(ncr);
-    const sysStatus= getSysStatus(r);
-
-    // stats
-    if (target) {
-      nPlanned++;
-      if (target <= TODAY) nOverdue++;
-      else if (target <= fourWeeks) nThisMonth++;
+  // ── Month header row ──
+  // Group weeks by month
+  const monthGroups = [];
+  weeks.forEach((w,i) => {
+    const mk = `${w.getFullYear()}-${w.getMonth()}`;
+    if (!monthGroups.length || monthGroups[monthGroups.length-1].key !== mk) {
+      monthGroups.push({ key:mk, label:fmtMon(w), count:1 });
     } else {
-      nUnplanned++;
+      monthGroups[monthGroups.length-1].count++;
     }
+  });
 
-    // progress dot
-    const dotClass = prog.status==='complete'?'sd-done':prog.status==='investigated'?'sd-inv':
-                     prog.status==='countermeasure'?'sd-cm':prog.status==='failed'?'sd-fail':
-                     sysStatus==='closed'?'sd-closed':'sd-none';
+  const INFO_COLS = 7;
+  const infoSpans = `<th class="month-th s1 s2 s3 s4 s5 s6 s7" colspan="${INFO_COLS}" style="text-align:left;padding-left:8px;position:sticky;left:0;z-index:30;background:#0a0f18">
+    PZ1D NCR Closure Plan · ${fmtD(TODAY)} ${TODAY.getFullYear()} · ${rows.length} open NCRs
+  </th>`;
+  const monthSpans = monthGroups.map(g=>`<th class="month-th gc" colspan="${g.count}" style="text-align:center">${g.label}</th>`).join('');
 
-    // info cells
+  // ── Week header row ──
+  const todayWkI = weeks.findIndex(w => {
+    const wEnd = addWeeks(w,1);
+    return TODAY >= w && TODAY < wEnd;
+  });
+  const infoThs = `
+    <th class="s1" style="z-index:25">NCR #</th>
+    <th class="s2" style="z-index:25">Part Number</th>
+    <th class="s3" style="z-index:25">Fault Code</th>
+    <th class="s4" style="z-index:25">Mgr</th>
+    <th class="s5" style="z-index:25">Start Date</th>
+    <th class="s6" style="z-index:25">Target Date</th>
+    <th class="s7" style="z-index:25">Duration</th>`;
+  const weekThs = weeks.map((w,i)=>{
+    const isT  = i===todayWkI;
+    const isSat = w.getDay()===6, isSun = w.getDay()===0;
+    return `<th class="gc${isT?' today-col':''}" style="${w<mondayOf(TODAY)?'color:#263348':''}">
+      ${fmtD(w)}</th>`;
+  }).join('');
+
+  document.getElementById('gthead').innerHTML =
+    `<tr>${infoSpans}${monthSpans}</tr><tr>${infoThs}${weekThs}</tr>`;
+
+  // ── Stats ──
+  let nFull=0, nSoon=0, nLate=0, durSum=0, durCount=0;
+  const soon28 = new Date(TODAY.getTime() + 28*MS_DAY);
+  rows.forEach(r => {
+    const ncr = r['NCR Number'];
+    const p   = getPlan(ncr);
+    const t   = isoDate(p.target);
+    const dur = getDuration(ncr);
+    if (p.start && p.target) nFull++;
+    if (t) {
+      if (t < TODAY) nLate++;
+      else if (t <= soon28) nSoon++;
+    }
+    if (dur !== null) { durSum += dur; durCount++; }
+  });
+  document.getElementById('s-total').textContent   = rows.length;
+  document.getElementById('s-full').textContent    = nFull;
+  document.getElementById('s-avgdur').textContent  = durCount ? Math.round(durSum/durCount) : '—';
+  document.getElementById('s-soon').textContent    = nSoon;
+  document.getElementById('s-late').textContent    = nLate;
+
+  // ── Body ──
+  document.getElementById('gtbody').innerHTML = rows.map((r,ri) => {
+    const ncr    = r['NCR Number'];
+    const p      = getPlan(ncr);
+    const st     = isoDate(p.start);
+    const tgt    = isoDate(p.target);
+    const dur    = getDuration(ncr);
+    const status = getStatus(ncr);
+    const isClosed = getSysStatus(r)==='closed';
+    const mgr    = r['To']==='Sam Pascoe' ? 'Sam' : 'Chris';
+
+    const dotCls = status==='complete'?'sd-done':status==='investigated'?'sd-inv':
+                   status==='countermeasure'?'sd-cm':status==='failed'?'sd-fail':'sd-none';
+
+    // Duration label
+    const durLabel = dur !== null
+      ? `<span style="color:${dur<=14?'var(--green)':dur<=28?'var(--amber)':'var(--red)'}">${dur}d</span>`
+      : '<span style="color:var(--muted)">—</span>';
+
+    // Start / target unset indicator
+    const startVal = p.start || '';
+    const targVal  = p.target || '';
+
     const infoCells = `
-      <td class="sticky s1"><span class="sdot ${dotClass}"></span><span class="ncr-num">${ncr}</span></td>
-      <td class="sticky s2"><span class="part-cell">${r['Part Number']}</span></td>
-      <td class="sticky s3"><span class="fault-cell" title="${r['Fault Code']}">${r['Fault Code']}</span></td>
-      <td class="sticky s4"><span class="badge ${isSam?'sam-b':'chr-b'}">${isSam?'Sam':'Chris'}</span></td>
-      <td class="sticky" style="left:400px;min-width:110px;z-index:15">
-        <input type="date" class="target-input" value="${targets[ncr]||''}"
-          onchange="setTarget('${ncr}',this.value)" title="Set target close date">
-      </td>`;
+      <td class="s1"><span class="sdot ${dotCls}"></span><span class="ncr-id">${ncr}</span></td>
+      <td class="s2"><span class="part-txt" title="${r['Part Number']}">${r['Part Number']}</span></td>
+      <td class="s3"><span class="fault-txt" title="${r['Fault Code']}">${r['Fault Code']}</span></td>
+      <td class="s4"><span class="mgr-txt">${mgr}</span></td>
+      <td class="s5">
+        <input type="date" class="cell-date${startVal?'':' unset'}" value="${startVal}"
+          title="Start date" onchange="setDate('${ncr}','start',this.value);this.classList.toggle('unset',!this.value)">
+      </td>
+      <td class="s6">
+        <input type="date" class="cell-date${targVal?'':' unset'}" value="${targVal}"
+          title="Target close date" onchange="setDate('${ncr}','target',this.value);this.classList.toggle('unset',!this.value)">
+      </td>
+      <td class="s7 dur-txt">${durLabel}</td>`;
 
-    // gantt cells
-    const ganttCells = weeks.map((wk,i) => {
-      const wkEnd  = addWeeks(wk,1);
-      const isTod  = i===todayWkIdx;
-      let inner    = '';
+    // Gantt cells
+    const ganttCells = weeks.map((wk,wi) => {
+      const wkEnd = addWeeks(wk, 1);
+      const isT   = wi === todayWkI;
+      let inner   = '';
 
-      // Today line in today's column
-      if (isTod) inner += `<div class="today-line"></div>`;
+      // Today marker
+      if (isT) {
+        const todayPct = ((TODAY - wk) / MS_WEEK * 100).toFixed(1);
+        inner += `<div class="tline" style="left:${todayPct}%"></div>`;
+      }
 
-      // bar logic
-      const barStart = logDate < wk ? wk : logDate;
-      const barEnd   = target || TODAY;
-      const effectiveEnd = target ? target : TODAY;
+      // Bar: use start date if set, otherwise logged date as fallback
+      const barStart = st || parseNCRDate(r['Logged Date']) || TODAY;
+      const barEnd   = tgt || TODAY;
+      const noTarget = !tgt;
 
-      // does bar span this week?
-      const barS = logDate;
-      const barE = effectiveEnd > TODAY ? effectiveEnd : TODAY;
+      // Does any part of the bar fall in this week?
+      if (barStart < wkEnd && barEnd >= wk) {
+        const leftOff   = Math.max(0, (barStart - wk) / MS_WEEK * 100);
+        const rightOff  = Math.max(0, (wkEnd - barEnd) / MS_WEEK * 100);
+        const widthPct  = Math.max(0, 100 - leftOff - rightOff);
 
-      if (barS < wkEnd && barE >= wk) {
-        const wkMs   = MS_PER_WEEK;
-        const startMs = Math.max(0, wk - barS);
-        const endMs   = Math.min(wkMs, wkEnd - barS);
-        const leftPct  = (Math.max(0, wk-barS) / wkMs * 100).toFixed(1);
-        const rightMs  = Math.max(0, barS + wkMs - Math.min(wkEnd, barE));
-        const widthPct = Math.max(0, 100 - parseFloat(leftPct) - (rightMs/wkMs*100)).toFixed(1);
+        if (widthPct > 0) {
+          const weekMid  = new Date(wk.getTime() + MS_WEEK/2);
+          const isPastWk = wkEnd <= TODAY;
+          const isFutWk  = wk >= TODAY;
 
-        if (parseFloat(widthPct)>0) {
-          const isPast   = wk < weekStart(TODAY) || (isTod && false);
-          const isFuture = wk > weekStart(TODAY);
-          let bg, border='none';
-          if (!target && TODAY > logDate) {
-            // no target, overdue
-            bg=`rgba(239,68,68,0.3)`; border=`1px dashed var(--red)`;
-          } else if (isFuture || (isTod && target && target > TODAY)) {
-            bg=isSam?`rgba(6,182,212,.25)`:`rgba(249,115,22,.25)`;
-            border=isSam?`1px dashed var(--sam)`:`1px dashed var(--chris)`;
+          let bg, border = 'none';
+          if (noTarget) {
+            bg = 'rgba(220,38,38,.35)'; border = '1px dashed var(--red)';
+          } else if (isPastWk) {
+            bg = 'rgba(59,130,246,.6)';
+          } else if (isFutWk) {
+            bg = 'rgba(59,130,246,.22)'; border = '1px dashed #3b82f6';
           } else {
-            bg=isSam?`rgba(6,182,212,.55)`:`rgba(249,115,22,.55)`;
+            // mixed week (contains today)
+            bg = 'rgba(59,130,246,.4)';
           }
-          inner += `<div class="gbar" style="left:${leftPct}%;width:${widthPct}%;background:${bg};border:${border}"></div>`;
+          inner += `<div class="gbar" style="left:${leftOff.toFixed(1)}%;width:${widthPct.toFixed(1)}%;background:${bg};border:${border}"></div>`;
         }
       }
 
-      // target marker — show in the week the target falls in
-      if (target && target >= wk && target < wkEnd) {
-        const pct = ((target-wk)/MS_PER_WEEK*100).toFixed(1);
-        inner += `<div class="gtarget" style="left:${pct}%"></div>`;
+      // Target marker
+      if (tgt && tgt >= wk && tgt < wkEnd) {
+        const pct = ((tgt - wk) / MS_WEEK * 100).toFixed(1);
+        inner += `<div class="tmark" style="left:${pct}%"></div>`;
       }
 
-      return `<td class="gcell${isTod?' today-col':''}">${inner}</td>`;
+      return `<td class="gc${isT?' today-col':''}">${inner}</td>`;
     }).join('');
 
-    const isClosedRow = sysStatus==='closed';
-    return `<tr style="${isClosedRow?'opacity:.3':''}">${infoCells}${ganttCells}</tr>`;
+    return `<tr class="${isClosed?'row-closed':''}">${infoCells}${ganttCells}</tr>`;
   }).join('');
-
-  document.getElementById('gantt-body').innerHTML = bodyHtml || `<tr><td colspan="${5+TOTAL_WEEKS}" style="text-align:center;padding:40px;color:var(--muted)">No NCRs match the current filter.</td></tr>`;
-
-  // Stats
-  document.getElementById('s-total').textContent     = NCR_DATA.filter(r=>getSysStatus(r)!=='closed').length;
-  document.getElementById('s-planned').textContent   = nPlanned;
-  document.getElementById('s-unplanned').textContent = nUnplanned;
-  document.getElementById('s-thismonth').textContent = nThisMonth;
-  document.getElementById('s-overdue').textContent   = nOverdue;
 }
 
-// ── Set target ────────────────────────────────────────────────
-function setTarget(ncr, val) {
-  if (val) targets[ncr] = val;
-  else delete targets[ncr];
-  saveTargets();
+// ── Set date ─────────────────────────────────────────────────
+function setDate(ncr, field, val) {
+  if (!plan[ncr]) plan[ncr] = { start:'', target:'' };
+  plan[ncr][field] = val;
+  save();
   render();
-  toast(`NCR ${ncr} target → ${val || 'cleared'}`);
+  const dur = getDuration(ncr);
+  toast(`NCR ${ncr} — ${field==='start'?'start':'target'}: ${val||'cleared'}${dur?' ('+dur+'d)':''}`);
 }
 
-// ── Bulk set ──────────────────────────────────────────────────
-function bulkSetTarget() {
-  const val  = document.getElementById('bulk-date').value;
-  if (!val) { toast('Pick a date first'); return; }
-  const rows = getVisible();
-  rows.forEach(r => { targets[r['NCR Number']] = val; });
-  saveTargets();
+// ── Bulk set ─────────────────────────────────────────────────
+function bulkSet() {
+  const s = document.getElementById('bulk-start').value;
+  const t = document.getElementById('bulk-target').value;
+  if (!s && !t) { toast('Enter at least a start or target date'); return; }
+  const rows = getRows();
+  rows.forEach(r => {
+    const ncr = r['NCR Number'];
+    if (!plan[ncr]) plan[ncr] = { start:'', target:'' };
+    if (s) plan[ncr].start  = s;
+    if (t) plan[ncr].target = t;
+  });
+  save();
   render();
-  toast(`Target set for ${rows.length} visible NCRs`);
+  toast(`Updated ${rows.length} NCRs`);
 }
 
-// ── View shift ────────────────────────────────────────────────
+function clearAll() {
+  if (!confirm('Clear ALL start and target dates? This cannot be undone.')) return;
+  plan = {};
+  save();
+  render();
+  toast('All dates cleared');
+}
+
+// ── View navigation ───────────────────────────────────────────
 function shiftView(n) { viewOffset += n; render(); }
 function jumpToday()  { viewOffset = 0;  render(); }
 
 // ── Export ────────────────────────────────────────────────────
 function exportCSV() {
-  const hdrs = ['NCR Number','Logged Date','Part Number','Fault Code','Assigned To','Target Close Date','Days Remaining','Progress Status'];
   const TODAY = new Date(); TODAY.setHours(0,0,0,0);
-  const rows = NCR_DATA.map(r => {
-    const target = targets[r['NCR Number']] ? isoToDate(targets[r['NCR Number']]) : null;
-    const days   = target ? Math.round((target-TODAY)/(1000*60*60*24)) : '';
-    const prog   = getProgress(r['NCR Number']);
-    return [r['NCR Number'],r['Logged Date'],r['Part Number'],r['Fault Code'],r['To'],
-            targets[r['NCR Number']]||'',days,prog.status||'unstarted']
+  const hdrs = ['NCR Number','Part Number','Fault Code','Manager','Logged Date','Start Date','Target Date','Duration (days)','Days Remaining','Progress Status'];
+  const data = NCR_DATA.map(r => {
+    const ncr  = r['NCR Number'];
+    const p    = getPlan(ncr);
+    const dur  = getDuration(ncr);
+    const tgt  = isoDate(p.target);
+    const rem  = tgt ? daysBetween(TODAY, tgt) : '';
+    const stat = getStatus(ncr) || 'unstarted';
+    return [ncr, r['Part Number'], r['Fault Code'], r['To'], r['Logged Date'],
+            p.start||'', p.target||'', dur!==null?dur:'', rem, stat]
       .map(v=>`"${(v+'').replace(/"/g,'""')}"`).join(',');
   });
-  const csv  = [hdrs.join(','),...rows].join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
+  const csv  = [hdrs.join(','), ...data].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
   const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = `NCR_ClosurePlan_${dateToIso(new Date())}.csv`;
+  a.href = URL.createObjectURL(blob);
+  a.download = `NCR_ClosurePlan_${toIso(new Date())}.csv`;
   a.click();
-  toast('Plan exported as CSV');
+  toast('Plan exported');
 }
 
 // ── Toast ─────────────────────────────────────────────────────
-let tt;
-function toast(msg) {
-  const el=document.getElementById('toast');
-  el.textContent=msg; el.classList.add('show');
-  clearTimeout(tt); tt=setTimeout(()=>el.classList.remove('show'),2200);
+let _tt;
+function toast(m) {
+  const el = document.getElementById('toast');
+  el.textContent = m; el.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(()=>el.classList.remove('show'), 2400);
 }
 
 // ── Init ──────────────────────────────────────────────────────
-loadStored();
+load();
 render();
 
-// Pre-fill bulk date to 4 weeks from today
-const d=new Date(); d.setDate(d.getDate()+28);
-document.getElementById('bulk-date').value = dateToIso(d);
+// Pre-fill bulk dates
+const _t = new Date(); _t.setHours(0,0,0,0);
+const _e = new Date(_t.getTime() + 28*86400000);
+document.getElementById('bulk-start').value  = toIso(_t);
+document.getElementById('bulk-target').value = toIso(_e);
 </script>
 </body>
 </html>
