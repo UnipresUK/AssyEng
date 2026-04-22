@@ -258,12 +258,12 @@
     <div class="kpi-row" id="kpi-row"></div>
   </div>
 
-  <!-- Workload + Progress funnel -->
+  <!-- NCR Age + Progress funnel -->
   <div class="grid-2">
     <div class="card">
-      <div class="card-title">Workload by Manager</div>
-      <div class="card-desc">Open NCR count and fault category exposure per manager</div>
-      <div id="workload-panel" style="margin-top:8px"></div>
+      <div class="card-title">NCR Age Analysis</div>
+      <div class="card-desc">How long open NCRs have been outstanding (from logged date to today)</div>
+      <div id="age-panel" style="margin-top:10px"></div>
     </div>
     <div class="card">
       <div class="card-title">Investigation Progress Funnel</div>
@@ -439,33 +439,50 @@ document.getElementById('kpi-row').innerHTML = kpis.map(k => `
   </div>`).join('');
 
 // ── Assignee split ────────────────────────────────────────────
-// Build workload rows (no split styling — same department, two managers)
-const managers = [
-  { name:'Sam Pascoe',  data:bySam,   color:'#06b6d4' },
-  { name:'Chris Wilson',data:byChris, color:'#f97316' },
+// NCR Age Analysis — how long each NCR has been open
+const TODAY_D = new Date();
+const ageBuckets = [
+  { label:'< 30 days',   min:0,   max:29,  color:'#10b981' },
+  { label:'30 – 60 days',min:30,  max:59,  color:'#f59e0b' },
+  { label:'60 – 90 days',min:60,  max:89,  color:'#f97316' },
+  { label:'> 90 days',   min:90,  max:9999,color:'#ef4444' },
 ];
-document.getElementById('workload-panel').innerHTML = managers.map(m => {
-  const topCats = catList
-    .map(c=>({ c, n:m.data.filter(r=>suggestCat(r['Fault Code'])===c).length }))
-    .filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,4);
-  const bars = topCats.map(x=>`
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-      <span style="width:90px;font-size:10px;color:#94a3b8">${x.c}</span>
-      <div style="flex:1;background:#1a2030;border-radius:3px;height:5px;overflow:hidden">
-        <div style="width:${(x.n/m.data.length*100).toFixed(0)}%;height:100%;background:${m.color};border-radius:3px"></div>
-      </div>
-      <span style="font-size:11px;font-family:monospace;color:#94a3b8;width:18px;text-align:right">${x.n}</span>
-    </div>`).join('');
-  return `
-    <div style="padding:14px 0;border-bottom:1px solid #242e42">
-      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px">
-        <span style="font-size:14px;font-weight:600;color:${m.color}">${m.name}</span>
-        <span style="font-family:monospace;font-size:24px;font-weight:600;color:${m.color}">${m.data.length}</span>
-        <span style="font-size:11px;color:#64748b">open NCRs (${(m.data.length/total*100).toFixed(0)}% of total)</span>
-      </div>
-      ${bars}
-    </div>`;
-}).join('');
+function parseLD(s) {
+  if (!s) return null;
+  const [d] = s.split(' '), [dd,mm,yyyy] = d.split('/');
+  return new Date(+yyyy,+mm-1,+dd);
+}
+const ageCounts = ageBuckets.map(b => ({
+  ...b,
+  n: NCR_DATA.filter(r => {
+    const d = parseLD(r['Logged Date']);
+    if (!d) return false;
+    const age = Math.floor((TODAY_D - d) / 86400000);
+    return age >= b.min && age <= b.max;
+  }).length
+}));
+const maxAge = Math.max(...ageCounts.map(b=>b.n), 1);
+// oldest NCR
+const ages = NCR_DATA.map(r => { const d=parseLD(r['Logged Date']); return d ? Math.floor((TODAY_D-d)/86400000) : 0; }).sort((a,b)=>b-a);
+const oldestDays = ages[0] || 0;
+const avgAge = ages.length ? Math.round(ages.reduce((s,v)=>s+v,0)/ages.length) : 0;
+
+document.getElementById('age-panel').innerHTML = `
+  <div style="display:flex;gap:24px;margin-bottom:16px">
+    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:3px">Oldest NCR</div>
+      <div style="font-family:monospace;font-size:22px;font-weight:600;color:#ef4444">${oldestDays}d</div></div>
+    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:3px">Average Age</div>
+      <div style="font-family:monospace;font-size:22px;font-weight:600;color:#f59e0b">${avgAge}d</div></div>
+  </div>
+  ${ageCounts.map(b=>`
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+    <span style="width:92px;font-size:11px;color:#94a3b8;flex-shrink:0">${b.label}</span>
+    <div style="flex:1;background:#1a2030;border-radius:3px;height:18px;overflow:hidden;position:relative">
+      <div style="width:${(b.n/maxAge*100).toFixed(0)}%;height:100%;background:${b.color};opacity:.8;border-radius:3px;transition:width .6s"></div>
+    </div>
+    <span style="font-family:monospace;font-size:12px;font-weight:600;color:${b.color};width:28px;text-align:right">${b.n}</span>
+    <span style="font-size:10px;color:#64748b;width:30px">${(b.n/total*100).toFixed(0)}%</span>
+  </div>`).join('')}`;
 
 // ── Progress funnel (uses localStorage progress if available) ──
 const stored = (() => { try { return JSON.parse(localStorage.getItem('pz1d_ncr_progress_v1')||'{}'); } catch{return{};} })();

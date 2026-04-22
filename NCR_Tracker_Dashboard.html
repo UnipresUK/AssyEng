@@ -40,11 +40,11 @@
   header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 18px 28px;
+    padding: 10px 20px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
   }
   .header-left { display: flex; align-items: center; gap: 16px; }
@@ -104,14 +104,14 @@
   .stat {
     flex: 1;
     background: var(--surface);
-    padding: 14px 20px;
+    padding: 8px 14px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
   }
-  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
-  .stat-value { font-size: 24px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
-  .stat-sub { font-size: 11px; color: var(--text-muted); }
+  .stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+  .stat-value { font-size: 20px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .stat-sub { font-size: 10px; color: var(--text-muted); }
   .stat.investigated .stat-value { color: var(--s-investigated); }
   .stat.countermeasure .stat-value { color: var(--s-countermeasure); }
   .stat.failed .stat-value { color: var(--s-failed); }
@@ -120,9 +120,9 @@
   /* ── Controls ── */
   .controls {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
-    padding: 14px 28px;
+    padding: 7px 20px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
@@ -130,9 +130,9 @@
   .filter-group { display: flex; gap: 6px; align-items: center; }
   .filter-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
   .pill {
-    padding: 5px 12px;
+    padding: 3px 10px;
     border-radius: 20px;
-    font-size: 12px;
+    font-size: 11px;
     cursor: pointer;
     border: 1px solid var(--border);
     background: transparent;
@@ -163,7 +163,7 @@
 
   /* ── Import strip ── */
   .import-strip {
-    padding: 10px 28px;
+    padding: 6px 20px;
     background: rgba(59,130,246,0.06);
     border-bottom: 1px solid rgba(59,130,246,0.2);
     display: flex;
@@ -178,9 +178,9 @@
   /* ── Category filter chips ── */
   .category-bar {
     display: flex;
-    gap: 6px;
+    gap: 5px;
     align-items: center;
-    padding: 10px 28px;
+    padding: 6px 20px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     flex-wrap: wrap;
@@ -207,22 +207,23 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 11px;
   }
   thead th {
     background: var(--surface);
-    padding: 10px 16px;
+    padding: 5px 8px;
     text-align: left;
-    font-size: 10px;
+    font-size: 9px;
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--text-muted);
-    font-weight: 500;
-    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    border: 1px solid var(--border);
     white-space: nowrap;
     position: sticky; top: 0; z-index: 10;
     cursor: pointer;
     user-select: none;
+    height: 28px;
   }
   thead th:hover { color: var(--text-dim); }
   thead th.sorted { color: var(--accent); }
@@ -230,45 +231,44 @@
   thead th.no-sort { cursor: default; }
   thead th.no-sort:hover { color: var(--text-muted); }
 
-  tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background 0.1s;
-  }
-  tbody tr:hover { background: rgba(255,255,255,0.025); }
-  td { padding: 10px 16px; vertical-align: middle; }
+  tbody tr { transition: background 0.08s; }
+  tbody tr:nth-child(even) td { background: rgba(255,255,255,0.018); }
+  tbody tr:hover td { background: rgba(255,255,255,0.04) !important; }
+  td { padding: 3px 7px; vertical-align: middle; border: 1px solid var(--border); height: 28px; }
 
   .ncr-num {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--text-dim);
   }
   .assignee-badge {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 10px;
     font-weight: 500;
     white-space: nowrap;
   }
   .assignee-badge.sam  { background: rgba(6,182,212,0.12);  color: var(--sam);   border: 1px solid rgba(6,182,212,0.3); }
   .assignee-badge.chris{ background: rgba(249,115,22,0.12); color: var(--chris); border: 1px solid rgba(249,115,22,0.3); }
 
-  .fault-code { font-size: 11px; color: var(--text-dim); max-width: 200px; }
-  .part-num   { font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+  .fault-code { font-size: 10px; color: var(--text-dim); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .part-num   { font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
 
   /* ── Investigator assign ── */
   .investigator-select {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 5px;
+    border-radius: 3px;
     color: var(--text);
     font-family: inherit;
-    font-size: 12px;
-    padding: 4px 8px;
+    font-size: 11px;
+    padding: 2px 4px;
     cursor: pointer;
     outline: none;
-    min-width: 130px;
+    min-width: 115px;
+    max-width: 115px;
     transition: border-color 0.15s;
   }
   .investigator-select:focus { border-color: var(--accent); }
@@ -277,44 +277,30 @@
   .category-select {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 5px;
+    border-radius: 3px;
     color: var(--text);
     font-family: inherit;
-    font-size: 11px;
-    padding: 4px 8px;
+    font-size: 10px;
+    padding: 2px 4px;
     cursor: pointer;
     outline: none;
-    min-width: 120px;
+    min-width: 100px;
+    max-width: 100px;
     transition: border-color 0.15s;
   }
   .category-select:focus { border-color: #8b5cf6; }
-  .cat-badge {
-    display: inline-block;
-    padding: 2px 7px;
-    border-radius: 10px;
-    font-size: 10px;
-    font-weight: 500;
-    white-space: nowrap;
-    margin-top: 2px;
-  }
-  .cat-weld        { background: rgba(239,68,68,0.15);   color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-  .cat-assembly    { background: rgba(245,158,11,0.15);  color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
-  .cat-thread      { background: rgba(139,92,246,0.15);  color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
-  .cat-laser       { background: rgba(6,182,212,0.15);   color: #22d3ee; border: 1px solid rgba(6,182,212,0.3); }
-  .cat-dimensional { background: rgba(59,130,246,0.15);  color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
-  .cat-other       { background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3); }
 
   /* ── Progress buttons ── */
-  .progress-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+  .progress-btns { display: flex; gap: 3px; flex-wrap: nowrap; }
   .prog-btn {
-    padding: 4px 10px;
-    border-radius: 5px;
-    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
     font-weight: 500;
     cursor: pointer;
     border: 1px solid transparent;
     font-family: inherit;
-    transition: all 0.15s;
+    transition: all 0.12s;
     white-space: nowrap;
     background: var(--surface2);
     color: var(--text-muted);
@@ -329,12 +315,12 @@
   .notes-input {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 5px;
+    border-radius: 3px;
     color: var(--text);
     font-family: inherit;
-    font-size: 11px;
-    padding: 4px 8px;
-    width: 160px;
+    font-size: 10px;
+    padding: 2px 6px;
+    width: 140px;
     outline: none;
     transition: border-color 0.15s;
   }
@@ -381,11 +367,12 @@
 
   /* ── Progress dot ── */
   .status-dot {
-    width: 8px; height: 8px;
+    width: 7px; height: 7px;
     border-radius: 50%;
     display: inline-block;
-    margin-right: 6px;
+    margin-right: 4px;
     flex-shrink: 0;
+    vertical-align: middle;
   }
   .dot-none           { background: var(--s-unallocated); }
   .dot-investigated   { background: var(--s-investigated); }
@@ -415,15 +402,15 @@
 
   /* ── NCR system status badges ── */
   .sys-badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 3px 9px; border-radius: 12px;
-    font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 1px 6px; border-radius: 10px;
+    font-size: 9px; font-weight: 600; letter-spacing: 0.04em;
     white-space: nowrap;
   }
   .sys-open     { background: rgba(59,130,246,0.12);  color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
   .sys-signoff  { background: rgba(245,158,11,0.15);  color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
   .sys-closed   { background: rgba(16,185,129,0.12);  color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-  .signoff-name { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+  .signoff-name { font-size: 9px; color: var(--text-muted); font-style: italic; display: block; }
 
   .row-closed   { opacity: 0.38; }
   .stat.signoff .stat-value { color: #f59e0b; }
@@ -815,10 +802,9 @@ function render() {
         </select>
       </td>
       <td>
-        <select class="category-select" onchange="setCategory('${n}', this.value)">
+        <select class="category-select" onchange="setCategory('${n}', this.value)" title="${effectiveCat||'No category'}">
           ${catOptions}
         </select>
-        ${effectiveCat ? `<div><span class="cat-badge ${catCls}">${effectiveCat}</span></div>` : ''}
       </td>
       <td><div class="progress-btns">${progBtns}</div></td>
       <td>
