@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Engineer Development Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:       #0a0d12;
+  --surface:  #131720;
+  --surface2: #1a2030;
+  --surface3: #202840;
+  --border:   #242e42;
+  --text:     #e2e8f0;
+  --muted:    #64748b;
+  --dim:      #94a3b8;
+  --accent:   #3b82f6;
+  --green:    #10b981;
+  --amber:    #f59e0b;
+  --purple:   #8b5cf6;
+  --red:      #ef4444;
+  --cyan:     #06b6d4;
+  --orange:   #f97316;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── Nav ── */
+.site-nav {
+  background: #0d1017;
+  border-bottom: 1px solid #1e2a3a;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.site-nav .nav-brand {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; font-weight: 600;
+  color: #3b82f6;
+  padding: 10px 14px 10px 0;
+  margin-right: 8px;
+  border-right: 1px solid #1e2a3a;
+  white-space: nowrap;
+}
+.site-nav a {
+  text-decoration: none; color: #64748b; font-size: 12px;
+  padding: 10px 14px; border-bottom: 2px solid transparent;
+  transition: all .15s; white-space: nowrap;
+}
+.site-nav a:hover { color: #e2e8f0; }
+.site-nav a.active { color: #e2e8f0; border-bottom-color: #3b82f6; }
+
+/* ── Header ── */
+.page-header {
+  background: linear-gradient(135deg, #131720 0%, #0f1520 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 28px 36px 24px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.header-brand { display: flex; align-items: center; gap: 16px; }
+.brand-mark {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  border-radius: 12px;
+  display: grid; place-items: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600; font-size: 14px; color: #fff;
+  letter-spacing: 0.05em;
+}
+.brand-title { font-size: 22px; font-weight: 700; }
+.brand-sub   { font-size: 13px; color: var(--muted); margin-top: 3px; }
+.header-meta { text-align: right; }
+.meta-date   { font-size: 13px; color: var(--dim); }
+.meta-label  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── Layout ── */
+.main-wrap { padding: 28px 36px; max-width: 1600px; margin: 0 auto; }
+
+/* ── KPI strip ── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.kpi-value { font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 600; line-height: 1; }
+.kpi-sub   { font-size: 12px; color: var(--dim); margin-top: 6px; }
+.kv-accent { color: var(--accent); }
+.kv-green  { color: var(--green); }
+.kv-amber  { color: var(--amber); }
+.kv-purple { color: var(--purple); }
+.kv-cyan   { color: var(--cyan); }
+
+/* ── Section heading ── */
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.section-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.section-actions { display: flex; gap: 8px; }
+.filter-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--dim);
+  font-size: 12px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+.filter-btn:hover, .filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── Engineer cards grid ── */
+.engineer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 36px;
+}
+.eng-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.eng-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+}
+.eng-card[data-tier="junior"]::before  { background: var(--amber); }
+.eng-card[data-tier="graduate"]::before { background: var(--cyan); }
+.eng-card[data-tier="mid"]::before     { background: var(--green); }
+.eng-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59,130,246,.15);
+}
+.eng-card.selected { border-color: var(--accent); background: var(--surface2); }
+
+.eng-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+.eng-avatar {
+  width: 44px; height: 44px; border-radius: 10px;
+  display: grid; place-items: center;
+  font-size: 16px; font-weight: 700;
+  flex-shrink: 0;
+}
+.eng-info { flex: 1; min-width: 0; }
+.eng-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.eng-role { font-size: 12px; color: var(--dim); }
+.eng-badge {
+  font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px;
+  text-transform: uppercase; letter-spacing: .05em;
+  white-space: nowrap;
+}
+.badge-junior   { background: rgba(245,158,11,.15); color: var(--amber); }
+.badge-graduate { background: rgba(6,182,212,.15);  color: var(--cyan);  }
+.badge-mid      { background: rgba(16,185,129,.15); color: var(--green); }
+
+.eng-progress-wrap { margin-bottom: 12px; }
+.progress-label {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--dim);
+  margin-bottom: 6px;
+}
+.progress-bar {
+  height: 6px; background: var(--surface3);
+  border-radius: 3px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width .6s ease;
+}
+
+.eng-skills-mini {
+  display: flex; flex-wrap: wrap; gap: 5px;
+}
+.skill-pip {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--surface3);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.skill-pip.level-0 { background: rgba(100,116,139,.1); color: var(--muted); }
+.skill-pip.level-1 { background: rgba(239,68,68,.15);  color: var(--red);   }
+.skill-pip.level-2 { background: rgba(245,158,11,.15); color: var(--amber); }
+.skill-pip.level-3 { background: rgba(16,185,129,.15); color: var(--green); }
+.skill-pip.level-4 { background: rgba(59,130,246,.2);  color: var(--accent); }
+
+/* ── Detail pane ── */
+.detail-pane {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 36px;
+  overflow: hidden;
+  display: none;
+}
+.detail-pane.open { display: block; }
+
+.detail-header {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 28px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.detail-avatar {
+  width: 56px; height: 56px; border-radius: 12px;
+  display: grid; place-items: center;
+  font-size: 20px; font-weight: 700;
+}
+.detail-info { flex: 1; }
+.detail-name { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.detail-meta { font-size: 13px; color: var(--dim); display: flex; gap: 16px; flex-wrap: wrap; }
+.detail-meta span { display: flex; align-items: center; gap: 4px; }
+.detail-close {
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--dim);
+  font-size: 13px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-family: 'IBM Plex Sans', sans-serif;
+  transition: all .15s;
+  margin-left: auto;
+}
+.detail-close:hover { background: var(--red); border-color: var(--red); color: #fff; }
+
+.detail-body {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 0;
+}
+@media (max-width: 900px) {
+  .detail-body { grid-template-columns: 1fr; }
+}
+.detail-main { padding: 24px 28px; border-right: 1px solid var(--border); }
+.detail-sidebar { padding: 24px 24px; }
+
+/* Skills matrix in detail */
+.skill-rows { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+.skill-row { display: flex; align-items: center; gap: 12px; }
+.skill-name { font-size: 13px; width: 200px; flex-shrink: 0; color: var(--dim); }
+.skill-bar-wrap { flex: 1; position: relative; height: 8px; }
+.skill-bar-bg { height: 8px; background: var(--surface3); border-radius: 4px; }
+.skill-bar-fg { height: 8px; border-radius: 4px; transition: width .6s ease; }
+.skill-dots {
+  display: flex; gap: 4px;
+  position: absolute; right: -80px; top: 50%; transform: translateY(-50%);
+}
+.skill-level-tag {
+  font-size: 10px; font-weight: 600; width: 72px; text-align: right;
+  flex-shrink: 0;
+}
+.lv0 { color: var(--muted); }
+.lv1 { color: var(--red); }
+.lv2 { color: var(--amber); }
+.lv3 { color: var(--green); }
+.lv4 { color: var(--accent); }
+.bar-lv0 { background: var(--muted); width: 0%; }
+.bar-lv1 { background: var(--red);   width: 25%; }
+.bar-lv2 { background: var(--amber); width: 50%; }
+.bar-lv3 { background: var(--green); width: 75%; }
+.bar-lv4 { background: var(--accent); width: 100%; }
+
+/* Goals table */
+.goals-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.goals-table th {
+  text-align: left; padding: 8px 12px;
+  font-size: 11px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+  border-bottom: 1px solid var(--border);
+}
+.goals-table td { padding: 10px 12px; border-bottom: 1px solid rgba(36,46,66,.5); vertical-align: top; }
+.goals-table tr:last-child td { border-bottom: none; }
+.goals-table tr:hover td { background: rgba(59,130,246,.04); }
+.goal-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px;
+  white-space: nowrap;
+}
+.gs-complete  { background: rgba(16,185,129,.15); color: var(--green); }
+.gs-progress  { background: rgba(59,130,246,.15);  color: var(--accent); }
+.gs-pending   { background: rgba(100,116,139,.15); color: var(--muted); }
+.gs-overdue   { background: rgba(239,68,68,.15);   color: var(--red); }
+.goal-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+
+/* Radar chart */
+.radar-wrap { width: 100%; max-width: 260px; margin: 0 auto 20px; }
+
+/* Notes area */
+.dev-notes {
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 13px; color: var(--dim);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.notes-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+
+/* ── Skills Matrix table ── */
+.matrix-wrap { overflow-x: auto; margin-bottom: 36px; }
+.matrix-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 900px; }
+.matrix-table th {
+  background: var(--surface);
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 10px; font-weight: 600;
+  color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+  border: 1px solid var(--border);
+  position: sticky; top: 0;
+}
+.matrix-table th.col-name { text-align: left; min-width: 140px; }
+.matrix-table td {
+  border: 1px solid var(--border);
+  padding: 9px 12px;
+  text-align: center;
+  background: var(--surface);
+}
+.matrix-table tr:hover td { background: var(--surface2); }
+.matrix-table td.eng-name-cell { text-align: left; font-weight: 500; color: var(--text); }
+.matrix-table td.eng-name-cell small { display: block; color: var(--muted); font-size: 10px; font-weight: 400; }
+
+.dot {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; border-radius: 6px;
+  font-size: 11px; font-weight: 700;
+  font-family: 'IBM Plex Mono', monospace;
+}
+.dot-0 { background: rgba(100,116,139,.12); color: var(--muted); }
+.dot-1 { background: rgba(239,68,68,.15);   color: var(--red); }
+.dot-2 { background: rgba(245,158,11,.15);  color: var(--amber); }
+.dot-3 { background: rgba(16,185,129,.15);  color: var(--green); }
+.dot-4 { background: rgba(59,130,246,.2);   color: var(--accent); }
+
+/* legend */
+.legend {
+  display: flex; flex-wrap: wrap; gap: 16px;
+  margin-bottom: 16px;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--dim); }
+
+/* ── Tab strip inside detail ── */
+.tab-strip {
+  display: flex; gap: 2px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.tab-btn {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--muted); font-size: 13px; padding: 8px 16px;
+  cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+  transition: all .15s;
+  margin-bottom: -1px;
+}
+.tab-btn:hover { color: var(--dim); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .main-wrap { padding: 16px; }
+  .page-header { padding: 18px 16px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-brand">ASSY ENG</div>
+  <a href="index.html">📋 Task Manager</a>
+  <a href="NCR_Tracker_Dashboard.html">🔧 NCR Tracker</a>
+  <a href="NCR_Management_Dashboard.html">📊 NCR Dashboard</a>
+  <a href="NCR_Gantt_Plan.html">📅 Timing Plan</a>
+  <a href="engineer-dev-plan.html" class="active">🎓 Dev Plan</a>
+</nav>
+
+<div class="page-header">
+  <div class="header-brand">
+    <div class="brand-mark">DEV</div>
+    <div>
+      <div class="brand-title">Engineer Development Plan</div>
+      <div class="brand-sub">Assembly Engineering — Skills & Competency Tracker</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="meta-date" id="todayDate"></div>
+    <div class="meta-label">Active Plans: <span id="planCount" style="color:var(--accent)">—</span></div>
+  </div>
+</div>
+
+<div class="main-wrap">
+
+  <!-- KPI strip -->
+  <div class="kpi-strip" id="kpiStrip">
+    <div class="kpi-card">
+      <div class="kpi-label">Engineers on Plan</div>
+      <div class="kpi-value kv-accent" id="kpi-total">—</div>
+      <div class="kpi-sub">Active development plans</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg. Competency</div>
+      <div class="kpi-value kv-green" id="kpi-avg">—</div>
+      <div class="kpi-sub">Out of 4.0 max</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Goals Complete</div>
+      <div class="kpi-value kv-amber" id="kpi-goals">—</div>
+      <div class="kpi-sub">Across all engineers</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Fully Signed Off</div>
+      <div class="kpi-value kv-purple" id="kpi-signoff">—</div>
+      <div class="kpi-sub">Areas at level 3+</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Needs Attention</div>
+      <div class="kpi-value kv-cyan" id="kpi-attention">—</div>
+      <div class="kpi-sub">Goals overdue</div>
+    </div>
+  </div>
+
+  <!-- Engineer cards -->
+  <div class="section-head">
+    <div class="section-title">Engineers</div>
+    <div class="section-actions">
+      <button class="filter-btn active" onclick="filterTier('all',this)">All</button>
+      <button class="filter-btn" onclick="filterTier('junior',this)">Junior</button>
+      <button class="filter-btn" onclick="filterTier('graduate',this)">Out of Time</button>
+      <button class="filter-btn" onclick="filterTier('mid',this)">Mid-Level</button>
+    </div>
+  </div>
+  <div class="engineer-grid" id="engineerGrid"></div>
+
+  <!-- Detail pane -->
+  <div class="detail-pane" id="detailPane">
+    <div class="detail-header" id="detailHeader"></div>
+    <div class="detail-body">
+      <div class="detail-main" id="detailMain"></div>
+      <div class="detail-sidebar" id="detailSidebar"></div>
+    </div>
+  </div>
+
+  <!-- Team Skills Matrix -->
+  <div class="section-head">
+    <div class="section-title">Team Skills Matrix</div>
+    <div>
+      <span style="font-size:12px;color:var(--muted)">Click engineer card above to see full plan</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="dot dot-0">0</div> Not Started</div>
+    <div class="legend-item"><div class="dot dot-1">1</div> Awareness</div>
+    <div class="legend-item"><div class="dot dot-2">2</div> Basic Competent</div>
+    <div class="legend-item"><div class="dot dot-3">3</div> Competent</div>
+    <div class="legend-item"><div class="dot dot-4">4</div> Advanced / Can Train</div>
+  </div>
+
+  <div class="matrix-wrap">
+    <table class="matrix-table" id="matrixTable"></table>
+  </div>
+
+</div>
+
+<script>
+// ───────────────────────────────────────────────
+// CONFIG
+// ───────────────────────────────────────────────
+
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzZT93HdWqXIIC0bGsfOB5TBpqEmsocHX5O_VzNaMIABAA-1tEW-VA1fiiaKvwXd6Y2AA/exec';
+
+// ───────────────────────────────────────────────
+// DATA
+// ───────────────────────────────────────────────
+
+const SKILLS = [
+  { key:'drw',  label:'Technical Drawings & Specs',  short:'Drawings' },
+  { key:'asm',  label:'Assembly Techniques & Methods', short:'Assembly' },
+  { key:'qlt',  label:'Quality Control & Inspection', short:'Quality' },
+  { key:'hse',  label:'Health, Safety & Environment', short:'HSE' },
+  { key:'erp',  label:'ERP / Production Systems',    short:'ERP/IT' },
+  { key:'rca',  label:'Problem Solving & Root Cause', short:'RCA' },
+  { key:'lean', label:'Lean & Continuous Improvement', short:'Lean' },
+  { key:'com',  label:'Communication & Teamwork',    short:'Comms' },
+  { key:'tool', label:'Tooling & Equipment',         short:'Tooling' },
+  { key:'prod', label:'Product & System Knowledge',  short:'Product' },
+];
+
+const LEVEL_LABELS = ['Not Started','Awareness','Basic Competent','Competent','Advanced'];
+const LEVEL_CLASSES = ['lv0','lv1','lv2','lv3','lv4'];
+const BAR_CLASSES   = ['bar-lv0','bar-lv1','bar-lv2','bar-lv3','bar-lv4'];
+
+let ENGINEERS = [];  // populated from Google Sheet on load
+let _saving = {};    // debounce map for note saves
+
+// ───────────────────────────────────────────────
+// HELPERS
+// ───────────────────────────────────────────────
+
+function avgSkill(eng) {
+  const vals = Object.values(eng.skills);
+  return (vals.reduce((a,b)=>a+b,0) / vals.length).toFixed(1);
+}
+
+function overallPct(eng) {
+  const max = Object.keys(eng.skills).length * 4;
+  const sum = Object.values(eng.skills).reduce((a,b)=>a+b,0);
+  return Math.round(sum / max * 100);
+}
+
+function goalCounts() {
+  let total=0, complete=0, overdue=0;
+  ENGINEERS.forEach(e => {
+    e.goals.forEach(g => {
+      total++;
+      if(g.status==='complete') complete++;
+      if(g.status==='overdue') overdue++;
+    });
+  });
+  return {total, complete, overdue};
+}
+
+function signoffCount() {
+  let count = 0;
+  ENGINEERS.forEach(e => {
+    Object.values(e.skills).forEach(v => { if(v>=3) count++; });
+  });
+  return count;
+}
+
+function tierLabel(tier) {
+  if(tier==='junior')   return '<span class="eng-badge badge-junior">Junior</span>';
+  if(tier==='graduate') return '<span class="eng-badge badge-graduate">Out of Time</span>';
+  if(tier==='mid')      return '<span class="eng-badge badge-mid">Mid-Level</span>';
+  return '';
+}
+
+function statusClass(s) {
+  if(s==='complete') return 'gs-complete';
+  if(s==='progress') return 'gs-progress';
+  if(s==='pending')  return 'gs-pending';
+  if(s==='overdue')  return 'gs-overdue';
+  return 'gs-pending';
+}
+function statusLabel(s) {
+  if(s==='complete') return '✓ Complete';
+  if(s==='progress') return '⟳ In Progress';
+  if(s==='pending')  return '○ Pending';
+  if(s==='overdue')  return '⚠ Overdue';
+  return s;
+}
+
+// ───────────────────────────────────────────────
+// RENDER KPIs
+// ───────────────────────────────────────────────
+
+function renderKPIs() {
+  if(!ENGINEERS.length) return;
+  document.getElementById('kpi-total').textContent = ENGINEERS.length;
+  document.getElementById('planCount').textContent = ENGINEERS.length;
+
+  const avgAll = (ENGINEERS.reduce((a,e)=>a+parseFloat(avgSkill(e)),0)/ENGINEERS.length).toFixed(1);
+  document.getElementById('kpi-avg').textContent = avgAll;
+
+  const gc = goalCounts();
+  document.getElementById('kpi-goals').textContent = `${gc.complete}/${gc.total}`;
+  document.getElementById('kpi-signoff').textContent = signoffCount();
+  document.getElementById('kpi-attention').textContent = gc.overdue;
+}
+
+// ───────────────────────────────────────────────
+// RENDER ENGINEER CARDS
+// ───────────────────────────────────────────────
+
+let selectedId = null;
+let radarChart = null;
+
+function renderCards(tier='all') {
+  const grid = document.getElementById('engineerGrid');
+  grid.innerHTML = '';
+  const filtered = tier==='all' ? ENGINEERS : ENGINEERS.filter(e=>e.tier===tier);
+
+  filtered.forEach(eng => {
+    const pct = overallPct(eng);
+    const barColor = pct>=75?'var(--green)':pct>=40?'var(--amber)':'var(--red)';
+
+    const skillPips = SKILLS.slice(0,6).map(s =>
+      `<span class="skill-pip level-${eng.skills[s.key]}">${s.short}</span>`
+    ).join('');
+
+    const card = document.createElement('div');
+    card.className = `eng-card${selectedId===eng.id?' selected':''}`;
+    card.dataset.tier = eng.tier;
+    card.innerHTML = `
+      <div class="eng-top">
+        <div class="eng-avatar" style="background:${eng.colorBg};color:${eng.color}">${eng.initials}</div>
+        <div class="eng-info">
+          <div class="eng-name">${eng.name}</div>
+          <div class="eng-role">${eng.role}</div>
+        </div>
+        ${tierLabel(eng.tier)}
+      </div>
+      <div class="eng-progress-wrap">
+        <div class="progress-label"><span>Overall Progress</span><span>${pct}%</span></div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${barColor}"></div></div>
+      </div>
+      <div class="eng-skills-mini">${skillPips}</div>
+    `;
+    card.addEventListener('click', () => openDetail(eng.id));
+    grid.appendChild(card);
+  });
+}
+
+// ───────────────────────────────────────────────
+// DETAIL PANE
+// ───────────────────────────────────────────────
+
+function openDetail(id) {
+  const eng = ENGINEERS.find(e=>e.id===id);
+  if(!eng) return;
+
+  if(selectedId===id) {
+    closeDetail();
+    return;
+  }
+  selectedId = id;
+  renderCards();
+
+  // Header
+  const avgStr = avgSkill(eng);
+  const pct = overallPct(eng);
+  document.getElementById('detailHeader').innerHTML = `
+    <div class="detail-avatar" style="background:${eng.colorBg};color:${eng.color}">${eng.initials}</div>
+    <div class="detail-info">
+      <div class="detail-name">${eng.name} ${tierLabel(eng.tier)}</div>
+      <div class="detail-meta">
+        <span>📋 ${eng.role}</span>
+        <span>📅 Started: ${new Date(eng.started).toLocaleDateString('en-GB',{month:'short',year:'numeric'})}</span>
+        <span>👤 Manager: ${eng.manager}</span>
+        <span>📈 Avg: <strong style="color:var(--accent)">${avgStr}/4.0</strong></span>
+        <span>⬛ Progress: <strong style="color:var(--green)">${pct}%</strong></span>
+      </div>
+    </div>
+    <button class="detail-close" onclick="closeDetail()">✕ Close</button>
+  `;
+
+  // Main — tabs
+  document.getElementById('detailMain').innerHTML = `
+    <div class="tab-strip">
+      <button class="tab-btn active" onclick="switchTab('skills',this)">Skills</button>
+      <button class="tab-btn" onclick="switchTab('goals',this)">Development Goals</button>
+      <button class="tab-btn" onclick="switchTab('notes',this)">Notes</button>
+    </div>
+    <div class="tab-content active" id="tab-skills">${buildSkillsTab(eng)}</div>
+    <div class="tab-content" id="tab-goals">${buildGoalsTab(eng)}</div>
+    <div class="tab-content" id="tab-notes">${buildNotesTab(eng)}</div>
+  `;
+
+  // Sidebar — radar chart
+  document.getElementById('detailSidebar').innerHTML = `
+    <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Competency Radar</div>
+    <div class="radar-wrap"><canvas id="radarCanvas"></canvas></div>
+    <div style="margin-top:16px;">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;">Level Key</div>
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+        <div style="display:flex;align-items:center;gap:8px;"><div class="dot dot-0">0</div><span style="color:var(--muted)">Not Started</span></div>
+        <div style="display:flex;align-items:center;gap:8px;"><div class="dot dot-1">1</div><span style="color:var(--dim)">Awareness</span></div>
+        <div style="display:flex;align-items:center;gap:8px;"><div class="dot dot-2">2</div><span style="color:var(--dim)">Basic Competent</span></div>
+        <div style="display:flex;align-items:center;gap:8px;"><div class="dot dot-3">3</div><span style="color:var(--dim)">Competent</span></div>
+        <div style="display:flex;align-items:center;gap:8px;"><div class="dot dot-4">4</div><span style="color:var(--dim)">Advanced / Can Train</span></div>
+      </div>
+    </div>
+  `;
+
+  renderRadar(eng);
+
+  const pane = document.getElementById('detailPane');
+  pane.classList.add('open');
+  pane.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function closeDetail() {
+  selectedId = null;
+  document.getElementById('detailPane').classList.remove('open');
+  if(radarChart) { radarChart.destroy(); radarChart=null; }
+  renderCards();
+}
+
+function buildSkillsTab(eng) {
+  const hint = '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Click a skill bar to cycle level (0 → 1 → 2 → 3 → 4 → 0). Saves to sheet automatically.</div>';
+  return hint + `<div class="skill-rows">
+    ${SKILLS.map(s => {
+      const lv = eng.skills[s.key];
+      const pct = lv/4*100;
+      return `
+      <div class="skill-row" style="cursor:pointer" title="Click to increase level" onclick="cycleSkill('${eng.id}','${s.key}')">
+        <div class="skill-name">${s.label}</div>
+        <div class="skill-bar-wrap" style="position:relative">
+          <div class="skill-bar-bg">
+            <div class="skill-bar-fg ${BAR_CLASSES[lv]}" style="width:${pct}%" id="bar-${eng.id}-${s.key}"></div>
+          </div>
+        </div>
+        <div class="skill-level-tag ${LEVEL_CLASSES[lv]}" id="tag-${eng.id}-${s.key}">${LEVEL_LABELS[lv]}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function cycleSkill(engineerId, skill) {
+  const eng = ENGINEERS.find(e=>e.id===engineerId);
+  if(!eng) return;
+  const newLevel = (eng.skills[skill] + 1) % 5;
+  // Update DOM immediately
+  const bar = document.getElementById(`bar-${engineerId}-${skill}`);
+  const tag = document.getElementById(`tag-${engineerId}-${skill}`);
+  if(bar) { bar.className = `skill-bar-fg ${BAR_CLASSES[newLevel]}`; bar.style.width = (newLevel/4*100)+'%'; }
+  if(tag) { tag.className = `skill-level-tag ${LEVEL_CLASSES[newLevel]}`; tag.textContent = LEVEL_LABELS[newLevel]; }
+  // Update header stats
+  saveSkill(engineerId, skill, newLevel).then(()=>{
+    showBanner(`${skill.toUpperCase()} → Level ${newLevel} (${LEVEL_LABELS[newLevel]}) saved`, 'ok');
+    if(radarChart && selectedId===engineerId) renderRadar(eng);
+    // Refresh header avg/progress
+    const avgStr = avgSkill(eng);
+    const pct = overallPct(eng);
+    const avgEl = document.querySelector('.detail-meta strong[data-avg]');
+    document.querySelectorAll('.detail-meta strong').forEach(el=>{
+      if(el.textContent.includes('/4.0')) el.textContent = avgStr+'/4.0';
+      if(el.textContent.includes('%') && !el.textContent.includes('/')) el.textContent = pct+'%';
+    });
+  });
+}
+
+const STATUS_CYCLE = ['pending','progress','complete','overdue'];
+
+function buildGoalsTab(eng) {
+  const hint = '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Click a status badge to cycle it. Saves to sheet automatically.</div>';
+  return hint + `
+  <table class="goals-table">
+    <thead><tr>
+      <th>Development Goal</th>
+      <th>Target Date</th>
+      <th>Status</th>
+    </tr></thead>
+    <tbody>
+    ${eng.goals.map(g=>`
+      <tr>
+        <td>${g.title}</td>
+        <td><span class="goal-date">${formatTarget(g.target)}</span></td>
+        <td>
+          <span class="goal-status ${statusClass(g.status)}" id="gs-${g.id}"
+            style="cursor:pointer" title="Click to change status"
+            onclick="cycleGoal('${eng.id}','${g.id}')">
+            ${statusLabel(g.status)}
+          </span>
+        </td>
+      </tr>
+    `).join('')}
+    </tbody>
+  </table>`;
+}
+
+function formatTarget(t) {
+  if(!t) return '—';
+  try { return new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+  catch(_) { return t; }
+}
+
+function cycleGoal(engineerId, goalId) {
+  const eng = ENGINEERS.find(e=>e.id===engineerId);
+  if(!eng) return;
+  const goal = eng.goals.find(g=>g.id===goalId);
+  if(!goal) return;
+  const idx = STATUS_CYCLE.indexOf(goal.status);
+  const newStatus = STATUS_CYCLE[(idx+1) % STATUS_CYCLE.length];
+  const el = document.getElementById(`gs-${goalId}`);
+  if(el) { el.className = `goal-status ${statusClass(newStatus)}`; el.textContent = statusLabel(newStatus); }
+  saveGoalStatus(engineerId, goalId, newStatus).then(()=>{
+    showBanner(`Goal → ${statusLabel(newStatus)} saved`, 'ok');
+  });
+}
+
+function buildNotesTab(eng) {
+  return `
+  <div class="notes-label">Manager Notes <span style="color:var(--muted);font-weight:400;font-size:10px;margin-left:6px;">auto-saves as you type</span></div>
+  <textarea class="dev-notes" id="notesArea-${eng.id}"
+    style="width:100%;min-height:140px;background:var(--surface3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;font-size:13px;color:var(--dim);line-height:1.6;resize:vertical;font-family:IBM Plex Sans,sans-serif;"
+    oninput="saveNotes('${eng.id}',this.value)">${eng.notes||''}</textarea>`;
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function renderRadar(eng) {
+  if(radarChart) { radarChart.destroy(); radarChart=null; }
+  const ctx = document.getElementById('radarCanvas').getContext('2d');
+  const data = SKILLS.map(s=>eng.skills[s.key]);
+  const labels = SKILLS.map(s=>s.short);
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets:[{
+        label: eng.name,
+        data,
+        backgroundColor: `${eng.color}22`,
+        borderColor: eng.color,
+        borderWidth: 2,
+        pointBackgroundColor: eng.color,
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive:true,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        r:{
+          min:0, max:4,
+          ticks:{ stepSize:1, color:'#64748b', backdropColor:'transparent', font:{size:9} },
+          grid:{ color:'#1e2a3a' },
+          pointLabels:{ color:'#94a3b8', font:{size:10} },
+          angleLines:{ color:'#1e2a3a' },
+        }
+      }
+    }
+  });
+}
+
+// ───────────────────────────────────────────────
+// MATRIX TABLE
+// ───────────────────────────────────────────────
+
+function renderMatrix() {
+  const tbl = document.getElementById('matrixTable');
+  const skillCols = SKILLS.map(s=>`<th>${s.short}</th>`).join('');
+  const rows = ENGINEERS.map(eng=>{
+    const cells = SKILLS.map(s=>{
+      const lv=eng.skills[s.key];
+      return `<td><div class="dot dot-${lv}">${lv}</div></td>`;
+    }).join('');
+    return `<tr>
+      <td class="eng-name-cell">
+        ${eng.name}
+        <small>${eng.role.replace('Assembly Engineer','').replace('Engineer','').trim()||'Engineer'}</small>
+      </td>
+      ${cells}
+      <td><strong style="font-family:'IBM Plex Mono',monospace;color:var(--accent)">${avgSkill(eng)}</strong></td>
+    </tr>`;
+  }).join('');
+
+  tbl.innerHTML = `
+    <thead><tr>
+      <th class="col-name">Engineer</th>
+      ${skillCols}
+      <th>Avg</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  `;
+}
+
+// ───────────────────────────────────────────────
+// FILTER
+// ───────────────────────────────────────────────
+
+function filterTier(tier, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  closeDetail();
+  renderCards(tier);
+}
+
+// ───────────────────────────────────────────────
+// API — save back to Google Sheet
+// ───────────────────────────────────────────────
+
+function apiPost(params) {
+  if (!SCRIPT_URL || SCRIPT_URL.includes('YOUR_SCRIPT')) return Promise.resolve();
+  const url = SCRIPT_URL + '?' + Object.entries(params).map(([k,v])=>k+'='+encodeURIComponent(v)).join('&');
+  return fetch(url).then(r=>r.json()).catch(()=>{});
+}
+
+function saveSkill(engineerId, skill, level) {
+  // Update local data
+  const eng = ENGINEERS.find(e=>e.id===engineerId);
+  if(eng) eng.skills[skill] = level;
+  renderMatrix();
+  renderKPIs();
+  return apiPost({ action:'updateSkill', engineerId, skill, level });
+}
+
+function saveGoalStatus(engineerId, goalId, newStatus) {
+  const eng = ENGINEERS.find(e=>e.id===engineerId);
+  if(eng) { const g=eng.goals.find(g=>g.id===goalId); if(g) g.status=newStatus; }
+  renderKPIs();
+  return apiPost({ action:'updateGoal', goalId, status:newStatus });
+}
+
+function saveNotes(engineerId, notes) {
+  const eng = ENGINEERS.find(e=>e.id===engineerId);
+  if(eng) eng.notes = notes;
+  clearTimeout(_saving[engineerId]);
+  _saving[engineerId] = setTimeout(()=>{
+    apiPost({ action:'updateNotes', engineerId, notes });
+  }, 1200);
+}
+
+// ───────────────────────────────────────────────
+// INIT — load from Google Sheet, fall back to demo
+// ───────────────────────────────────────────────
+
+const DEMO_ENGINEERS = [
+  { id:'E01', name:'Tom Ashworth', initials:'TA', tier:'junior', role:'Junior Assembly Engineer', started:'2024-09-01', manager:'S. Richardson', color:'#f59e0b', colorBg:'rgba(245,158,11,.15)', skills:{drw:1,asm:2,qlt:1,hse:2,erp:1,rca:1,lean:1,com:2,tool:2,prod:1}, goals:[{id:'G001',title:'Complete Engineering Drawing Fundamentals module',target:'2025-06-30',status:'progress'},{id:'G002',title:'Shadow QC inspection on 3 builds',target:'2025-05-31',status:'complete'},{id:'G003',title:'Pass HSE induction & toolbox talks',target:'2025-04-30',status:'complete'},{id:'G004',title:'Complete ERP training (SAP basics)',target:'2025-07-31',status:'pending'},{id:'G005',title:'Achieve level 2 on all core skills',target:'2025-12-31',status:'pending'}], notes:'Tom joined straight from college. Strong hands-on ability; needs to build confidence reading complex drawings. Pair with senior engineer on next build cycle.' },
+  { id:'E02', name:'Priya Nair', initials:'PN', tier:'graduate', role:'Graduate Engineer (Out of Time)', started:'2023-09-01', manager:'S. Richardson', color:'#06b6d4', colorBg:'rgba(6,182,212,.15)', skills:{drw:3,asm:2,qlt:2,hse:3,erp:2,rca:2,lean:2,com:3,tool:2,prod:2}, goals:[{id:'G006',title:'Lead full build sign-off independently',target:'2025-05-31',status:'complete'},{id:'G007',title:'Complete Lean Six Sigma Yellow Belt',target:'2025-07-31',status:'progress'},{id:'G008',title:'RCA on last 2 NCRs raised in section',target:'2025-04-30',status:'overdue'},{id:'G009',title:'Mentor new junior engineer for 1 quarter',target:'2025-09-30',status:'pending'},{id:'G010',title:'Achieve level 3 on all core skills',target:'2025-12-31',status:'pending'}], notes:'Priya completed apprenticeship Sept 2023. Technically solid; developing confidence in problem solving and RCA. Recommended for Yellow Belt training this quarter.' },
+  { id:'E03', name:'Jake Holden', initials:'JH', tier:'junior', role:'Junior Assembly Engineer', started:'2025-01-06', manager:'S. Richardson', color:'#f59e0b', colorBg:'rgba(245,158,11,.15)', skills:{drw:0,asm:1,qlt:1,hse:2,erp:0,rca:0,lean:0,com:1,tool:1,prod:0}, goals:[{id:'G011',title:'Complete site induction & HSE mandatory training',target:'2025-01-31',status:'complete'},{id:'G012',title:'Shadow assembly on PZ1D build — all stations',target:'2025-04-30',status:'progress'},{id:'G013',title:'Complete drawing & GD&T awareness session',target:'2025-05-31',status:'pending'},{id:'G014',title:'First solo workstation sign-off with supervisor',target:'2025-07-31',status:'pending'}], notes:'New starter January 2025. Focus on structured shadowing and safety compliance first. Weekly check-ins recommended for first 6 months.' },
+  { id:'E04', name:'Amelia Foster', initials:'AF', tier:'graduate', role:'Graduate Engineer (Out of Time)', started:'2023-09-01', manager:'S. Richardson', color:'#06b6d4', colorBg:'rgba(6,182,212,.15)', skills:{drw:3,asm:3,qlt:3,hse:3,erp:2,rca:2,lean:2,com:2,tool:3,prod:2}, goals:[{id:'G015',title:'Complete full NCR root-cause investigation',target:'2025-03-31',status:'complete'},{id:'G016',title:'Achieve ERP level 3 — transactions & reporting',target:'2025-06-30',status:'progress'},{id:'G017',title:'Lean improvement project submission',target:'2025-08-31',status:'pending'},{id:'G018',title:'Lead junior engineer development for 1 quarter',target:'2025-09-30',status:'pending'},{id:'G019',title:'Full competency sign-off by manager',target:'2025-12-31',status:'pending'}], notes:'Progressing well and close to full sign-off. ERP and Lean are the remaining development areas. On track for mid-level progression by end of year.' },
+  { id:'E05', name:'Ryan Blackwell', initials:'RB', tier:'junior', role:'Junior Assembly Engineer', started:'2024-06-03', manager:'S. Richardson', color:'#f59e0b', colorBg:'rgba(245,158,11,.15)', skills:{drw:2,asm:2,qlt:1,hse:3,erp:1,rca:1,lean:1,com:2,tool:2,prod:1}, goals:[{id:'G020',title:'Complete HSE advanced module',target:'2025-02-28',status:'complete'},{id:'G021',title:'QC inspection shadowing — 5 builds logged',target:'2025-05-31',status:'progress'},{id:'G022',title:'Drawing reading assessment — pass 70%+',target:'2025-06-30',status:'pending'},{id:'G023',title:'ERP system access & basic transactions',target:'2025-07-31',status:'pending'}], notes:'Good practical ability and safety-conscious. Needs to develop quality awareness and drawing interpretation. Progressing at expected pace for 10 months in post.' },
+  { id:'E06', name:'Sophie Marsh', initials:'SM', tier:'mid', role:'Assembly Engineer', started:'2022-09-01', manager:'S. Richardson', color:'#10b981', colorBg:'rgba(16,185,129,.15)', skills:{drw:4,asm:4,qlt:3,hse:4,erp:3,rca:3,lean:3,com:3,tool:4,prod:3}, goals:[{id:'G024',title:'Lean project lead — 5S implementation',target:'2025-03-31',status:'complete'},{id:'G025',title:'Mentor two junior engineers through Q2',target:'2025-06-30',status:'progress'},{id:'G026',title:'Complete IEng application submission',target:'2025-09-30',status:'pending'},{id:'G027',title:'Full advanced sign-off on all skill areas',target:'2025-12-31',status:'pending'}], notes:'Most experienced on the plan; acts as informal mentor. Targeted for IEng application this year. Retain and develop as a technical lead.' },
+];
+
+function showBanner(msg, type='info') {
+  let banner = document.getElementById('loadBanner');
+  if(!banner) {
+    banner = document.createElement('div');
+    banner.id = 'loadBanner';
+    banner.style.cssText = 'position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;transition:opacity .4s;font-family:IBM Plex Sans,sans-serif;';
+    document.body.appendChild(banner);
+  }
+  banner.style.background = type==='ok' ? '#10b98133' : type==='err' ? '#ef444433' : '#3b82f633';
+  banner.style.border = `1px solid ${type==='ok'?'#10b981':type==='err'?'#ef4444':'#3b82f6'}`;
+  banner.style.color = type==='ok' ? '#10b981' : type==='err' ? '#ef4444' : '#93c5fd';
+  banner.style.opacity = '1';
+  banner.textContent = msg;
+  clearTimeout(banner._t);
+  banner._t = setTimeout(()=>{ banner.style.opacity='0'; }, 3000);
+}
+
+function init() {
+  const d = new Date();
+  document.getElementById('todayDate').textContent =
+    d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+
+  if (!SCRIPT_URL || SCRIPT_URL.includes('YOUR_SCRIPT')) {
+    ENGINEERS = DEMO_ENGINEERS;
+    renderAll();
+    showBanner('Demo mode — no script URL configured', 'info');
+    return;
+  }
+
+  showBanner('Loading from Google Sheet…', 'info');
+  fetch(SCRIPT_URL + '?action=getAll')
+    .then(r => r.json())
+    .then(resp => {
+      if (resp.ok && Array.isArray(resp.data) && resp.data.length > 0) {
+        ENGINEERS = resp.data;
+        showBanner('Loaded ' + ENGINEERS.length + ' engineers from sheet', 'ok');
+      } else {
+        ENGINEERS = DEMO_ENGINEERS;
+        showBanner('Sheet empty — showing demo data. Run doSetup() in Apps Script to seed.', 'err');
+      }
+      renderAll();
+    })
+    .catch(() => {
+      ENGINEERS = DEMO_ENGINEERS;
+      showBanner('Could not reach script — showing demo data', 'err');
+      renderAll();
+    });
+}
+
+function renderAll() {
+  renderKPIs();
+  renderCards();
+  renderMatrix();
+}
+
+init();
+</script>
+</body>
+</html>
