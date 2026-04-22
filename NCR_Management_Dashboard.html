@@ -241,7 +241,7 @@
     <div class="brand-mark">NCR</div>
     <div>
       <div class="brand-title">PZ1D Live Trial — NCR Management Report</div>
-      <div class="brand-sub">Quality Performance Dashboard · Sam Pascoe &amp; Chris Wilson</div>
+      <div class="brand-sub">Quality Performance Dashboard · Assembly Engineering</div>
     </div>
   </div>
   <div class="header-meta">
@@ -315,9 +315,9 @@
       <div style="margin-top:6px" id="parts-table"></div>
     </div>
     <div class="card">
-      <div class="card-title">Fault Category Split by Engineer</div>
-      <div class="card-desc">Radar view of fault type exposure per assignee</div>
-      <div class="chart-wrap" style="height:260px"><canvas id="radarChart"></canvas></div>
+      <div class="card-title">Assembly Engineering — Workload by Manager</div>
+      <div class="card-desc">Fault category breakdown per manager within the department</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="mgrChart"></canvas></div>
     </div>
   </div>
 
@@ -420,16 +420,17 @@ function catCountFor(arr) { return catList.map(c => arr.filter(r=>suggestCat(r['
 document.getElementById('report-date').textContent =
   'Generated ' + new Date().toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'});
 document.getElementById('footer').textContent =
-  `PZ1D NCR Management Dashboard · ${total} open items · Generated ${new Date().toLocaleDateString('en-GB')}`;
+  `Assembly Engineering — PZ1D NCR Management Dashboard · ${total} open items · Generated ${new Date().toLocaleDateString('en-GB')}`;
 
 // ── KPI row ───────────────────────────────────────────────────
+const over90  = (ageCounts.find(b=>b.label==='> 90 days')||{n:0}).n;
 const kpis = [
-  { label:'Total Open NCRs', value:total,               sub:'all open items',         color:'#3b82f6' },
-  { label:'Sam Pascoe',      value:bySam.length,         sub:'assigned to Sam',        color:'#06b6d4' },
-  { label:'Chris Wilson',    value:byChris.length,       sub:'assigned to Chris',      color:'#f97316' },
-  { label:'Rework',          value:(dispMap['Rework']||0), sub:'parts for rework',     color:'#f59e0b' },
-  { label:'Scrap',           value:(dispMap['Scrap']||0),  sub:'parts scrapped',       color:'#ef4444' },
-  { label:'Weld Defects',    value:(catMap['Weld Defect']||0), sub:'top category',     color:'#8b5cf6' },
+  { label:'Total Open NCRs',    value:total,                          sub:'Assembly Engineering dept',    color:'#3b82f6' },
+  { label:'Avg NCR Age',        value:avgAge+'d',                     sub:'days open (dept average)',     color:'#f59e0b' },
+  { label:'> 90 Days Old',      value:over90,                         sub:'critical — oldest tickets',    color:'#ef4444' },
+  { label:'Rework',             value:(dispMap['Rework']||0),         sub:'parts for rework',             color:'#f97316' },
+  { label:'Scrap',              value:(dispMap['Scrap']||0),          sub:'parts scrapped',               color:'#8b5cf6' },
+  { label:'Weld Defects',       value:(catMap['Weld Defect']||0),     sub:'top fault category',           color:'#06b6d4' },
 ];
 document.getElementById('kpi-row').innerHTML = kpis.map(k => `
   <div class="kpi" style="--kpi-color:${k.color}">
@@ -647,27 +648,37 @@ document.getElementById('parts-table').innerHTML = `
     </tr>`).join('')}
   </table>`;
 
-// ── Radar chart ───────────────────────────────────────────────
-new Chart(document.getElementById('radarChart'), {
-  type:'radar',
+// ── Manager workload grouped bar ──────────────────────────────
+new Chart(document.getElementById('mgrChart'), {
+  type:'bar',
   data:{
     labels: catList,
     datasets:[
-      { label:'Sam Pascoe',   data:catCountFor(bySam),   borderColor:'#06b6d4', backgroundColor:'rgba(6,182,212,0.15)',  pointBackgroundColor:'#06b6d4', borderWidth:2 },
-      { label:'Chris Wilson', data:catCountFor(byChris), borderColor:'#f97316', backgroundColor:'rgba(249,115,22,0.15)', pointBackgroundColor:'#f97316', borderWidth:2 },
+      {
+        label:'Sam Pascoe',
+        data: catCountFor(bySam),
+        backgroundColor:'rgba(59,130,246,0.75)',
+        borderColor:'#3b82f6',
+        borderWidth:1, borderRadius:3,
+      },
+      {
+        label:'Chris Wilson',
+        data: catCountFor(byChris),
+        backgroundColor:'rgba(16,185,129,0.75)',
+        borderColor:'#10b981',
+        borderWidth:1, borderRadius:3,
+      },
     ]
   },
   options:{
     responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{ position:'bottom', labels:{color:'#94a3b8',padding:12,font:{size:11}} } },
+    plugins:{
+      legend:{ position:'bottom', labels:{color:'#94a3b8',padding:12,font:{size:11}} },
+      tooltip:{ callbacks:{ label: ctx=>`${ctx.dataset.label}: ${ctx.raw} NCRs` } }
+    },
     scales:{
-      r:{
-        grid:{ color:GRID },
-        angleLines:{ color:GRID },
-        pointLabels:{ color:'#94a3b8', font:{size:10} },
-        ticks:{ color:'#64748b', backdropColor:'transparent', stepSize:2 },
-        beginAtZero:true,
-      }
+      x:{ grid:{display:false}, ticks:{color:'#94a3b8',font:{size:10}} },
+      y:{ grid:gridOpts, ticks:{color:'#64748b'}, beginAtZero:true }
     }
   }
 });
