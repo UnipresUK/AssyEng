@@ -271,6 +271,7 @@
 <nav class="tabs">
     <button class="tab-btn active" data-tab="people">👤 People &amp; Investments</button>
     <button class="tab-btn" data-tab="expenses">💷 Expenses &amp; Withdrawals</button>
+    <button class="tab-btn" data-tab="debts">💳 Debts</button>
     <button class="tab-btn" data-tab="dashboard">📊 Dashboard</button>
     <button class="tab-btn" data-tab="breakdown">📋 Year by Year</button>
 </nav>
@@ -463,6 +464,43 @@
 </div>
 </div>
 
+<!-- ══════════════════ TAB 3: DEBTS ══════════════════ -->
+<div id="tab-debts" class="tab-panel">
+<div class="container">
+
+    <!-- Debt entry table -->
+    <div class="card" style="margin-bottom:20px">
+        <div class="card-hdr">
+            <div class="card-title">💳 Debts &amp; Liabilities</div>
+            <button class="btn btn-ghost btn-sm" onclick="addDebt()">+ Add Debt</button>
+        </div>
+        <p class="info">Add mortgages, credit cards and loans. Set an overpayment to see interest &amp; time saved. The remaining balance is subtracted from Family Net Worth in Year by Year.</p>
+        <div style="overflow-x:auto">
+            <table class="inv-tbl">
+                <thead><tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Balance</th>
+                    <th>Rate %</th>
+                    <th>Monthly Payment</th>
+                    <th>Extra / Overpayment</th>
+                    <th>Term Left (yrs)</th>
+                    <th></th>
+                </tr></thead>
+                <tbody id="debtRows">
+                    <tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);font-size:.8rem">No debts added yet — click + Add Debt</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="info" style="margin-top:10px">💡 Enter Balance + Rate + Term then click <strong>📐</strong> to auto-calculate your standard monthly payment.</p>
+    </div>
+
+    <!-- Summary + amortization panels (rendered by JS) -->
+    <div id="debtPanel"></div>
+
+</div>
+</div>
+
 <!-- ══════════════════ TAB 4: BREAKDOWN ══════════════════ -->
 <div id="tab-breakdown" class="tab-panel">
 <div class="container">
@@ -500,7 +538,7 @@ function collectState() {
                  'k1Name','k1Dob','k2Name','k2Dob','spAge','spAmt'];
     const config = {};
     ids.forEach(id => { const el = document.getElementById(id); if (el) config[id] = el.value; });
-    return { config, investments: { h: ppl.h, w: ppl.w, k1: ppl.k1, k2: ppl.k2 }, bands };
+    return { config, investments: { h: ppl.h, w: ppl.w, k1: ppl.k1, k2: ppl.k2 }, bands, debts };
 }
 
 function applyState(s) {
@@ -526,6 +564,11 @@ function applyState(s) {
     if (s.bands && s.bands.length) {
         bands = s.bands;
         renderBands();
+    }
+    // Debts
+    if (s.debts && s.debts.length) {
+        debts = [];
+        s.debts.forEach(d => addDebt(d));
     }
     refreshAges();
 }
@@ -584,6 +627,8 @@ const ppl = { h: [], w: [], k1: [], k2: [] };
 const maxInv = { h: 10, w: 10, k1: 5, k2: 5 };
 let _uid = 1;
 
+let debts = [];
+
 let bands = [
     { from: 20, to: 30, amount: 20000 },
     { from: 30, to: 40, amount: 35000 },
@@ -622,6 +667,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.add('active');
         document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
         if (btn.dataset.tab === 'expenses') renderWdrSummary();
+        if (btn.dataset.tab === 'debts')    renderDebtPanel();
     });
 });
 
@@ -1640,6 +1686,244 @@ function miniChart(id, labels, data, color, fill) {
 }
 
 // ═══════════════════════════════════════════════
+//  DEBTS & LIABILITIES
+// ═══════════════════════════════════════════════
+
+const DEBT_TYPES = { mortgage: '🏠 Mortgage', credit: '💳 Credit Card', loan: '💰 Personal Loan', car: '🚗 Car Finance', other: '📄 Other' };
+
+function addDebt(d = {}) {
+    const id = _uid++;
+    debts.push({
+        id,
+        type:           d.type           || 'mortgage',
+        name:           d.name           || '',
+        balance:        d.balance        || 0,
+        rate:           d.rate           !== undefined ? d.rate : 3.5,
+        monthlyPayment: d.monthlyPayment || 0,
+        overpayment:    d.overpayment    || 0,
+        termYears:      d.termYears      || 25,
+    });
+    renderDebtTable();
+    renderDebtPanel();
+}
+
+function delDebt(id) {
+    debts = debts.filter(d => d.id !== id);
+    renderDebtTable();
+    renderDebtPanel();
+}
+
+function setDebt(id, field, val) {
+    const d = debts.find(d => d.id === id);
+    if (!d) return;
+    if (field === 'type' || field === 'name') d[field] = val;
+    else d[field] = +val || 0;
+    renderDebtPanel();
+}
+
+function calcDebtPayment(id) {
+    const d = debts.find(d => d.id === id);
+    if (!d || !d.balance || !d.rate || !d.termYears) return;
+    const r = d.rate / 100 / 12;
+    const n = d.termYears * 12;
+    const pmt = r > 0
+        ? Math.round(d.balance * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1))
+        : Math.round(d.balance / n);
+    d.monthlyPayment = pmt;
+    renderDebtTable();
+    renderDebtPanel();
+}
+
+function renderDebtTable() {
+    const tbody = document.getElementById('debtRows');
+    if (!tbody) return;
+    if (!debts.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);font-size:.8rem">No debts added yet — click + Add Debt</td></tr>`;
+        return;
+    }
+    const inp = (id, field, val, extra='') =>
+        `<input type="number" value="${val}" min="0" ${extra}
+            style="width:100%;padding:5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.78rem"
+            oninput="setDebt(${id},'${field}',this.value)">`;
+    tbody.innerHTML = debts.map(d => `
+        <tr id="debtRow${d.id}">
+            <td><select style="width:108px;padding:4px 5px;font-size:.72rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text)"
+                onchange="setDebt(${d.id},'type',this.value);renderDebtTable()">
+                ${Object.entries(DEBT_TYPES).map(([v,l]) => `<option value="${v}"${d.type===v?' selected':''}>${l}</option>`).join('')}
+            </select></td>
+            <td><input type="text" value="${esc(d.name)}" placeholder="e.g. Halifax Mortgage"
+                style="width:130px;padding:5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.78rem"
+                oninput="setDebt(${d.id},'name',this.value)"></td>
+            <td><div class="sym-wrap l"><span class="sym-l">£</span>
+                <input type="number" value="${d.balance}" min="0" style="width:100px;padding:5px 8px 5px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.78rem"
+                oninput="setDebt(${d.id},'balance',this.value)"></div></td>
+            <td><div class="sym-wrap r"><input type="number" value="${d.rate}" min="0" max="30" step="0.01" style="width:70px;padding:5px 22px 5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.78rem"
+                oninput="setDebt(${d.id},'rate',this.value)"><span class="sym-r">%</span></div></td>
+            <td><div style="display:flex;gap:4px;align-items:center">
+                <div class="sym-wrap l"><span class="sym-l">£</span>
+                <input type="number" value="${d.monthlyPayment}" min="0" style="width:90px;padding:5px 8px 5px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.78rem"
+                oninput="setDebt(${d.id},'monthlyPayment',this.value)"></div>
+                <button class="btn btn-ghost btn-sm" title="Auto-calculate from balance/rate/term" onclick="calcDebtPayment(${d.id})" style="padding:4px 7px;font-size:.72rem;flex-shrink:0">📐</button>
+            </div></td>
+            <td><div class="sym-wrap l"><span class="sym-l">£</span>
+                <input type="number" value="${d.overpayment}" min="0" style="width:90px;padding:5px 8px 5px 20px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.78rem"
+                oninput="setDebt(${d.id},'overpayment',this.value)"></div></td>
+            <td><input type="number" value="${d.termYears}" min="1" max="40" style="width:70px;padding:5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:.78rem"
+                oninput="setDebt(${d.id},'termYears',this.value)"></td>
+            <td><button class="btn-del" onclick="delDebt(${d.id})">✕</button></td>
+        </tr>`).join('');
+}
+
+// Amortization engine — returns month count, total interest, and year-by-year schedule
+function amortize(balance, rate, monthlyPayment, extra = 0) {
+    const r   = rate / 100 / 12;
+    const pmt = monthlyPayment + extra;
+    let bal   = balance;
+
+    if (bal <= 0 || pmt <= 0) return { months: 0, totalInterest: 0, schedule: [] };
+    if (r > 0 && pmt <= bal * r) return { months: Infinity, totalInterest: Infinity, schedule: [] };
+
+    let totalInterest = 0, month = 0;
+    let yInt = 0, yPrin = 0;
+    const schedule = [];
+
+    while (bal > 0.005 && month < 720) {
+        const interest  = bal * r;
+        const principal = Math.min(Math.max(0, pmt - interest), bal);
+        if (principal <= 0) break;
+        bal           -= principal;
+        totalInterest += interest;
+        yInt          += interest;
+        yPrin         += principal;
+        month++;
+        if (month % 12 === 0 || bal < 0.005) {
+            schedule.push({ year: Math.ceil(month/12), balance: Math.max(0, Math.round(bal)), interestPaid: Math.round(yInt), principalPaid: Math.round(yPrin) });
+            yInt = 0; yPrin = 0;
+        }
+    }
+    return { months: month, totalInterest: Math.round(totalInterest), schedule };
+}
+
+// Project debt balance year-by-year for net worth integration
+function projectDebtByYear(debt, startYr, endYr) {
+    const r   = debt.rate / 100 / 12;
+    const pmt = (debt.monthlyPayment || 0) + (debt.overpayment || 0);
+    let bal   = debt.balance;
+    const out = {};
+    for (let yr = startYr; yr <= endYr; yr++) {
+        for (let m = 0; m < 12 && bal > 0; m++) {
+            const interest  = bal * r;
+            const principal = Math.min(Math.max(0, pmt - interest), bal);
+            bal = Math.max(0, bal - principal);
+        }
+        out[yr] = Math.round(bal);
+        if (bal <= 0) break;
+    }
+    return out;
+}
+
+function fmDur(months) {
+    if (months === Infinity) return '∞ (payment too low)';
+    const y = Math.floor(months / 12), m = months % 12;
+    return y > 0 ? `${y}y ${m}m` : `${m}m`;
+}
+
+function renderDebtPanel() {
+    const el = document.getElementById('debtPanel');
+    if (!el) return;
+
+    if (!debts.length) {
+        el.innerHTML = '';
+        return;
+    }
+
+    // Summary stats
+    const totalBal     = debts.reduce((s,d) => s + d.balance, 0);
+    const totalMonthly = debts.reduce((s,d) => s + d.monthlyPayment + d.overpayment, 0);
+    const totalInterest = debts.reduce((s,d) => {
+        const a = amortize(d.balance, d.rate, d.monthlyPayment, d.overpayment);
+        return s + (a.totalInterest === Infinity ? 0 : a.totalInterest);
+    }, 0);
+
+    // Per-debt cards
+    const cards = debts.map(d => {
+        const std = amortize(d.balance, d.rate, d.monthlyPayment, 0);
+        const ovp = d.overpayment > 0 ? amortize(d.balance, d.rate, d.monthlyPayment, d.overpayment) : null;
+        const mSaved = (ovp && std.months !== Infinity && ovp.months !== Infinity) ? std.months - ovp.months : 0;
+        const iSaved = (ovp && std.totalInterest !== Infinity) ? std.totalInterest - ovp.totalInterest : 0;
+        const scheduleRows = (ovp || std).schedule.map(r =>
+            `<tr><td>${r.year}</td><td>${ff(r.balance)}</td><td class="cd">${ff(r.interestPaid)}</td><td class="cg">${ff(r.principalPaid)}</td></tr>`
+        ).join('');
+        const typeLabel = DEBT_TYPES[d.type] || d.type;
+
+        return `<div class="card" style="margin-bottom:16px">
+            <div class="card-hdr">
+                <div class="card-title">${d.name || 'Unnamed debt'} <span class="badge" style="background:rgba(239,68,68,.12);color:var(--danger);margin-left:4px">${typeLabel}</span></div>
+                <span style="font-size:.82rem;color:var(--muted)">${ff(d.balance)} @ ${d.rate}%</span>
+            </div>
+            <div class="g3" style="margin-bottom:14px">
+                <div class="stat" style="padding:12px 14px">
+                    <div class="stat-lbl">Standard payoff</div>
+                    <div class="stat-val" style="font-size:1.1rem">${fmDur(std.months)}</div>
+                    <div class="stat-sub">Total interest: ${std.totalInterest === Infinity ? '∞' : ff(std.totalInterest)}</div>
+                </div>
+                ${ovp ? `
+                <div class="stat" style="padding:12px 14px;border-color:var(--success)">
+                    <div class="stat-lbl">With +£${d.overpayment.toLocaleString()}/mo extra</div>
+                    <div class="stat-val cg" style="font-size:1.1rem">${fmDur(ovp.months)}</div>
+                    <div class="stat-sub">Total interest: ${ff(ovp.totalInterest)}</div>
+                </div>
+                <div class="stat" style="padding:12px 14px">
+                    <div class="stat-lbl">Overpayment saves</div>
+                    <div class="stat-val cg" style="font-size:1.1rem">${fmDur(mSaved)}</div>
+                    <div class="stat-sub cg">£${iSaved.toLocaleString()} interest saved</div>
+                </div>` : `
+                <div class="stat" style="padding:12px 14px">
+                    <div class="stat-lbl">Monthly payment</div>
+                    <div class="stat-val" style="font-size:1.1rem">${ff(d.monthlyPayment)}</div>
+                    <div class="stat-sub">Add an overpayment to see savings</div>
+                </div>
+                <div class="stat" style="padding:12px 14px">
+                    <div class="stat-lbl">Rate</div>
+                    <div class="stat-val" style="font-size:1.1rem">${d.rate}%</div>
+                    <div class="stat-sub">per annum</div>
+                </div>`}
+            </div>
+            <details>
+                <summary style="cursor:pointer;font-size:.78rem;color:var(--muted);padding:4px 0;list-style:none">
+                    <span style="user-select:none">▶ Year-by-year amortization schedule${ovp ? ' (with overpayment)' : ''}</span>
+                </summary>
+                <div style="overflow-x:auto;margin-top:10px">
+                    <table class="bk-tbl">
+                        <thead><tr><th style="text-align:left">Year</th><th>Remaining Balance</th><th class="cd">Interest Paid</th><th class="cg">Principal Paid</th></tr></thead>
+                        <tbody>${scheduleRows}</tbody>
+                    </table>
+                </div>
+            </details>
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+        <div class="g3" style="margin-bottom:20px">
+            <div class="stat" style="border-left:3px solid var(--danger)">
+                <div class="stat-lbl">Total Outstanding Debt</div>
+                <div class="stat-val cd">${ff(totalBal)}</div>
+            </div>
+            <div class="stat" style="border-left:3px solid var(--warning)">
+                <div class="stat-lbl">Monthly Commitments</div>
+                <div class="stat-val">${ff(totalMonthly)}</div>
+                <div class="stat-sub">Including overpayments</div>
+            </div>
+            <div class="stat" style="border-left:3px solid var(--muted)">
+                <div class="stat-lbl">Total Interest (all debts)</div>
+                <div class="stat-val cd">${ff(totalInterest)}</div>
+                <div class="stat-sub">At current overpayment levels</div>
+            </div>
+        </div>
+        ${cards}`;
+}
+
+// ═══════════════════════════════════════════════
 //  BREAKDOWN TABLE
 // ═══════════════════════════════════════════════
 
@@ -1664,6 +1948,10 @@ function renderBreak(r) {
     const wDbs    = firstW.dbVals   || [];
     const hExp    = breakExpanded.h;
     const wExp    = breakExpanded.w;
+
+    // Pre-compute debt balances by year for net worth integration
+    const debtByYrMap = {};
+    for (const d of debts) debtByYrMap[d.id] = projectDebtByYear(d, c.yr, c.yr + c.endAge);
 
     const togBtn = (person, open) =>
         `<button class="tog-break" onclick="toggleBreak('${person}')" title="${open?'Collapse':'Expand investments'}">${open?'◀':'▶'}</button>`;
@@ -1690,7 +1978,8 @@ function renderBreak(r) {
     for (const hRow of h) {
         const wRow = wByYr[hRow.yr] || {};
         const cPot        = hRow.pot + (wRow.pot||0);
-        const familyNet   = cPot + (k1ByYr[hRow.yr]?.pot||0) + (k2ByYr[hRow.yr]?.pot||0);
+        const totalDebt   = debts.reduce((s,d) => s + (debtByYrMap[d.id]?.[hRow.yr] || 0), 0);
+        const familyNet   = cPot + (k1ByYr[hRow.yr]?.pot||0) + (k2ByYr[hRow.yr]?.pot||0) - totalDebt;
         const totalIncome = hRow.income + (wRow.income||0);
         const expense     = hRow.expense;
         const surplus     = totalIncome - expense;
@@ -1731,6 +2020,7 @@ function renderBreak(r) {
             ${hCells.join('')}
             ${wCells.join('')}
             <td class="cc" style="font-weight:600">${ff(cPot)}</td>
+            <td class="cd">${totalDebt > 0 ? ff(totalDebt) : '—'}</td>
             <td class="cc" style="font-weight:700">${ff(familyNet)}</td>
             <td>${expense>0?ff(expense):'—'}</td>
             <td>${totalIncome>0?ff(totalIncome):'—'}</td>
@@ -1749,6 +2039,7 @@ function renderBreak(r) {
                     ${hHdrs.join('')}
                     ${wHdrs.join('')}
                     <th class="cc">Adults Combined</th>
+                    <th class="cd">Total Debt</th>
                     <th class="cc">Family Net Worth</th>
                     <th>Expenses</th>
                     <th>Income</th>
