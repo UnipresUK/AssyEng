@@ -960,8 +960,15 @@ function importFile(input) {
       try {
         const data     = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array', cellDates: false });
-        const sheet    = workbook.Sheets[workbook.SheetNames[0]];
-        const rows     = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        // Pick the sheet with the most rows (likely the data sheet)
+        let bestSheet = workbook.Sheets[workbook.SheetNames[0]];
+        let bestCount = 0;
+        workbook.SheetNames.forEach(name => {
+          const s = workbook.Sheets[name];
+          const r = XLSX.utils.sheet_to_json(s, { header: 1, defval: '' });
+          if (r.length > bestCount) { bestCount = r.length; bestSheet = s; }
+        });
+        const rows = XLSX.utils.sheet_to_json(bestSheet, { header: 1, defval: '' });
         processImportRows(rows);
       } catch (err) {
         alert('Error reading Excel file: ' + err.message);
@@ -1020,24 +1027,39 @@ function processImportRows(rows) {
     return i;
   };
 
-  const COLS = {
-    ncr:     idx('NCR Number'),
-    date:    idx('Logged Date'),
-    part:    idx('Part Number'),
-    fault:   idx('Fault Code'),
-    status:  idx('Status'),
-    to:      idx('To'),          // exact match only — too short for partial
-    wcFound: idx('Workcentre Found'),
-    signOff: idx('Sign Off - Supervisor Name'),
+  // Helper: find first matching header from a list of aliases
+  const idxAny = (...names) => {
+    for (const name of names) {
+      const i = idx(name);
+      if (i >= 0) return i;
+    }
+    return -1;
   };
 
-  // If NCR Number not found by name, try any column with "NCR" in it
-  if (COLS.ncr < 0) COLS.ncr = headers.findIndex(h => /ncr/i.test(h));
+  const COLS = {
+    ncr:     idxAny('NCR Number', 'NCR No', 'NCR No.', 'NCR#', 'NCR'),
+    date:    idxAny('Logged Date', 'Date Logged', 'Date', 'Created'),
+    part:    idxAny('Part Number', 'Part No', 'Part No.', 'PartNumber'),
+    fault:   idxAny('Fault Code', 'Fault', 'Defect Code', 'Defect'),
+    status:  idxAny('Status', 'NCR Status'),
+    to:      idxAny('To', 'Assigned To', 'Assigned', 'Owner', 'Engineer'),
+    wcFound: idxAny('Workcentre Found', 'Workcentre', 'Work Centre Found', 'Found At'),
+    signOff: idxAny('Sign Off - Supervisor Name', 'Supervisor Name', 'Sign Off'),
+  };
 
   if (COLS.ncr < 0) {
-    alert('Found a potential header row but no NCR column.\n\nColumns found: ' + headers.join(', '));
+    alert('Found a potential header row but no NCR column.\n\nColumns found:\n' + headers.join(', '));
     return;
   }
+
+  // Diagnostic — remove once import is confirmed working
+  console.log('Import column mapping:', {
+    headers: headers.length + ' columns',
+    ncr:     headers[COLS.ncr]     + ' (col ' + (COLS.ncr+1) + ')',
+    to:      COLS.to >= 0   ? headers[COLS.to]     + ' (col ' + (COLS.to+1) + ')' : 'NOT FOUND',
+    part:    COLS.part >= 0 ? headers[COLS.part]   + ' (col ' + (COLS.part+1) + ')' : 'NOT FOUND',
+    fault:   COLS.fault >= 0 ? headers[COLS.fault] + ' (col ' + (COLS.fault+1) + ')' : 'NOT FOUND',
+  });
 
   const col = (row, key) => COLS[key] >= 0 ? String(row[COLS[key]] || '').trim() : '';
 
