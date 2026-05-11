@@ -653,16 +653,22 @@ function setSyncState(state, label) {
 }
 
 // ── Google Sheets: load all progress ──────────────────────────
+// Step 1: render immediately from localStorage cache (instant)
+// Step 2: silently refresh from Sheets in background, re-render if changed
 async function loadProgress() {
-  setSyncState('syncing', 'Loading…');
-  setLoadingBar(30);
+  // ── Instant render from cache ──
+  try { progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { progress = {}; }
+  render();
+  setSyncState('syncing', 'Syncing…');
+
+  // ── Background sync from Sheets ──
   try {
     const res  = await fetch(SHEETS_URL + '?action=getAll');
     const json = await res.json();
     if (json.ok && Array.isArray(json.data)) {
-      progress = {};
+      const fresh = {};
       json.data.forEach(r => {
-        progress[r.NCR_Number] = {
+        fresh[r.NCR_Number] = {
           investigator: r.Investigator || '',
           status:       r.Status       || '',
           notes:        r.Notes        || '',
@@ -670,17 +676,20 @@ async function loadProgress() {
           dept:         r.Dept         || '',
         };
       });
-      setSyncState('synced', 'Synced');
+      // Only re-render if the data actually changed
+      if (JSON.stringify(fresh) !== JSON.stringify(progress)) {
+        progress = fresh;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+        render();
+      }
+      setSyncState('synced', 'Synced ✓');
     } else {
       throw new Error(json.error || 'Bad response');
     }
   } catch (e) {
-    console.warn('Sheets unavailable, falling back to localStorage:', e);
-    try { progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { progress = {}; }
-    setSyncState('error', 'Offline (local)');
+    console.warn('Sheets sync failed, using cached data:', e);
+    setSyncState('error', 'Offline (cached)');
   }
-  setLoadingBar(100);
-  render();
 }
 
 // ── Google Sheets: push one record (debounced) ─────────────────

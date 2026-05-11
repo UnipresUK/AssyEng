@@ -422,30 +422,13 @@ document.getElementById('report-date').textContent =
 document.getElementById('footer').textContent =
   `Assembly Engineering — PZ1D NCR Management Dashboard · ${total} open items · Generated ${new Date().toLocaleDateString('en-GB')}`;
 
-// ── KPI row ───────────────────────────────────────────────────
-const kpis = [
-  { label:'Total Open NCRs',    value:total,                          sub:'Assembly Engineering dept',    color:'#3b82f6' },
-  { label:'Avg NCR Age',        value:avgAge+'d',                     sub:'days open (dept average)',     color:'#f59e0b' },
-  { label:'> 90 Days Old',      value:over90,                         sub:'critical — oldest tickets',    color:'#ef4444' },
-  { label:'Rework',             value:(dispMap['Rework']||0),         sub:'parts for rework',             color:'#f97316' },
-  { label:'Scrap',              value:(dispMap['Scrap']||0),          sub:'parts scrapped',               color:'#8b5cf6' },
-  { label:'Weld Defects',       value:(catMap['Weld Defect']||0),     sub:'top fault category',           color:'#06b6d4' },
-];
-document.getElementById('kpi-row').innerHTML = kpis.map(k => `
-  <div class="kpi" style="--kpi-color:${k.color}">
-    <span class="kpi-label">${k.label}</span>
-    <span class="kpi-value">${k.value}</span>
-    <span class="kpi-sub">${k.sub}</span>
-  </div>`).join('');
-
-// ── Assignee split ────────────────────────────────────────────
-// NCR Age Analysis — how long each NCR has been open
+// ── NCR Age Analysis — must be computed before KPIs ──────────
 const TODAY_D = new Date();
 const ageBuckets = [
-  { label:'< 30 days',   min:0,   max:29,  color:'#10b981' },
-  { label:'30 – 60 days',min:30,  max:59,  color:'#f59e0b' },
-  { label:'60 – 90 days',min:60,  max:89,  color:'#f97316' },
-  { label:'> 90 days',   min:90,  max:9999,color:'#ef4444' },
+  { label:'< 30 days',   min:0,   max:29,  color:'#059669' },
+  { label:'30 – 60 days',min:30,  max:59,  color:'#d97706' },
+  { label:'60 – 90 days',min:60,  max:89,  color:'#ea580c' },
+  { label:'> 90 days',   min:90,  max:9999,color:'#dc2626' },
 ];
 function parseLD(s) {
   if (!s) return null;
@@ -461,25 +444,40 @@ const ageCounts = ageBuckets.map(b => ({
     return age >= b.min && age <= b.max;
   }).length
 }));
-const maxAge  = Math.max(...ageCounts.map(b=>b.n), 1);
-const over90  = (ageCounts.find(b=>b.label==='> 90 days')||{n:0}).n;
-// oldest NCR
-const ages = NCR_DATA.map(r => { const d=parseLD(r['Logged Date']); return d ? Math.floor((TODAY_D-d)/86400000) : 0; }).sort((a,b)=>b-a);
+const maxAge     = Math.max(...ageCounts.map(b=>b.n), 1);
+const over90     = (ageCounts.find(b=>b.label==='> 90 days')||{n:0}).n;
+const ages       = NCR_DATA.map(r => { const d=parseLD(r['Logged Date']); return d ? Math.floor((TODAY_D-d)/86400000) : 0; }).sort((a,b)=>b-a);
 const oldestDays = ages[0] || 0;
-const avgAge = ages.length ? Math.round(ages.reduce((s,v)=>s+v,0)/ages.length) : 0;
+const avgAge     = ages.length ? Math.round(ages.reduce((s,v)=>s+v,0)/ages.length) : 0;
+
+// ── KPI row (needs avgAge + over90 computed above) ────────────
+const kpis = [
+  { label:'Total Open NCRs',    value:total,                          sub:'Assembly Engineering dept',    color:'#2563eb' },
+  { label:'Avg NCR Age',        value:avgAge+'d',                     sub:'days open (dept average)',     color:'#d97706' },
+  { label:'> 90 Days Old',      value:over90,                         sub:'critical — oldest tickets',    color:'#dc2626' },
+  { label:'Rework',             value:(dispMap['Rework']||0),         sub:'parts for rework',             color:'#ea580c' },
+  { label:'Scrap',              value:(dispMap['Scrap']||0),          sub:'parts scrapped',               color:'#7c3aed' },
+  { label:'Weld Defects',       value:(catMap['Weld Defect']||0),     sub:'top fault category',           color:'#0891b2' },
+];
+document.getElementById('kpi-row').innerHTML = kpis.map(k => `
+  <div class="kpi" style="--kpi-color:${k.color}">
+    <span class="kpi-label">${k.label}</span>
+    <span class="kpi-value">${k.value}</span>
+    <span class="kpi-sub">${k.sub}</span>
+  </div>`).join('');
 
 document.getElementById('age-panel').innerHTML = `
   <div style="display:flex;gap:24px;margin-bottom:16px">
     <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:3px">Oldest NCR</div>
-      <div style="font-family:monospace;font-size:22px;font-weight:600;color:#ef4444">${oldestDays}d</div></div>
+      <div style="font-family:monospace;font-size:22px;font-weight:600;color:#dc2626">${oldestDays}d</div></div>
     <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:3px">Average Age</div>
-      <div style="font-family:monospace;font-size:22px;font-weight:600;color:#f59e0b">${avgAge}d</div></div>
+      <div style="font-family:monospace;font-size:22px;font-weight:600;color:#d97706">${avgAge}d</div></div>
   </div>
   ${ageCounts.map(b=>`
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-    <span style="width:92px;font-size:11px;color:#94a3b8;flex-shrink:0">${b.label}</span>
-    <div style="flex:1;background:#1a2030;border-radius:3px;height:18px;overflow:hidden;position:relative">
-      <div style="width:${(b.n/maxAge*100).toFixed(0)}%;height:100%;background:${b.color};opacity:.8;border-radius:3px;transition:width .6s"></div>
+    <span style="width:92px;font-size:11px;color:#475569;flex-shrink:0">${b.label}</span>
+    <div style="flex:1;background:#e2e8f0;border-radius:3px;height:18px;overflow:hidden;position:relative">
+      <div style="width:${(b.n/maxAge*100).toFixed(0)}%;height:100%;background:${b.color};opacity:.9;border-radius:3px;transition:width .6s"></div>
     </div>
     <span style="font-family:monospace;font-size:12px;font-weight:600;color:${b.color};width:28px;text-align:right">${b.n}</span>
     <span style="font-size:10px;color:#64748b;width:30px">${(b.n/total*100).toFixed(0)}%</span>
@@ -490,7 +488,7 @@ const stored = (() => { try { return JSON.parse(localStorage.getItem('pz1d_ncr_p
 const pCount = { '': 0, investigated:0, countermeasure:0, failed:0, complete:0 };
 NCR_DATA.forEach(r => { const s=(stored[r['NCR Number']]||{}).status||''; pCount[s]=(pCount[s]||0)+1; });
 const funnelSteps = [
-  { label:'Unstarted',       key:'',               color:'#334155' },
+  { label:'Unstarted',       key:'',               color:'#94a3b8' },
   { label:'Investigated',    key:'investigated',   color:'#f59e0b' },
   { label:'Countermeasure',  key:'countermeasure', color:'#8b5cf6' },
   { label:'Failed CM',       key:'failed',         color:'#ef4444' },
