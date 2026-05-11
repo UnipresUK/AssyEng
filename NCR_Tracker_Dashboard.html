@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PZ1D NCR Tracker — Week 17</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="xlsx.full.min.js"></script>
 <style>
   :root {
     --bg: #f1f5f9;
@@ -1041,7 +1042,7 @@ function clearAllProgress() {
   toast('Progress cleared');
 }
 
-// ── Import CSV → parse → upload to Google Sheets NCR_Data tab ───
+// ── Import any file → parse → upload to Google Sheets NCR_Data ──
 async function importCSVToSheets(input) {
   const file = input.files[0];
   if (!file) return;
@@ -1049,25 +1050,42 @@ async function importCSVToSheets(input) {
 
   setNCRSyncState('syncing', 'Reading file…');
 
-  const text = await file.text();
-  // Strip BOM, normalise line endings
-  const lines = text.replace(/^﻿/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  let rows = [];
+  try {
+    const buf      = await file.arrayBuffer();
+    const data     = new Uint8Array(buf);
+    const workbook = XLSX.read(data, { type: 'array', cellDates: false, raw: false });
 
-  // Find header row — look for a row containing "NCR" in first 30 lines
-  let headerIdx = -1;
-  for (let i = 0; i < Math.min(lines.length, 30); i++) {
-    if (/ncr/i.test(lines[i])) { headerIdx = i; break; }
-  }
-  if (headerIdx < 0) {
-    const sample = lines.slice(0, 5).map((l, i) => `Row ${i+1}: ${l.substring(0, 80)}`).join('\n');
-    alert('Could not find NCR column in this file.\n\nFirst rows:\n' + sample + '\n\nPlease export the file as CSV from the NCR system.');
+    // Pick sheet with most columns (the full data sheet)
+    let bestSheet = workbook.Sheets[workbook.SheetNames[0]];
+    let bestCols  = 0;
+    workbook.SheetNames.forEach(name => {
+      const s = workbook.Sheets[name];
+      if (!s['!ref']) return;
+      const cols = XLSX.utils.decode_range(s['!ref']).e.c + 1;
+      if (cols > bestCols) { bestCols = cols; bestSheet = s; }
+    });
+    rows = XLSX.utils.sheet_to_json(bestSheet, { header: 1, defval: '' });
+  } catch (e) {
+    alert('Could not read file: ' + e.message);
     setNCRSyncState('error', 'Import failed');
     return;
   }
 
-  const headers = parseCSVRow(lines[headerIdx]);
+  // Find header row — scan first 30 rows for one containing "NCR"
+  let headerIdx = -1;
+  for (let i = 0; i < Math.min(rows.length, 30); i++) {
+    if (rows[i].some(c => /ncr/i.test(String(c)))) { headerIdx = i; break; }
+  }
+  if (headerIdx < 0) {
+    alert('Could not find NCR column in this file.\nMake sure you are exporting the correct NCR report.');
+    setNCRSyncState('error', 'Import failed');
+    return;
+  }
 
-  // Flexible column finder — exact match only for short names, partial for long
+  const headers = rows[headerIdx].map(h => String(h).trim());
+
+  // Flexible column finder
   const findCol = (...names) => {
     for (const name of names) {
       const tl = name.toLowerCase();
@@ -1093,17 +1111,17 @@ async function importCSVToSheets(input) {
   };
 
   if (COLS.ncr < 0) {
-    alert('Could not find NCR Number column.\nColumns found: ' + headers.slice(0,10).join(', ') + '…');
+    alert('Could not find NCR Number column.\nColumns detected: ' + headers.slice(0,10).join(', ') + '…');
     setNCRSyncState('error', 'Import failed');
     return;
   }
 
-  const col = (row, key) => COLS[key] >= 0 ? (row[COLS[key]] || '').trim() : '';
+  const col = (row, key) => COLS[key] >= 0 ? String(row[COLS[key]] || '').trim() : '';
 
-  // Parse all data rows
   const records = [];
-  for (let i = headerIdx + 1; i < lines.length; i++) {
-    const row = parseCSVRow(lines[i]);
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.every(c => c === '' || c === null)) continue;
     const ncr = col(row, 'ncr');
     if (!ncr) continue;
     records.push({
