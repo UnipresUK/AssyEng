@@ -973,11 +973,10 @@ function importFile(input) {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        const lines = e.target.result.split('\n').map(l => l.trim()).filter(Boolean);
-        // Find header row
-        const headerIdx = lines.findIndex(l => /NCR.?Number/i.test(l));
-        if (headerIdx < 0) { alert('Could not find NCR Number column in CSV.'); return; }
-        const rows = lines.slice(headerIdx).map(parseCSVRow);
+        // Strip BOM if present, normalise line endings
+        const raw   = e.target.result.replace(/^﻿/, '');
+        const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const rows  = lines.map(parseCSVRow);
         processImportRows(rows);
       } catch (err) {
         alert('Error parsing CSV: ' + err.message);
@@ -992,33 +991,52 @@ function importFile(input) {
 function processImportRows(rows) {
   if (!rows.length) { alert('No data found in file.'); return; }
 
-  // Find the header row — look for a cell that is exactly (or contains) "NCR Number"
-  let headerIdx = rows.findIndex(row =>
-    row.some(cell => String(cell).trim().toLowerCase() === 'ncr number')
-  );
-  if (headerIdx < 0) {
-    // Fallback: partial match
-    headerIdx = rows.findIndex(row =>
-      row.some(cell => /ncr.?number/i.test(String(cell)))
-    );
+  // Find header row — scan first 10 rows for any cell containing "NCR"
+  let headerIdx = -1;
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    if (rows[i].some(cell => /ncr/i.test(String(cell)))) {
+      headerIdx = i;
+      break;
+    }
   }
-  if (headerIdx < 0) { alert('Could not find NCR Number column. Make sure you are exporting the correct report.'); return; }
+
+  if (headerIdx < 0) {
+    // Show a sample of what was found to help diagnose
+    const sample = rows.slice(0, 5)
+      .map((r, i) => `Row ${i+1}: ` + r.slice(0, 6).map(c => '"' + c + '"').join(', '))
+      .join('\n');
+    alert('Could not find NCR column in file.\n\nFirst rows found:\n' + sample + '\n\nMake sure you are exporting the correct NCR report.');
+    return;
+  }
 
   const headers = rows[headerIdx].map(h => String(h).trim());
-  const idx     = h => headers.findIndex(x => x.toLowerCase() === h.toLowerCase());
 
-  const COLS = {
-    ncr:      idx('NCR Number'),
-    date:     idx('Logged Date'),
-    part:     idx('Part Number'),
-    fault:    idx('Fault Code'),
-    status:   idx('Status'),
-    to:       idx('To'),
-    wcFound:  idx('Workcentre Found'),
-    signOff:  idx('Sign Off - Supervisor Name'),
+  // Flexible column finder — tries exact then partial match
+  const idx = target => {
+    const tl = target.toLowerCase();
+    let i = headers.findIndex(h => h.toLowerCase() === tl);
+    if (i < 0) i = headers.findIndex(h => h.toLowerCase().includes(tl));
+    return i;
   };
 
-  if (COLS.ncr < 0) { alert('NCR Number column not found in headers: ' + headers.join(', ')); return; }
+  const COLS = {
+    ncr:     idx('NCR Number'),
+    date:    idx('Logged Date'),
+    part:    idx('Part Number'),
+    fault:   idx('Fault Code'),
+    status:  idx('Status'),
+    to:      idx('To'),
+    wcFound: idx('Workcentre Found'),
+    signOff: idx('Sign Off - Supervisor Name'),
+  };
+
+  // If NCR Number not found by name, try any column with "NCR" in it
+  if (COLS.ncr < 0) COLS.ncr = headers.findIndex(h => /ncr/i.test(h));
+
+  if (COLS.ncr < 0) {
+    alert('Found a potential header row but no NCR column.\n\nColumns found: ' + headers.join(', '));
+    return;
+  }
 
   const col = (row, key) => COLS[key] >= 0 ? String(row[COLS[key]] || '').trim() : '';
 
@@ -1029,7 +1047,6 @@ function processImportRows(rows) {
     const ncrNum = col(row, 'ncr');
     if (!ncrNum) continue;
     const to = col(row, 'to');
-    // Only include rows assigned to Sam or Chris
     if (!['Sam Pascoe','Chris Wilson'].includes(to)) continue;
     newData.push({
       'NCR Number':                ncrNum,
@@ -1044,7 +1061,7 @@ function processImportRows(rows) {
   }
 
   if (!newData.length) {
-    alert('No NCRs found assigned to Sam Pascoe or Chris Wilson in this file.');
+    alert('File parsed OK but no NCRs found assigned to Sam Pascoe or Chris Wilson.\n\nCheck the "To" column contains exactly those names.');
     return;
   }
 
