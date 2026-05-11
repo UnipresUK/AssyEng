@@ -497,7 +497,7 @@
   <span style="color:var(--text-muted);margin:0 4px">|</span>
   <label style="cursor:pointer;display:flex;align-items:center;gap:6px;">
     📂 <span style="text-decoration:underline;text-underline-offset:3px;">Import new NCR export (CSV)</span>
-    <input type="file" id="file-import" accept=".csv" style="display:none" onchange="importCSVToSheets(this)">
+    <input type="file" id="file-import" accept="*" style="display:none" onchange="importCSVToSheets(this)">
   </label>
   <span style="color:var(--text-muted);font-size:11px">— exports to Google Sheets automatically</span>
 </div>
@@ -1053,13 +1053,14 @@ async function importCSVToSheets(input) {
   // Strip BOM, normalise line endings
   const lines = text.replace(/^﻿/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-  // Find header row — look for a row containing "NCR" in first 10 lines
+  // Find header row — look for a row containing "NCR" in first 30 lines
   let headerIdx = -1;
-  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+  for (let i = 0; i < Math.min(lines.length, 30); i++) {
     if (/ncr/i.test(lines[i])) { headerIdx = i; break; }
   }
   if (headerIdx < 0) {
-    alert('Could not find NCR column in this file.\nMake sure you are exporting the correct NCR report as CSV.');
+    const sample = lines.slice(0, 5).map((l, i) => `Row ${i+1}: ${l.substring(0, 80)}`).join('\n');
+    alert('Could not find NCR column in this file.\n\nFirst rows:\n' + sample + '\n\nPlease export the file as CSV from the NCR system.');
     setNCRSyncState('error', 'Import failed');
     return;
   }
