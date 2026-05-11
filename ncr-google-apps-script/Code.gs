@@ -57,6 +57,7 @@ function route(p) {
       case 'getAll':      return doGetAll();
       case 'update':      return doUpdate(p);
       case 'getNCRData':  return doGetNCRData();
+      case 'setNCRData':  return doSetNCRData(p);
       default:            return fail('Unknown action: ' + (p.action || 'none'));
     }
   } catch (err) {
@@ -97,6 +98,27 @@ function doGetNCRData() {
       return obj;
     });
   return ok(records);
+}
+
+// ─── WRITE NCR list data to NCR_Data sheet ──────────────────────
+function doSetNCRData(p) {
+  const records = JSON.parse(p.records || '[]');
+  if (!records.length) return fail('No records provided');
+
+  const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet   = ss.getSheetByName(NCR_DATA_SHEET);
+  if (!sheet) sheet = ss.insertSheet(NCR_DATA_SHEET);
+  else sheet.clearContents();
+
+  const headers = ['NCR Number','Logged Date','To','Part Number','Fault Code',
+                   'Status','Workcentre Found','Sign Off - Supervisor Name'];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
+
+  if (records.length > 0) {
+    const rows = records.map(r => headers.map(h => r[h] || ''));
+    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  }
+  return ok({ written: records.length });
 }
 
 // ─── UPSERT a progress record ───────────────────────────────────

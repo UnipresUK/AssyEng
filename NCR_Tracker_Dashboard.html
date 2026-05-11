@@ -494,9 +494,12 @@
 <div class="import-strip">
   <span class="ncr-sync-dot" id="ncr-sync-dot"></span>
   <span id="ncr-sync-label">Loading NCR data…</span>
-  <span style="color:var(--text-muted)">—</span>
-  To update: paste your latest NCR export into the
-  <a href="https://docs.google.com/spreadsheets/d/17WxtqSYbL4wt7bnAmHavbSM8MYE3CnRdkikeZpiHIuA" target="_blank">📊 NCR_Data tab in Google Sheets</a>
+  <span style="color:var(--text-muted);margin:0 4px">|</span>
+  <label style="cursor:pointer;display:flex;align-items:center;gap:6px;">
+    📂 <span style="text-decoration:underline;text-underline-offset:3px;">Import new NCR export (CSV)</span>
+    <input type="file" id="file-import" accept=".csv" style="display:none" onchange="importCSVToSheets(this)">
+  </label>
+  <span style="color:var(--text-muted);font-size:11px">— exports to Google Sheets automatically</span>
 </div>
 
 <div class="controls">
@@ -1038,170 +1041,107 @@ function clearAllProgress() {
   toast('Progress cleared');
 }
 
-// ── Import (kept for reference — now handled via Google Sheets) ──
-function importFile(input) {
+// ── Import CSV → parse → upload to Google Sheets NCR_Data tab ───
+async function importCSVToSheets(input) {
   const file = input.files[0];
   if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data     = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array', cellDates: false, raw: false });
-
-      // Pick the sheet that contains "NCR" somewhere in the first 10 rows
-      // (handles files where row 1-3 are a title block and headers start on row 4+)
-      let bestSheet = null;
-      let bestCols  = 0;
-      workbook.SheetNames.forEach(name => {
-        const s    = workbook.Sheets[name];
-        const ref  = s['!ref'];
-        if (!ref) return;
-        const rows = XLSX.utils.sheet_to_json(s, { header: 1, defval: '', range: 0 });
-        const hasNCR = rows.slice(0, 10).some(row =>
-          row.some(cell => /ncr/i.test(String(cell)))
-        );
-        const range = XLSX.utils.decode_range(ref);
-        const cols  = range.e.c + 1;
-        // Prefer any sheet that has NCR in headers; among those, pick widest
-        if (hasNCR && cols > bestCols) { bestCols = cols; bestSheet = s; }
-      });
-
-      // Fallback: just use widest sheet if no NCR header found
-      if (!bestSheet) {
-        workbook.SheetNames.forEach(name => {
-          const s   = workbook.Sheets[name];
-          const ref = s['!ref'];
-          if (!ref) return;
-          const range = XLSX.utils.decode_range(ref);
-          const cols  = range.e.c + 1;
-          if (cols > bestCols) { bestCols = cols; bestSheet = s; }
-        });
-      }
-
-      console.log('Sheets:', workbook.SheetNames, '— using sheet with', bestCols, 'columns');
-      const rows = XLSX.utils.sheet_to_json(bestSheet, { header: 1, defval: '' });
-      processImportRows(rows);
-    } catch (err) {
-      alert('Error reading file: ' + err.message);
-    }
-  };
-  reader.readAsArrayBuffer(file);
   input.value = '';
-}
 
-// ── Shared import row processor ─────────────────────────────────
-function processImportRows(rows) {
-  if (!rows.length) { alert('No data found in file.'); return; }
+  setNCRSyncState('syncing', 'Reading file…');
 
-  // Find header row — scan first 10 rows for any cell containing "NCR"
+  const text = await file.text();
+  // Strip BOM, normalise line endings
+  const lines = text.replace(/^﻿/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+  // Find header row — look for a row containing "NCR" in first 10 lines
   let headerIdx = -1;
-  for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    if (rows[i].some(cell => /ncr/i.test(String(cell)))) {
-      headerIdx = i;
-      break;
-    }
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    if (/ncr/i.test(lines[i])) { headerIdx = i; break; }
   }
-
   if (headerIdx < 0) {
-    // Show a sample of what was found to help diagnose
-    const sample = rows.slice(0, 5)
-      .map((r, i) => `Row ${i+1}: ` + r.slice(0, 6).map(c => '"' + c + '"').join(', '))
-      .join('\n');
-    alert('Could not find NCR column in file.\n\nFirst rows found:\n' + sample + '\n\nMake sure you are exporting the correct NCR report.');
+    alert('Could not find NCR column in this file.\nMake sure you are exporting the correct NCR report as CSV.');
+    setNCRSyncState('error', 'Import failed');
     return;
   }
 
-  const headers = rows[headerIdx].map(h => String(h).trim());
+  const headers = parseCSVRow(lines[headerIdx]);
 
-  // Column finder — exact match first, then partial only for longer strings (len > 4)
-  const idx = target => {
-    const tl = target.toLowerCase();
-    let i = headers.findIndex(h => h.toLowerCase() === tl);
-    if (i < 0 && tl.length > 4)
-      i = headers.findIndex(h => h.toLowerCase().includes(tl));
-    return i;
-  };
-
-  // Helper: find first matching header from a list of aliases
-  const idxAny = (...names) => {
+  // Flexible column finder — exact match only for short names, partial for long
+  const findCol = (...names) => {
     for (const name of names) {
-      const i = idx(name);
+      const tl = name.toLowerCase();
+      let i = headers.findIndex(h => h.toLowerCase() === tl);
       if (i >= 0) return i;
+      if (tl.length > 4) {
+        i = headers.findIndex(h => h.toLowerCase().includes(tl));
+        if (i >= 0) return i;
+      }
     }
     return -1;
   };
 
   const COLS = {
-    ncr:         idxAny('NCR Number', 'NCR No', 'NCR No.', 'NCR#'),
-    date:        idxAny('Logged Date', 'Date Logged', 'Date', 'Created'),
-    part:        idxAny('Part Number', 'Part No', 'Part No.'),
-    fault:       idxAny('Fault Code', 'Fault', 'Defect Code', 'Defect'),
-    status:      idxAny('Status', 'NCR Status'),
-    to:          idxAny('To', 'Assigned To', 'Assigned'),
-    disposition: idxAny('Disposition'),
-    wcFound:     idxAny('Workcentre Found', 'Workcentre Found', 'Work Centre Found'),
-    liableWC:    idxAny('Liable Workcentre', 'Liable WC'),
-    signOff:     idxAny('Sign Off - Supervisor Name', 'Supervisor Name', 'Sign Off'),
-    author:      idxAny('Author'),
+    ncr:     findCol('NCR Number', 'NCR No', 'NCR No.', 'NCR#'),
+    date:    findCol('Logged Date', 'Date Logged', 'Date'),
+    to:      findCol('To', 'Assigned To', 'Assigned'),
+    part:    findCol('Part Number', 'Part No'),
+    fault:   findCol('Fault Code', 'Fault', 'Defect Code'),
+    status:  findCol('Status', 'NCR Status'),
+    wcFound: findCol('Workcentre Found', 'Work Centre Found'),
+    signOff: findCol('Sign Off - Supervisor Name', 'Sign Off'),
   };
 
   if (COLS.ncr < 0) {
-    alert('Found a potential header row but no NCR column.\n\nColumns found:\n' + headers.join(', '));
+    alert('Could not find NCR Number column.\nColumns found: ' + headers.slice(0,10).join(', ') + '…');
+    setNCRSyncState('error', 'Import failed');
     return;
   }
 
-  // Diagnostic — logs all column names so we can find the right ones
-  console.log('=== IMPORT DIAGNOSTIC ===');
-  console.log('Total columns: ' + headers.length);
-  console.log('All headers:', headers.map((h,i) => (i+1)+': '+h).join('\n'));
-  console.log('Mapped → NCR:',   COLS.ncr  >= 0 ? headers[COLS.ncr]  + ' (col '+(COLS.ncr+1)+')' : 'NOT FOUND');
-  console.log('Mapped → To:',    COLS.to   >= 0 ? headers[COLS.to]   + ' (col '+(COLS.to+1)+')' : 'NOT FOUND');
-  console.log('Mapped → Part:',  COLS.part >= 0 ? headers[COLS.part] + ' (col '+(COLS.part+1)+')' : 'NOT FOUND');
-  console.log('Mapped → Fault:', COLS.fault>= 0 ? headers[COLS.fault]+ ' (col '+(COLS.fault+1)+')' : 'NOT FOUND');
+  const col = (row, key) => COLS[key] >= 0 ? (row[COLS[key]] || '').trim() : '';
 
-  const col = (row, key) => COLS[key] >= 0 ? String(row[COLS[key]] || '').trim() : '';
-
-  const newData = [];
-  for (let i = headerIdx + 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
-    const ncrNum = col(row, 'ncr');
-    if (!ncrNum) continue;
-    const to = col(row, 'to');
-    newData.push({
-      'NCR Number':                ncrNum,
-      'Logged Date':               col(row, 'date'),
-      'To':                        to,
-      'Part Number':               col(row, 'part'),
-      'Fault Code':                col(row, 'fault'),
-      'Status':                    col(row, 'status') || 'Open',
-      'Disposition':               col(row, 'disposition'),
-      'Workcentre Found':          col(row, 'wcFound'),
-      'Liable Workcentre':         col(row, 'liableWC'),
+  // Parse all data rows
+  const records = [];
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const row = parseCSVRow(lines[i]);
+    const ncr = col(row, 'ncr');
+    if (!ncr) continue;
+    records.push({
+      'NCR Number':  ncr,
+      'Logged Date': col(row, 'date'),
+      'To':          col(row, 'to'),
+      'Part Number': col(row, 'part'),
+      'Fault Code':  col(row, 'fault'),
+      'Status':      col(row, 'status') || 'Open',
+      'Workcentre Found': col(row, 'wcFound'),
       'Sign Off - Supervisor Name': col(row, 'signOff'),
     });
   }
 
-  if (!newData.length) {
-    alert('File parsed OK but no data rows found. Check the file has NCR records below the header row.');
+  if (!records.length) {
+    alert('No NCR rows found in file.');
+    setNCRSyncState('error', 'Import failed');
     return;
   }
 
-  currentData = newData;
+  setNCRSyncState('syncing', `Uploading ${records.length} NCRs to Google Sheets…`);
 
-  // Rebuild assignee filter buttons from whoever is in the data
-  const assignees = [...new Set(newData.map(r => r['To']).filter(Boolean))].sort();
-  const fg = document.querySelector('[data-filter="assignee"]').parentElement;
-  fg.innerHTML = `<button class="pill active" data-filter="assignee" data-value="all" onclick="setFilter('assignee','all',this)">All</button>` +
-    assignees.map(a => `<button class="pill" data-filter="assignee" data-value="${a}" onclick="setFilter('assignee','${a}',this)">${a}</button>`).join('');
-
-  const openCount = newData.filter(r => (r['Status']||'').toLowerCase() !== 'closed').length;
-  document.getElementById('subtitle').textContent =
-    `Imported ${new Date().toLocaleDateString()} · ${openCount} open items · ${assignees.join(' & ')}`;
-  render();
-  toast(`Imported ${newData.length} NCRs — allocations preserved`);
+  // POST to Apps Script
+  try {
+    const res  = await fetch(SHEETS_URL, {
+      method: 'POST',
+      body:   JSON.stringify({ action: 'setNCRData', records: JSON.stringify(records) }),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Upload failed');
+    toast(`✓ ${records.length} NCRs uploaded to Google Sheets`);
+    // Reload from Sheets so everyone sees the fresh data
+    await loadNCRData();
+  } catch (e) {
+    alert('Upload to Google Sheets failed: ' + e.message + '\n\nCheck the Apps Script is deployed.');
+    setNCRSyncState('error', 'Upload failed');
+  }
 }
+
 
 function parseCSVRow(line) {
   const result = [];
