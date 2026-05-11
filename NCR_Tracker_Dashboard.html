@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PZ1D NCR Tracker — Week 17</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root {
     --bg: #f1f5f9;
@@ -486,8 +487,8 @@
 
 <div class="import-strip">
   ℹ Import a new export to refresh NCR data — your allocations &amp; progress are preserved by NCR number.
-  <label>📂 Import new XLSX export <input type="file" id="file-import" accept=".csv" onchange="importCSV(this)"></label>
-  <span style="color:var(--text-muted)">(Export the NCR system as CSV first)</span>
+  <label>📂 Import NCR export (.xlsx or .csv) <input type="file" id="file-import" accept=".xlsx,.xls,.csv" onchange="importFile(this)"></label>
+  <span style="color:var(--text-muted)">(Excel or CSV export from the NCR system)</span>
 </div>
 
 <div class="controls">
@@ -946,66 +947,112 @@ function clearAllProgress() {
   toast('Progress cleared');
 }
 
-// ── Import CSV ─────────────────────────────────────────────────
-function importCSV(input) {
+// ── Import (XLSX or CSV) ────────────────────────────────────────
+function importFile(input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const text       = e.target.result;
-      const lines      = text.split('\n').map(l => l.trim()).filter(Boolean);
-      let headerIdx    = lines.findIndex(l => l.includes('NCR Number'));
-      if (headerIdx < 0) { alert('Could not find NCR Number column.'); return; }
-      const headers    = parseCSVRow(lines[headerIdx]);
-      // Case-insensitive column finder — trims whitespace
-      const idx = h => headers.findIndex(x => x.trim().toLowerCase() === h.toLowerCase());
+  const isExcel = /\.(xlsx|xls)$/i.test(file.name);
 
-      // Columns we care about (exact names from the NCR system export)
-      const COLS = {
-        ncr:       idx('NCR Number'),
-        date:      idx('Logged Date'),
-        part:      idx('Part Number'),
-        component: idx('Component Number'),
-        faultCode: idx('Fault Code'),
-        status:    idx('Status'),
-        to:        idx('To'),
-        liableWC:  idx('Liable Workcentre'),
-        wcFound:   idx('Workcentre Found'),
-        signOff:   idx('Sign Off - Supervisor Name'),
-      };
-
-      const col = (cols, key) => COLS[key] >= 0 ? (cols[COLS[key]] || '') : '';
-
-      const newData = [];
-      for (let i = headerIdx + 1; i < lines.length; i++) {
-        const cols = parseCSVRow(lines[i]);
-        const to   = col(cols, 'to');
-        if (!['Sam Pascoe','Chris Wilson'].includes(to)) continue;
-        newData.push({
-          'NCR Number':                col(cols, 'ncr'),
-          'Logged Date':               col(cols, 'date'),
-          'To':                        to,
-          'Part Number':               col(cols, 'part'),
-          'Component Number':          col(cols, 'component'),
-          'Fault Code':                col(cols, 'faultCode'),
-          'Status':                    col(cols, 'status') || 'Open',
-          'Liable Workcentre':         col(cols, 'liableWC'),
-          'Workcentre Found':          col(cols, 'wcFound'),
-          'Sign Off - Supervisor Name': col(cols, 'signOff'),
-        });
+  if (isExcel) {
+    // ── Excel path — use SheetJS ──
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data     = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: false });
+        const sheet    = workbook.Sheets[workbook.SheetNames[0]];
+        const rows     = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        processImportRows(rows);
+      } catch (err) {
+        alert('Error reading Excel file: ' + err.message);
       }
-      currentData = newData;
-      document.getElementById('subtitle').textContent =
-        `Imported ${new Date().toLocaleDateString()} · ${newData.length} open items · Sam Pascoe & Chris Wilson`;
-      render();
-      toast(`Imported ${newData.length} NCRs — allocations preserved`);
-    } catch (err) {
-      alert('Error parsing CSV: ' + err.message);
-    }
-  };
-  reader.readAsText(file);
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    // ── CSV path ──
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const lines = e.target.result.split('\n').map(l => l.trim()).filter(Boolean);
+        // Find header row
+        const headerIdx = lines.findIndex(l => /NCR.?Number/i.test(l));
+        if (headerIdx < 0) { alert('Could not find NCR Number column in CSV.'); return; }
+        const rows = lines.slice(headerIdx).map(parseCSVRow);
+        processImportRows(rows);
+      } catch (err) {
+        alert('Error parsing CSV: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
   input.value = '';
+}
+
+// ── Shared import row processor ─────────────────────────────────
+function processImportRows(rows) {
+  if (!rows.length) { alert('No data found in file.'); return; }
+
+  // Find the header row — look for a cell that is exactly (or contains) "NCR Number"
+  let headerIdx = rows.findIndex(row =>
+    row.some(cell => String(cell).trim().toLowerCase() === 'ncr number')
+  );
+  if (headerIdx < 0) {
+    // Fallback: partial match
+    headerIdx = rows.findIndex(row =>
+      row.some(cell => /ncr.?number/i.test(String(cell)))
+    );
+  }
+  if (headerIdx < 0) { alert('Could not find NCR Number column. Make sure you are exporting the correct report.'); return; }
+
+  const headers = rows[headerIdx].map(h => String(h).trim());
+  const idx     = h => headers.findIndex(x => x.toLowerCase() === h.toLowerCase());
+
+  const COLS = {
+    ncr:      idx('NCR Number'),
+    date:     idx('Logged Date'),
+    part:     idx('Part Number'),
+    fault:    idx('Fault Code'),
+    status:   idx('Status'),
+    to:       idx('To'),
+    wcFound:  idx('Workcentre Found'),
+    signOff:  idx('Sign Off - Supervisor Name'),
+  };
+
+  if (COLS.ncr < 0) { alert('NCR Number column not found in headers: ' + headers.join(', ')); return; }
+
+  const col = (row, key) => COLS[key] >= 0 ? String(row[COLS[key]] || '').trim() : '';
+
+  const newData = [];
+  for (let i = headerIdx + 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
+    const ncrNum = col(row, 'ncr');
+    if (!ncrNum) continue;
+    const to = col(row, 'to');
+    // Only include rows assigned to Sam or Chris
+    if (!['Sam Pascoe','Chris Wilson'].includes(to)) continue;
+    newData.push({
+      'NCR Number':                ncrNum,
+      'Logged Date':               col(row, 'date'),
+      'To':                        to,
+      'Part Number':               col(row, 'part'),
+      'Fault Code':                col(row, 'fault'),
+      'Status':                    col(row, 'status') || 'Open',
+      'Workcentre Found':          col(row, 'wcFound'),
+      'Sign Off - Supervisor Name': col(row, 'signOff'),
+    });
+  }
+
+  if (!newData.length) {
+    alert('No NCRs found assigned to Sam Pascoe or Chris Wilson in this file.');
+    return;
+  }
+
+  currentData = newData;
+  document.getElementById('subtitle').textContent =
+    `Imported ${new Date().toLocaleDateString()} · ${newData.length} open items · Sam Pascoe & Chris Wilson`;
+  render();
+  toast(`Imported ${newData.length} NCRs — allocations preserved`);
 }
 
 function parseCSVRow(line) {
