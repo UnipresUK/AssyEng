@@ -1055,14 +1055,14 @@ function processImportRows(rows) {
     return;
   }
 
-  // Diagnostic — remove once import is confirmed working
-  console.log('Import column mapping:', {
-    headers: headers.length + ' columns',
-    ncr:     headers[COLS.ncr]     + ' (col ' + (COLS.ncr+1) + ')',
-    to:      COLS.to >= 0   ? headers[COLS.to]     + ' (col ' + (COLS.to+1) + ')' : 'NOT FOUND',
-    part:    COLS.part >= 0 ? headers[COLS.part]   + ' (col ' + (COLS.part+1) + ')' : 'NOT FOUND',
-    fault:   COLS.fault >= 0 ? headers[COLS.fault] + ' (col ' + (COLS.fault+1) + ')' : 'NOT FOUND',
-  });
+  // Diagnostic — logs all column names so we can find the right ones
+  console.log('=== IMPORT DIAGNOSTIC ===');
+  console.log('Total columns: ' + headers.length);
+  console.log('All headers:', headers.map((h,i) => (i+1)+': '+h).join('\n'));
+  console.log('Mapped → NCR:',   COLS.ncr  >= 0 ? headers[COLS.ncr]  + ' (col '+(COLS.ncr+1)+')' : 'NOT FOUND');
+  console.log('Mapped → To:',    COLS.to   >= 0 ? headers[COLS.to]   + ' (col '+(COLS.to+1)+')' : 'NOT FOUND');
+  console.log('Mapped → Part:',  COLS.part >= 0 ? headers[COLS.part] + ' (col '+(COLS.part+1)+')' : 'NOT FOUND');
+  console.log('Mapped → Fault:', COLS.fault>= 0 ? headers[COLS.fault]+ ' (col '+(COLS.fault+1)+')' : 'NOT FOUND');
 
   const col = (row, key) => COLS[key] >= 0 ? String(row[COLS[key]] || '').trim() : '';
 
