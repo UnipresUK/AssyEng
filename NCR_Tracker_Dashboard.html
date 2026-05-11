@@ -1050,6 +1050,12 @@ async function importCSVToSheets(input) {
 
   setNCRSyncState('syncing', 'Reading file…');
 
+  if (typeof XLSX === 'undefined') {
+    alert('File reader not loaded yet — please refresh the page (Ctrl+Shift+R) and try again.');
+    setNCRSyncState('error', 'Import failed');
+    return;
+  }
+
   let rows = [];
   try {
     const buf      = await file.arrayBuffer();
