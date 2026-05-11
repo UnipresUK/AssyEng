@@ -960,13 +960,16 @@ function importFile(input) {
       try {
         const data     = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array', cellDates: false });
-        // Pick the sheet with the most rows (likely the data sheet)
+        // Pick the sheet with the most columns (the full data export)
         let bestSheet = workbook.Sheets[workbook.SheetNames[0]];
-        let bestCount = 0;
+        let bestCols  = 0;
         workbook.SheetNames.forEach(name => {
-          const s = workbook.Sheets[name];
-          const r = XLSX.utils.sheet_to_json(s, { header: 1, defval: '' });
-          if (r.length > bestCount) { bestCount = r.length; bestSheet = s; }
+          const s    = workbook.Sheets[name];
+          const ref  = s['!ref'];
+          if (!ref) return;
+          const range = XLSX.utils.decode_range(ref);
+          const cols  = range.e.c + 1; // number of columns
+          if (cols > bestCols) { bestCols = cols; bestSheet = s; }
         });
         const rows = XLSX.utils.sheet_to_json(bestSheet, { header: 1, defval: '' });
         processImportRows(rows);
@@ -1042,7 +1045,7 @@ function processImportRows(rows) {
     part:    idxAny('Part Number', 'Part No', 'Part No.', 'PartNumber'),
     fault:   idxAny('Fault Code', 'Fault', 'Defect Code', 'Defect'),
     status:  idxAny('Status', 'NCR Status'),
-    to:      idxAny('To', 'Assigned To', 'Assigned', 'Owner', 'Engineer'),
+    to:      idxAny('To', 'Assigned To', 'Assigned'),
     wcFound: idxAny('Workcentre Found', 'Workcentre', 'Work Centre Found', 'Found At'),
     signOff: idxAny('Sign Off - Supervisor Name', 'Supervisor Name', 'Sign Off'),
   };
