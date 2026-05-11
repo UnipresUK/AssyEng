@@ -251,8 +251,9 @@
     font-weight: 500;
     white-space: nowrap;
   }
-  .assignee-badge.sam  { background: rgba(8,145,178,0.1);  color: var(--sam);   border: 1px solid rgba(8,145,178,0.3); }
-  .assignee-badge.chris{ background: rgba(234,88,12,0.1);  color: var(--chris); border: 1px solid rgba(234,88,12,0.3); }
+  .assignee-badge.sam       { background: rgba(8,145,178,0.1);  color: var(--sam);   border: 1px solid rgba(8,145,178,0.3); }
+  .assignee-badge.chris     { background: rgba(234,88,12,0.1);  color: var(--chris); border: 1px solid rgba(234,88,12,0.3); }
+  .assignee-badge.unassigned{ background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
 
   .fault-code { font-size: 10px; color: var(--text-dim); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
   .part-num   { font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
@@ -803,8 +804,10 @@ function render() {
   tbody.innerHTML = rows.map(r => {
     const n          = r['NCR Number'];
     const p          = getP(n);
-    const isSam      = r['To'] === 'Sam Pascoe';
-    const badgeClass = isSam ? 'sam' : 'chris';
+    const assignee   = r['To'] || '';
+    const isSam      = assignee === 'Sam Pascoe';
+    const isChris    = assignee === 'Chris Wilson';
+    const badgeClass = isSam ? 'sam' : isChris ? 'chris' : 'unassigned';
     const isComplete = p.status === 'complete';
     const dotClass   = p.status ? `dot-${p.status}` : 'dot-none';
     const sysStatus  = getSysStatus(r);
@@ -840,7 +843,7 @@ function render() {
     return `<tr class="${rowClass}" id="row-${n}">
       <td><span class="status-dot ${dotClass}"></span><span class="ncr-num">${n}</span></td>
       <td class="date-col">${dateShort}</td>
-      <td><span class="assignee-badge ${badgeClass}">${r['To']}</span></td>
+      <td><span class="assignee-badge ${badgeClass}">${assignee || '—'}</span></td>
       <td class="part-num">${r['Part Number']}</td>
       <td class="fault-code">${r['Fault Code']}</td>
       <td>${sysBadge}</td>
