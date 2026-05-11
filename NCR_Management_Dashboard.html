@@ -423,7 +423,6 @@ document.getElementById('footer').textContent =
   `Assembly Engineering — PZ1D NCR Management Dashboard · ${total} open items · Generated ${new Date().toLocaleDateString('en-GB')}`;
 
 // ── KPI row ───────────────────────────────────────────────────
-const over90  = (ageCounts.find(b=>b.label==='> 90 days')||{n:0}).n;
 const kpis = [
   { label:'Total Open NCRs',    value:total,                          sub:'Assembly Engineering dept',    color:'#3b82f6' },
   { label:'Avg NCR Age',        value:avgAge+'d',                     sub:'days open (dept average)',     color:'#f59e0b' },
@@ -462,7 +461,8 @@ const ageCounts = ageBuckets.map(b => ({
     return age >= b.min && age <= b.max;
   }).length
 }));
-const maxAge = Math.max(...ageCounts.map(b=>b.n), 1);
+const maxAge  = Math.max(...ageCounts.map(b=>b.n), 1);
+const over90  = (ageCounts.find(b=>b.label==='> 90 days')||{n:0}).n;
 // oldest NCR
 const ages = NCR_DATA.map(r => { const d=parseLD(r['Logged Date']); return d ? Math.floor((TODAY_D-d)/86400000) : 0; }).sort((a,b)=>b-a);
 const oldestDays = ages[0] || 0;

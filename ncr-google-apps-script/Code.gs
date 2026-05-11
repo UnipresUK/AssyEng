@@ -47,7 +47,7 @@ function route(p) {
 
 // ─── GET ALL progress records ───────────────────────────────────
 function doGetAll() {
-  const sheet = getOrCreateSheet(PROGRESS_SHEET, ['NCR_Number','Investigator','Status','Notes','Category','LastUpdated']);
+  const sheet = getOrCreateSheet(PROGRESS_SHEET, ['NCR_Number','Investigator','Status','Notes','Category','Dept','LastUpdated']);
   const data  = sheet.getDataRange().getValues();
   if (data.length < 2) return ok([]);
   const headers = data[0];
@@ -66,7 +66,7 @@ function doUpdate(p) {
   const ncr = (p.ncr || '').toString().trim();
   if (!ncr) return fail('ncr is required');
 
-  const sheet   = getOrCreateSheet(PROGRESS_SHEET, ['NCR_Number','Investigator','Status','Notes','Category','LastUpdated']);
+  const sheet   = getOrCreateSheet(PROGRESS_SHEET, ['NCR_Number','Investigator','Status','Notes','Category','Dept','LastUpdated']);
   const data    = sheet.getDataRange().getValues();
   const headers = data[0];
   const ncrCol  = headers.indexOf('NCR_Number');
@@ -77,6 +77,7 @@ function doUpdate(p) {
     p.status       || '',
     p.notes        || '',
     p.category     || '',
+    p.dept         || '',
     new Date().toISOString()
   ];
 
