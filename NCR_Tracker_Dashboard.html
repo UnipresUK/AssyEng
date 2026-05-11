@@ -1046,12 +1046,10 @@ function processImportRows(rows) {
     if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
     const ncrNum = col(row, 'ncr');
     if (!ncrNum) continue;
-    const to = col(row, 'to');
-    if (!['Sam Pascoe','Chris Wilson'].includes(to)) continue;
     newData.push({
       'NCR Number':                ncrNum,
       'Logged Date':               col(row, 'date'),
-      'To':                        to,
+      'To':                        col(row, 'to'),
       'Part Number':               col(row, 'part'),
       'Fault Code':                col(row, 'fault'),
       'Status':                    col(row, 'status') || 'Open',
@@ -1061,13 +1059,21 @@ function processImportRows(rows) {
   }
 
   if (!newData.length) {
-    alert('File parsed OK but no NCRs found assigned to Sam Pascoe or Chris Wilson.\n\nCheck the "To" column contains exactly those names.');
+    alert('File parsed OK but no data rows found. Check the file has NCR records below the header row.');
     return;
   }
 
   currentData = newData;
+
+  // Rebuild assignee filter buttons from whoever is in the data
+  const assignees = [...new Set(newData.map(r => r['To']).filter(Boolean))].sort();
+  const fg = document.querySelector('[data-filter="assignee"]').parentElement;
+  fg.innerHTML = `<button class="pill active" data-filter="assignee" data-value="all" onclick="setFilter('assignee','all',this)">All</button>` +
+    assignees.map(a => `<button class="pill" data-filter="assignee" data-value="${a}" onclick="setFilter('assignee','${a}',this)">${a}</button>`).join('');
+
+  const openCount = newData.filter(r => (r['Status']||'').toLowerCase() !== 'closed').length;
   document.getElementById('subtitle').textContent =
-    `Imported ${new Date().toLocaleDateString()} · ${newData.length} open items · Sam Pascoe & Chris Wilson`;
+    `Imported ${new Date().toLocaleDateString()} · ${openCount} open items · ${assignees.join(' & ')}`;
   render();
   toast(`Imported ${newData.length} NCRs — allocations preserved`);
 }
