@@ -961,17 +961,35 @@ function importFile(input) {
       const data     = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array', cellDates: false, raw: false });
 
-      // Pick the sheet with the most columns (the full data export sheet)
-      let bestSheet = workbook.Sheets[workbook.SheetNames[0]];
+      // Pick the sheet that contains "NCR" somewhere in the first 10 rows
+      // (handles files where row 1-3 are a title block and headers start on row 4+)
+      let bestSheet = null;
       let bestCols  = 0;
       workbook.SheetNames.forEach(name => {
-        const s   = workbook.Sheets[name];
-        const ref = s['!ref'];
+        const s    = workbook.Sheets[name];
+        const ref  = s['!ref'];
         if (!ref) return;
+        const rows = XLSX.utils.sheet_to_json(s, { header: 1, defval: '', range: 0 });
+        const hasNCR = rows.slice(0, 10).some(row =>
+          row.some(cell => /ncr/i.test(String(cell)))
+        );
         const range = XLSX.utils.decode_range(ref);
         const cols  = range.e.c + 1;
-        if (cols > bestCols) { bestCols = cols; bestSheet = s; }
+        // Prefer any sheet that has NCR in headers; among those, pick widest
+        if (hasNCR && cols > bestCols) { bestCols = cols; bestSheet = s; }
       });
+
+      // Fallback: just use widest sheet if no NCR header found
+      if (!bestSheet) {
+        workbook.SheetNames.forEach(name => {
+          const s   = workbook.Sheets[name];
+          const ref = s['!ref'];
+          if (!ref) return;
+          const range = XLSX.utils.decode_range(ref);
+          const cols  = range.e.c + 1;
+          if (cols > bestCols) { bestCols = cols; bestSheet = s; }
+        });
+      }
 
       console.log('Sheets:', workbook.SheetNames, '— using sheet with', bestCols, 'columns');
       const rows = XLSX.utils.sheet_to_json(bestSheet, { header: 1, defval: '' });
