@@ -950,53 +950,37 @@ function clearAllProgress() {
   toast('Progress cleared');
 }
 
-// ── Import (XLSX or CSV) ────────────────────────────────────────
+// ── Import (any format — SheetJS handles xlsx, xls, csv, etc.) ──
 function importFile(input) {
   const file = input.files[0];
   if (!file) return;
-  const isExcel = /\.(xlsx|xls)$/i.test(file.name);
 
-  if (isExcel) {
-    // ── Excel path — use SheetJS ──
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const data     = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array', cellDates: false });
-        // Pick the sheet with the most columns (the full data export)
-        let bestSheet = workbook.Sheets[workbook.SheetNames[0]];
-        let bestCols  = 0;
-        workbook.SheetNames.forEach(name => {
-          const s    = workbook.Sheets[name];
-          const ref  = s['!ref'];
-          if (!ref) return;
-          const range = XLSX.utils.decode_range(ref);
-          const cols  = range.e.c + 1; // number of columns
-          if (cols > bestCols) { bestCols = cols; bestSheet = s; }
-        });
-        const rows = XLSX.utils.sheet_to_json(bestSheet, { header: 1, defval: '' });
-        processImportRows(rows);
-      } catch (err) {
-        alert('Error reading Excel file: ' + err.message);
-      }
-    };
-    reader.readAsArrayBuffer(file);
-  } else {
-    // ── CSV path ──
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        // Strip BOM if present, normalise line endings
-        const raw   = e.target.result.replace(/^﻿/, '');
-        const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-        const rows  = lines.map(parseCSVRow);
-        processImportRows(rows);
-      } catch (err) {
-        alert('Error parsing CSV: ' + err.message);
-      }
-    };
-    reader.readAsText(file);
-  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data     = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array', cellDates: false, raw: false });
+
+      // Pick the sheet with the most columns (the full data export sheet)
+      let bestSheet = workbook.Sheets[workbook.SheetNames[0]];
+      let bestCols  = 0;
+      workbook.SheetNames.forEach(name => {
+        const s   = workbook.Sheets[name];
+        const ref = s['!ref'];
+        if (!ref) return;
+        const range = XLSX.utils.decode_range(ref);
+        const cols  = range.e.c + 1;
+        if (cols > bestCols) { bestCols = cols; bestSheet = s; }
+      });
+
+      console.log('Sheets:', workbook.SheetNames, '— using sheet with', bestCols, 'columns');
+      const rows = XLSX.utils.sheet_to_json(bestSheet, { header: 1, defval: '' });
+      processImportRows(rows);
+    } catch (err) {
+      alert('Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
   input.value = '';
 }
 
@@ -1078,10 +1062,11 @@ function processImportRows(rows) {
     if (!row || row.every(c => c === '' || c === null || c === undefined)) continue;
     const ncrNum = col(row, 'ncr');
     if (!ncrNum) continue;
+    const to = col(row, 'to');
     newData.push({
       'NCR Number':                ncrNum,
       'Logged Date':               col(row, 'date'),
-      'To':                        col(row, 'to') || col(row, 'author'),
+      'To':                        to,
       'Part Number':               col(row, 'part'),
       'Fault Code':                col(row, 'fault'),
       'Status':                    col(row, 'status') || 'Open',
