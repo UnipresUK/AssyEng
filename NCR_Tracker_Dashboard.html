@@ -1040,14 +1040,17 @@ function processImportRows(rows) {
   };
 
   const COLS = {
-    ncr:     idxAny('NCR Number', 'NCR No', 'NCR No.', 'NCR#', 'NCR'),
-    date:    idxAny('Logged Date', 'Date Logged', 'Date', 'Created'),
-    part:    idxAny('Part Number', 'Part No', 'Part No.', 'PartNumber'),
-    fault:   idxAny('Fault Code', 'Fault', 'Defect Code', 'Defect'),
-    status:  idxAny('Status', 'NCR Status'),
-    to:      idxAny('To', 'Assigned To', 'Assigned'),
-    wcFound: idxAny('Workcentre Found', 'Workcentre', 'Work Centre Found', 'Found At'),
-    signOff: idxAny('Sign Off - Supervisor Name', 'Supervisor Name', 'Sign Off'),
+    ncr:         idxAny('NCR Number', 'NCR No', 'NCR No.', 'NCR#'),
+    date:        idxAny('Logged Date', 'Date Logged', 'Date', 'Created'),
+    part:        idxAny('Part Number', 'Part No', 'Part No.'),
+    fault:       idxAny('Fault Code', 'Fault', 'Defect Code', 'Defect'),
+    status:      idxAny('Status', 'NCR Status'),
+    to:          idxAny('To', 'Assigned To', 'Assigned'),
+    disposition: idxAny('Disposition'),
+    wcFound:     idxAny('Workcentre Found', 'Workcentre Found', 'Work Centre Found'),
+    liableWC:    idxAny('Liable Workcentre', 'Liable WC'),
+    signOff:     idxAny('Sign Off - Supervisor Name', 'Supervisor Name', 'Sign Off'),
+    author:      idxAny('Author'),
   };
 
   if (COLS.ncr < 0) {
@@ -1075,11 +1078,13 @@ function processImportRows(rows) {
     newData.push({
       'NCR Number':                ncrNum,
       'Logged Date':               col(row, 'date'),
-      'To':                        col(row, 'to'),
+      'To':                        col(row, 'to') || col(row, 'author'),
       'Part Number':               col(row, 'part'),
       'Fault Code':                col(row, 'fault'),
       'Status':                    col(row, 'status') || 'Open',
+      'Disposition':               col(row, 'disposition'),
       'Workcentre Found':          col(row, 'wcFound'),
+      'Liable Workcentre':         col(row, 'liableWC'),
       'Sign Off - Supervisor Name': col(row, 'signOff'),
     });
   }
