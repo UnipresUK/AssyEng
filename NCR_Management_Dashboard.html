@@ -6,6 +6,7 @@
 <title>PZ1D NCR — Management Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js" defer></script>
 <style>
   :root {
     --bg:        #f1f5f9;
@@ -293,31 +294,31 @@
     <div class="chart-wrap" style="height:220px"><canvas id="trendChart"></canvas></div>
   </div>
 
-  <!-- Workcentre + Disposition -->
+  <!-- Top 10 Parts bar + Disposition -->
   <div class="grid-2">
     <div class="card">
-      <div class="card-title">NCRs by Workcentre Found</div>
-      <div class="card-desc">Where defects are being detected</div>
-      <div class="chart-wrap" style="height:260px"><canvas id="wcChart"></canvas></div>
+      <div class="card-title">Top 10 Parts by NCR Count</div>
+      <div class="card-desc">Part numbers driving the most non-conformances</div>
+      <div class="chart-wrap" style="height:300px"><canvas id="partsChart"></canvas></div>
     </div>
     <div class="card">
       <div class="card-title">Disposition Breakdown</div>
       <div class="card-desc">Action taken on non-conforming parts</div>
-      <div class="chart-wrap" style="height:260px"><canvas id="dispChart"></canvas></div>
+      <div class="chart-wrap" style="height:300px"><canvas id="dispChart"></canvas></div>
     </div>
   </div>
 
-  <!-- Top parts + Per-person fault split -->
+  <!-- Workload by Department + Workload by Person -->
   <div class="grid-2">
     <div class="card">
-      <div class="card-title">Top 10 Parts by NCR Count</div>
-      <div class="card-desc">Recurring part numbers driving the most non-conformances</div>
-      <div style="margin-top:6px" id="parts-table"></div>
+      <div class="card-title">Workload by Department</div>
+      <div class="card-desc">NCRs assigned per responsible department (set in tracker)</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="deptChart"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">Assembly Engineering — Workload by Manager</div>
-      <div class="card-desc">Fault category breakdown per manager within the department</div>
-      <div class="chart-wrap" style="height:260px"><canvas id="mgrChart"></canvas></div>
+      <div class="card-title">Workload by Person Responsible</div>
+      <div class="card-desc">NCRs allocated per team member (set in tracker)</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="personChart"></canvas></div>
     </div>
   </div>
 
@@ -367,21 +368,21 @@ function suggestCat(fc) {
 }
 
 // ── Chart defaults ────────────────────────────────────────────
+Chart.register(ChartDataLabels);
 Chart.defaults.color = '#475569';
 Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
 Chart.defaults.font.size   = 11;
+Chart.defaults.plugins.datalabels.display = false; // off by default, enabled per-chart
 const PALETTE = ['#2563eb','#059669','#d97706','#7c3aed','#dc2626','#0891b2','#ea580c','#db2777','#65a30d','#6d28d9'];
 const GRID  = 'rgba(203,213,225,0.8)';
 const gridOpts = { color: GRID, drawBorder: false };
 
 // ── Compute everything ────────────────────────────────────────
-const total   = NCR_DATA.length;
-const bySam   = NCR_DATA.filter(r=>r['To']==='Sam Pascoe');
-const byChris = NCR_DATA.filter(r=>r['To']==='Chris Wilson');
+const total = NCR_DATA.length;
 
 // Fault codes
-const faultMap   = count(NCR_DATA, 'Fault Code');
-const topFaults  = sortedEntries(faultMap, 10);
+const faultMap  = count(NCR_DATA, 'Fault Code');
+const topFaults = sortedEntries(faultMap, 10);
 
 // Categories
 const catMap = {};
@@ -398,10 +399,6 @@ NCR_DATA.forEach(r => {
 const months      = Object.keys(monthMap).sort();
 const monthLabels = months.map(m => { const [y,mo]=m.split('-'); return ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+mo]+' '+y.slice(2); });
 
-// Workcentres
-const wcMap  = count(NCR_DATA, 'Workcentre Found');
-const topWCs = sortedEntries(wcMap, 8);
-
 // Dispositions
 const dispMap = {};
 NCR_DATA.forEach(r => {
@@ -415,10 +412,6 @@ NCR_DATA.forEach(r => {
 // Top parts
 const partMap  = count(NCR_DATA, 'Part Number');
 const topParts = sortedEntries(partMap, 10);
-
-// Radar: fault categories per person
-const catList = ['Weld Defect','Assembly','Thread','Laser','Dimensional','Other'];
-function catCountFor(arr) { return catList.map(c => arr.filter(r=>suggestCat(r['Fault Code'])===c).length); }
 
 // ── Date display ──────────────────────────────────────────────
 document.getElementById('report-date').textContent =
@@ -511,7 +504,7 @@ document.getElementById('progress-funnel').innerHTML = funnelSteps.map(s => {
   </div>`;
 }).join('');
 
-// ── Fault code bar chart ──────────────────────────────────────
+// ── Fault code bar chart (with % labels) ─────────────────────
 new Chart(document.getElementById('faultChart'), {
   type: 'bar',
   data: {
@@ -526,9 +519,17 @@ new Chart(document.getElementById('faultChart'), {
   options: {
     indexAxis: 'y',
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display:false }, tooltip: { callbacks: {
-      label: ctx => ` ${ctx.raw} NCRs (${(ctx.raw/total*100).toFixed(0)}%)`
-    }}},
+    layout: { padding: { right: 46 } },
+    plugins: {
+      legend: { display:false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw} NCRs (${(ctx.raw/total*100).toFixed(0)}%)` } },
+      datalabels: {
+        display: true,
+        anchor: 'end', align: 'end',
+        formatter: (v) => `${(v/total*100).toFixed(0)}%`,
+        color: '#475569', font: { size: 10, weight: '600' }
+      }
+    },
     scales: {
       x: { grid: gridOpts, ticks: { color:'#475569' } },
       y: { grid: { display:false }, ticks: { color:'#475569', font:{size:10} } }
@@ -536,8 +537,8 @@ new Chart(document.getElementById('faultChart'), {
   }
 });
 
-// ── Category doughnut ─────────────────────────────────────────
-const catColors = { 'Weld Defect':'#ef4444','Assembly':'#f59e0b','Thread':'#8b5cf6','Laser':'#06b6d4','Dimensional':'#3b82f6','Other':'#64748b' };
+// ── Category doughnut (with % labels on slices) ───────────────
+const catColors = { 'Weld Defect':'#dc2626','Assembly':'#d97706','Thread':'#7c3aed','Laser':'#0891b2','Dimensional':'#2563eb','Other':'#64748b' };
 const catEntries = sortedEntries(catMap);
 new Chart(document.getElementById('catChart'), {
   type: 'doughnut',
@@ -552,10 +553,15 @@ new Chart(document.getElementById('catChart'), {
   },
   options: {
     responsive:true, maintainAspectRatio:false,
-    cutout: '60%',
+    cutout: '55%',
     plugins: {
-      legend: { position:'bottom', labels:{ color:'#475569', padding:10, font:{size:10} } },
-      tooltip: { callbacks:{ label: ctx=>`${ctx.label}: ${ctx.raw} (${(ctx.raw/total*100).toFixed(0)}%)` }}
+      legend: { position:'bottom', labels:{ color:'#475569', padding:8, font:{size:10} } },
+      tooltip: { callbacks:{ label: ctx=>`${ctx.label}: ${ctx.raw} (${(ctx.raw/total*100).toFixed(0)}%)` } },
+      datalabels: {
+        display: true,
+        formatter: (v) => v/total >= 0.04 ? `${(v/total*100).toFixed(0)}%` : '',
+        color: '#fff', font: { size: 11, weight: '700' }
+      }
     }
   }
 });
@@ -586,25 +592,34 @@ new Chart(document.getElementById('trendChart'), {
   }
 });
 
-// ── Workcentre bar ────────────────────────────────────────────
-new Chart(document.getElementById('wcChart'), {
+// ── Top 10 Parts horizontal bar ───────────────────────────────
+new Chart(document.getElementById('partsChart'), {
   type: 'bar',
   data: {
-    labels: topWCs.map(([k])=>k),
+    labels: topParts.map(([k])=>k),
     datasets: [{
-      label:'NCRs Found',
-      data: topWCs.map(([,v])=>v),
-      backgroundColor:'rgba(16,185,129,0.7)',
-      borderColor:'#10b981',
-      borderWidth:1, borderRadius:4,
+      data: topParts.map(([,v])=>v),
+      backgroundColor: topParts.map((_,i)=>PALETTE[i%PALETTE.length]+'bb'),
+      borderColor:     topParts.map((_,i)=>PALETTE[i%PALETTE.length]),
+      borderWidth: 1, borderRadius: 4,
     }]
   },
   options: {
+    indexAxis: 'y',
     responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false} },
+    layout: { padding: { right: 36 } },
+    plugins:{
+      legend:{display:false},
+      tooltip:{ callbacks:{ label: ctx=>`${ctx.raw} NCRs (${(ctx.raw/total*100).toFixed(0)}%)` } },
+      datalabels:{
+        display:true, anchor:'end', align:'end',
+        formatter: v => v,
+        color:'#475569', font:{ size:10, weight:'600' }
+      }
+    },
     scales:{
-      x:{ grid:{display:false}, ticks:{color:'#475569'} },
-      y:{ grid:gridOpts, ticks:{color:'#475569'}, beginAtZero:true }
+      x:{ grid:gridOpts, ticks:{color:'#475569'}, beginAtZero:true },
+      y:{ grid:{display:false}, ticks:{color:'#475569', font:{size:10}} }
     }
   }
 });
@@ -633,70 +648,91 @@ new Chart(document.getElementById('dispChart'), {
   }
 });
 
-// ── Top parts table ───────────────────────────────────────────
-const maxPart = topParts[0][1];
-document.getElementById('parts-table').innerHTML = `
-  <table class="rank-table">
-    ${topParts.map(([part,n],i)=>`
-    <tr>
-      <td class="rank-num">${i+1}</td>
-      <td class="rank-name" style="font-family:monospace;font-size:11px">${part}</td>
-      <td>
-        <div class="rank-bar-track">
-          <div class="rank-bar-fill" style="width:${(n/maxPart*100).toFixed(0)}%;background:${PALETTE[i%PALETTE.length]}cc"></div>
-        </div>
-      </td>
-      <td class="rank-count">${n}</td>
-    </tr>`).join('')}
-  </table>`;
-
-// ── Manager workload grouped bar ──────────────────────────────
-new Chart(document.getElementById('mgrChart'), {
+// ── Workload by Department ────────────────────────────────────
+const deptMap = {};
+NCR_DATA.forEach(r => {
+  const p = stored[r['NCR Number']] || {};
+  const d = p.dept || 'Unassigned';
+  deptMap[d] = (deptMap[d]||0) + 1;
+});
+const deptEntries = sortedEntries(deptMap);
+new Chart(document.getElementById('deptChart'), {
   type:'bar',
   data:{
-    labels: catList,
-    datasets:[
-      {
-        label:'Sam Pascoe',
-        data: catCountFor(bySam),
-        backgroundColor:'rgba(59,130,246,0.75)',
-        borderColor:'#3b82f6',
-        borderWidth:1, borderRadius:3,
-      },
-      {
-        label:'Chris Wilson',
-        data: catCountFor(byChris),
-        backgroundColor:'rgba(16,185,129,0.75)',
-        borderColor:'#10b981',
-        borderWidth:1, borderRadius:3,
-      },
-    ]
+    labels: deptEntries.map(([k])=>k),
+    datasets:[{
+      data: deptEntries.map(([,v])=>v),
+      backgroundColor: deptEntries.map((_,i)=>PALETTE[i%PALETTE.length]+'bb'),
+      borderColor:     deptEntries.map((_,i)=>PALETTE[i%PALETTE.length]),
+      borderWidth:1, borderRadius:4,
+    }]
   },
   options:{
     responsive:true, maintainAspectRatio:false,
     plugins:{
-      legend:{ position:'bottom', labels:{color:'#475569',padding:12,font:{size:11}} },
-      tooltip:{ callbacks:{ label: ctx=>`${ctx.dataset.label}: ${ctx.raw} NCRs` } }
+      legend:{display:false},
+      tooltip:{ callbacks:{ label: ctx=>`${ctx.raw} NCRs (${(ctx.raw/total*100).toFixed(0)}%)` } },
+      datalabels:{
+        display:true, anchor:'end', align:'end',
+        formatter: v => v,
+        color:'#475569', font:{size:11, weight:'600'}
+      }
     },
     scales:{
-      x:{ grid:{display:false}, ticks:{color:'#475569',font:{size:10}} },
+      x:{ grid:{display:false}, ticks:{color:'#475569'} },
       y:{ grid:gridOpts, ticks:{color:'#475569'}, beginAtZero:true }
     }
   }
 });
 
+// ── Workload by Person Responsible ────────────────────────────
+const personMap = {};
+NCR_DATA.forEach(r => {
+  const p = stored[r['NCR Number']] || {};
+  const name = p.investigator || 'Unallocated';
+  personMap[name] = (personMap[name]||0) + 1;
+});
+const personEntries = sortedEntries(personMap).slice(0, 12);
+new Chart(document.getElementById('personChart'), {
+  type:'bar',
+  data:{
+    labels: personEntries.map(([k])=>k),
+    datasets:[{
+      data: personEntries.map(([,v])=>v),
+      backgroundColor: personEntries.map((_,i)=>PALETTE[i%PALETTE.length]+'bb'),
+      borderColor:     personEntries.map((_,i)=>PALETTE[i%PALETTE.length]),
+      borderWidth:1, borderRadius:4,
+    }]
+  },
+  options:{
+    indexAxis:'y',
+    responsive:true, maintainAspectRatio:false,
+    layout:{ padding:{ right:36 } },
+    plugins:{
+      legend:{display:false},
+      tooltip:{ callbacks:{ label: ctx=>`${ctx.raw} NCRs` } },
+      datalabels:{
+        display:true, anchor:'end', align:'end',
+        formatter: v => v,
+        color:'#475569', font:{size:10, weight:'600'}
+      }
+    },
+    scales:{
+      x:{ grid:gridOpts, ticks:{color:'#475569'}, beginAtZero:true },
+      y:{ grid:{display:false}, ticks:{color:'#475569', font:{size:10}} }
+    }
+  }
+});
+
 // ── Auto insights ─────────────────────────────────────────────
-const topFault     = topFaults[0];
-const topWC        = topWCs[0];
-const topPart      = topParts[0];
-const outflowPct   = ((wcMap['Outflow']||0)/total*100).toFixed(0);
-const weldPct      = ((catMap['Weld Defect']||0)/total*100).toFixed(0);
-const reworkPct    = ((dispMap['Rework']||0)/total*100).toFixed(0);
-const scrappedPct  = ((dispMap['Scrap']||0)/total*100).toFixed(0);
+const topFault    = topFaults[0];
+const topPart     = topParts[0];
+const weldPct     = ((catMap['Weld Defect']||0)/total*100).toFixed(0);
+const reworkPct   = ((dispMap['Rework']||0)/total*100).toFixed(0);
+const scrappedPct = ((dispMap['Scrap']||0)/total*100).toFixed(0);
 
 const insights = [
   { icon:'🔴', title:'Dominant Fault Type', body:`<strong>${faultShort(topFault[0])}</strong> accounts for ${topFault[1]} NCRs (${(topFault[1]/total*100).toFixed(0)}% of all items). Spotweld burr is the single biggest quality driver — a targeted process control review is recommended.` },
-  { icon:'📍', title:'Detection Hotspot', body:`<strong>${topWC[0]}</strong> is detecting ${topWC[1]} NCRs (${outflowPct}% of total). The majority of defects are escaping to outflow inspection rather than being caught at source.` },
   { icon:'🔩', title:'Highest-Volume Part', body:`Part <strong>${topPart[0]}</strong> has generated ${topPart[1]} NCRs — the most of any single part number. Consider a dedicated improvement action on this assembly.` },
   { icon:'♻️', title:'Rework vs Scrap', body:`${reworkPct}% of dispositions are rework, ${scrappedPct}% are scrap. Rework dominates, indicating the defects are generally recoverable but are adding cost and cycle time.` },
   { icon:'📈', title:'Volume Trend', body:`NCR volumes show a ${months.length > 3 && monthMap[months[months.length-1]] > monthMap[months[0]] ? 'rising' : 'varied'} trend over ${months.length} months of trial. Monitor month-on-month to confirm whether countermeasures are reducing intake.` },
