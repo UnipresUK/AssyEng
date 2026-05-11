@@ -7,17 +7,17 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:      #0a0d12;
-  --surf:    #111520;
-  --surf2:   #161c28;
-  --border:  #1f2d42;
-  --border2: #263348;
-  --text:    #d4dbe8;
-  --muted:   #4e6278;
-  --dim:     #7a90a8;
-  --accent:  #2b6cb0;
-  --accentL: #3b82f6;
-  --green:   #10b981;
+  --bg:      #f1f5f9;
+  --surf:    #ffffff;
+  --surf2:   #f8fafc;
+  --border:  #e2e8f0;
+  --border2: #cbd5e1;
+  --text:    #0f172a;
+  --muted:   #64748b;
+  --dim:     #475569;
+  --accent:  #1d4ed8;
+  --accentL: #2563eb;
+  --green:   #059669;
   --amber:   #d97706;
   --red:     #dc2626;
   --col-w:   52px;
@@ -28,20 +28,20 @@ body { font-family:'IBM Plex Sans',sans-serif; font-size:12px; background:var(--
 
 /* ── Shared nav ── */
 .site-nav {
-  background:#080b10; border-bottom:1px solid #151e2b;
+  background:#ffffff; border-bottom:1px solid #e2e8f0;
   padding:0 24px; display:flex; align-items:center; gap:2px;
 }
 .site-nav .nav-brand {
   font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600;
-  color:#3b82f6; padding:9px 12px 9px 0; margin-right:6px;
-  border-right:1px solid #151e2b; white-space:nowrap;
+  color:#2563eb; padding:9px 12px 9px 0; margin-right:6px;
+  border-right:1px solid #e2e8f0; white-space:nowrap;
 }
 .site-nav a {
-  text-decoration:none; color:#4e6278; font-size:11px;
+  text-decoration:none; color:#64748b; font-size:11px;
   padding:9px 12px; border-bottom:2px solid transparent; transition:all .15s; white-space:nowrap;
 }
-.site-nav a:hover { color:#d4dbe8; }
-.site-nav a.active { color:#d4dbe8; border-bottom-color:#3b82f6; }
+.site-nav a:hover { color:#0f172a; }
+.site-nav a.active { color:#0f172a; border-bottom-color:#2563eb; }
 
 /* ── Header ── */
 header {
@@ -106,7 +106,7 @@ table { border-collapse:collapse; width:max-content; font-size:11px; }
 
 /* Header row */
 thead th {
-  background:#0d1219;
+  background:#f1f5f9;
   border:1px solid var(--border);
   padding:4px 6px;
   font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--muted);
@@ -115,7 +115,7 @@ thead th {
 }
 /* Month row */
 .month-th {
-  background:#0a0f18; border:1px solid var(--border);
+  background:#e2e8f0; border:1px solid var(--border);
   font-size:10px; font-weight:600; color:var(--dim); text-align:center;
   padding:3px 0; position:sticky; top:0; z-index:20;
 }
@@ -140,20 +140,20 @@ td {
   white-space:nowrap;
   background:var(--bg);
 }
-tbody tr:nth-child(even) td { background:#0c1018; }
+tbody tr:nth-child(even) td { background:#f8fafc; }
 tbody tr:nth-child(even) td.s1,
 tbody tr:nth-child(even) td.s2,
 tbody tr:nth-child(even) td.s3,
 tbody tr:nth-child(even) td.s4,
 tbody tr:nth-child(even) td.s5,
 tbody tr:nth-child(even) td.s6,
-tbody tr:nth-child(even) td.s7 { background:#0c1018; }
+tbody tr:nth-child(even) td.s7 { background:#f8fafc; }
 
-tbody tr:hover td { background:#111827 !important; }
+tbody tr:hover td { background:rgba(37,99,235,0.05) !important; }
 
 td.s1,td.s2,td.s3,td.s4,td.s5,td.s6,td.s7 { background:var(--bg); z-index:10; }
 
-.ncr-id    { font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#7aa2cc; }
+.ncr-id    { font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; color:#2563eb; }
 .part-txt  { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; display:block; max-width:90px; }
 .fault-txt { font-size:10px; color:var(--dim); overflow:hidden; text-overflow:ellipsis; display:block; max-width:122px; }
 .mgr-txt   { font-size:10px; color:var(--muted); }
@@ -164,14 +164,14 @@ td.s1,td.s2,td.s3,td.s4,td.s5,td.s6,td.s7 { background:var(--bg); z-index:10; }
   background:transparent; border:none; color:var(--text);
   font-family:'IBM Plex Mono',monospace; font-size:10px; padding:0; width:88px; outline:none; cursor:pointer;
 }
-.cell-date::-webkit-calendar-picker-indicator { filter:invert(.3); width:9px; height:9px; cursor:pointer; }
-.cell-date:hover { color:#60a5fa; }
-.cell-date:focus { color:#90caf9; }
+.cell-date::-webkit-calendar-picker-indicator { filter:none; width:9px; height:9px; cursor:pointer; opacity:.5; }
+.cell-date:hover { color:#1d4ed8; }
+.cell-date:focus { color:#1e40af; }
 .cell-date.unset { color:var(--muted); }
 
 /* Status dot */
 .sdot { width:6px; height:6px; border-radius:50%; display:inline-block; margin-right:4px; vertical-align:middle; flex-shrink:0; }
-.sd-none { background:#2a3a50; } .sd-inv  { background:var(--amber); }
+.sd-none { background:#cbd5e1; } .sd-inv  { background:var(--amber); }
 .sd-cm   { background:#7c3aed; } .sd-fail { background:var(--red); }
 .sd-done { background:var(--green); }
 
@@ -180,9 +180,9 @@ td.gc {
   min-width:var(--col-w); max-width:var(--col-w); width:var(--col-w);
   padding:0; position:relative; border:1px solid var(--border);
 }
-td.gc.today-col { border-left:1px solid rgba(59,130,246,.5); background:rgba(59,130,246,.04) !important; }
-td.gc.weekend   { background:#09101a !important; }
-th.gc.today-col { border-left:1px solid rgba(59,130,246,.5); background:rgba(59,130,246,.08); }
+td.gc.today-col { border-left:1px solid rgba(37,99,235,.5); background:rgba(37,99,235,.05) !important; }
+td.gc.weekend   { background:#f0f4f8 !important; }
+th.gc.today-col { border-left:1px solid rgba(37,99,235,.5); background:rgba(37,99,235,.1); }
 
 /* Gantt bars */
 .gbar {
@@ -389,7 +389,7 @@ function render() {
   });
 
   const INFO_COLS = 7;
-  const infoSpans = `<th class="month-th s1 s2 s3 s4 s5 s6 s7" colspan="${INFO_COLS}" style="text-align:left;padding-left:8px;position:sticky;left:0;z-index:30;background:#0a0f18">
+  const infoSpans = `<th class="month-th s1 s2 s3 s4 s5 s6 s7" colspan="${INFO_COLS}" style="text-align:left;padding-left:8px;position:sticky;left:0;z-index:30;background:#e2e8f0">
     PZ1D NCR Closure Plan · ${fmtD(TODAY)} ${TODAY.getFullYear()} · ${rows.length} open NCRs
   </th>`;
   const monthSpans = monthGroups.map(g=>`<th class="month-th gc" colspan="${g.count}" style="text-align:center">${g.label}</th>`).join('');

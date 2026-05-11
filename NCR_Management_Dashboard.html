@@ -8,43 +8,43 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg:        #0a0d12;
-    --surface:   #131720;
-    --surface2:  #1a2030;
-    --border:    #242e42;
-    --text:      #e2e8f0;
+    --bg:        #f1f5f9;
+    --surface:   #ffffff;
+    --surface2:  #f8fafc;
+    --border:    #e2e8f0;
+    --text:      #0f172a;
     --muted:     #64748b;
-    --dim:       #94a3b8;
-    --accent:    #3b82f6;
-    --green:     #10b981;
-    --amber:     #f59e0b;
-    --purple:    #8b5cf6;
-    --red:       #ef4444;
-    --cyan:      #06b6d4;
-    --orange:    #f97316;
-    --pink:      #ec4899;
-    --sam:       #06b6d4;
-    --chris:     #f97316;
+    --dim:       #475569;
+    --accent:    #2563eb;
+    --green:     #059669;
+    --amber:     #d97706;
+    --purple:    #7c3aed;
+    --red:       #dc2626;
+    --cyan:      #0891b2;
+    --orange:    #ea580c;
+    --pink:      #db2777;
+    --sam:       #0891b2;
+    --chris:     #ea580c;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   /* ── Shared nav ── */
   .site-nav {
-    background:#0d1017;border-bottom:1px solid #1e2a3a;
+    background:#ffffff;border-bottom:1px solid #e2e8f0;
     padding:0 28px;display:flex;align-items:center;gap:4px;
   }
   .site-nav .nav-brand {
     font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
-    color:#3b82f6;padding:10px 14px 10px 0;margin-right:8px;
-    border-right:1px solid #1e2a3a;white-space:nowrap;
+    color:#2563eb;padding:10px 14px 10px 0;margin-right:8px;
+    border-right:1px solid #e2e8f0;white-space:nowrap;
   }
   .site-nav a {
     text-decoration:none;color:#64748b;font-size:12px;
     padding:10px 14px;border-bottom:2px solid transparent;
     transition:all .15s;white-space:nowrap;
   }
-  .site-nav a:hover { color:#e2e8f0; }
-  .site-nav a.active { color:#e2e8f0;border-bottom-color:#3b82f6; }
+  .site-nav a:hover { color:#0f172a; }
+  .site-nav a.active { color:#0f172a;border-bottom-color:#2563eb; }
 
   body {
     font-family: 'IBM Plex Sans', sans-serif;
@@ -55,7 +55,7 @@
 
   /* ── Header ── */
   .page-header {
-    background: linear-gradient(135deg, #131720 0%, #0f1520 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     border-bottom: 1px solid var(--border);
     padding: 28px 36px 24px;
     display: flex;
@@ -220,9 +220,9 @@
   /* ── Print ── */
   @media print {
     body { background: #fff; color: #111; }
-    .page-header, .card, .kpi, .assignee-panel, .insight { background: #f8f9fa !important; border-color: #dee2e6 !important; }
+    .page-header, .card, .kpi, .insight { background: #fff !important; border-color: #e2e8f0 !important; }
     .meta-print { display: none; }
-    .brand-title, .kpi-value, .ap-count { color: #111 !important; }
+    .brand-title, .kpi-value { color: #111 !important; }
     .dashboard { padding: 16px; }
   }
 </style>
@@ -363,11 +363,11 @@ function suggestCat(fc) {
 }
 
 // ── Chart defaults ────────────────────────────────────────────
-Chart.defaults.color = '#64748b';
+Chart.defaults.color = '#475569';
 Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
 Chart.defaults.font.size   = 11;
-const PALETTE = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#f97316','#ec4899','#84cc16','#a78bfa'];
-const GRID  = 'rgba(42,51,71,0.8)';
+const PALETTE = ['#2563eb','#059669','#d97706','#7c3aed','#dc2626','#0891b2','#ea580c','#db2777','#65a30d','#6d28d9'];
+const GRID  = 'rgba(203,213,225,0.8)';
 const gridOpts = { color: GRID, drawBorder: false };
 
 // ── Compute everything ────────────────────────────────────────
@@ -528,8 +528,8 @@ new Chart(document.getElementById('faultChart'), {
       label: ctx => ` ${ctx.raw} NCRs (${(ctx.raw/total*100).toFixed(0)}%)`
     }}},
     scales: {
-      x: { grid: gridOpts, ticks: { color:'#64748b' } },
-      y: { grid: { display:false }, ticks: { color:'#94a3b8', font:{size:10} } }
+      x: { grid: gridOpts, ticks: { color:'#475569' } },
+      y: { grid: { display:false }, ticks: { color:'#475569', font:{size:10} } }
     }
   }
 });
@@ -552,7 +552,7 @@ new Chart(document.getElementById('catChart'), {
     responsive:true, maintainAspectRatio:false,
     cutout: '60%',
     plugins: {
-      legend: { position:'bottom', labels:{ color:'#94a3b8', padding:10, font:{size:10} } },
+      legend: { position:'bottom', labels:{ color:'#475569', padding:10, font:{size:10} } },
       tooltip: { callbacks:{ label: ctx=>`${ctx.label}: ${ctx.raw} (${(ctx.raw/total*100).toFixed(0)}%)` }}
     }
   }
@@ -578,8 +578,8 @@ new Chart(document.getElementById('trendChart'), {
     responsive:true, maintainAspectRatio:false,
     plugins: { legend:{display:false} },
     scales: {
-      x: { grid: gridOpts, ticks:{color:'#64748b'} },
-      y: { grid: gridOpts, ticks:{color:'#64748b'}, beginAtZero:true }
+      x: { grid: gridOpts, ticks:{color:'#475569'} },
+      y: { grid: gridOpts, ticks:{color:'#475569'}, beginAtZero:true }
     }
   }
 });
@@ -601,8 +601,8 @@ new Chart(document.getElementById('wcChart'), {
     responsive:true, maintainAspectRatio:false,
     plugins:{ legend:{display:false} },
     scales:{
-      x:{ grid:{display:false}, ticks:{color:'#94a3b8'} },
-      y:{ grid:gridOpts, ticks:{color:'#64748b'}, beginAtZero:true }
+      x:{ grid:{display:false}, ticks:{color:'#475569'} },
+      y:{ grid:gridOpts, ticks:{color:'#475569'}, beginAtZero:true }
     }
   }
 });
@@ -625,7 +625,7 @@ new Chart(document.getElementById('dispChart'), {
     responsive:true, maintainAspectRatio:false,
     cutout:'60%',
     plugins:{
-      legend:{position:'right', labels:{color:'#94a3b8',padding:8,font:{size:10}}},
+      legend:{position:'right', labels:{color:'#475569',padding:8,font:{size:10}}},
       tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} (${(ctx.raw/total*100).toFixed(0)}%)`}}
     }
   }
@@ -673,12 +673,12 @@ new Chart(document.getElementById('mgrChart'), {
   options:{
     responsive:true, maintainAspectRatio:false,
     plugins:{
-      legend:{ position:'bottom', labels:{color:'#94a3b8',padding:12,font:{size:11}} },
+      legend:{ position:'bottom', labels:{color:'#475569',padding:12,font:{size:11}} },
       tooltip:{ callbacks:{ label: ctx=>`${ctx.dataset.label}: ${ctx.raw} NCRs` } }
     },
     scales:{
-      x:{ grid:{display:false}, ticks:{color:'#94a3b8',font:{size:10}} },
-      y:{ grid:gridOpts, ticks:{color:'#64748b'}, beginAtZero:true }
+      x:{ grid:{display:false}, ticks:{color:'#475569',font:{size:10}} },
+      y:{ grid:gridOpts, ticks:{color:'#475569'}, beginAtZero:true }
     }
   }
 });

@@ -7,24 +7,24 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0d0f14;
-    --surface: #161b24;
-    --surface2: #1e2532;
-    --border: #2a3347;
-    --text: #e2e8f0;
+    --bg: #f1f5f9;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --border: #e2e8f0;
+    --text: #0f172a;
     --text-muted: #64748b;
-    --text-dim: #94a3b8;
-    --accent: #3b82f6;
-    --accent-glow: rgba(59,130,246,0.15);
+    --text-dim: #475569;
+    --accent: #2563eb;
+    --accent-glow: rgba(37,99,235,0.1);
 
-    --s-investigated: #f59e0b;
-    --s-countermeasure: #8b5cf6;
-    --s-failed: #ef4444;
-    --s-complete: #10b981;
-    --s-unallocated: #334155;
+    --s-investigated: #d97706;
+    --s-countermeasure: #7c3aed;
+    --s-failed: #dc2626;
+    --s-complete: #059669;
+    --s-unallocated: #cbd5e1;
 
-    --sam: #06b6d4;
-    --chris: #f97316;
+    --sam: #0891b2;
+    --chris: #ea580c;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -142,8 +142,8 @@
   }
   .pill:hover { border-color: var(--text-muted); color: var(--text); }
   .pill.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
-  .pill.sam.active  { background: rgba(6,182,212,0.12); border-color: var(--sam); color: var(--sam); }
-  .pill.chris.active{ background: rgba(249,115,22,0.12); border-color: var(--chris); color: var(--chris); }
+  .pill.sam.active  { background: rgba(8,145,178,0.1); border-color: var(--sam); color: var(--sam); }
+  .pill.chris.active{ background: rgba(234,88,12,0.1); border-color: var(--chris); color: var(--chris); }
 
   .search-box {
     margin-left: auto;
@@ -232,8 +232,8 @@
   thead th.no-sort:hover { color: var(--text-muted); }
 
   tbody tr { transition: background 0.08s; }
-  tbody tr:nth-child(even) td { background: rgba(255,255,255,0.018); }
-  tbody tr:hover td { background: rgba(255,255,255,0.04) !important; }
+  tbody tr:nth-child(even) td { background: rgba(0,0,0,0.025); }
+  tbody tr:hover td { background: rgba(37,99,235,0.06) !important; }
   td { padding: 3px 7px; vertical-align: middle; border: 1px solid var(--border); height: 28px; }
 
   .ncr-num {
@@ -250,8 +250,8 @@
     font-weight: 500;
     white-space: nowrap;
   }
-  .assignee-badge.sam  { background: rgba(6,182,212,0.12);  color: var(--sam);   border: 1px solid rgba(6,182,212,0.3); }
-  .assignee-badge.chris{ background: rgba(249,115,22,0.12); color: var(--chris); border: 1px solid rgba(249,115,22,0.3); }
+  .assignee-badge.sam  { background: rgba(8,145,178,0.1);  color: var(--sam);   border: 1px solid rgba(8,145,178,0.3); }
+  .assignee-badge.chris{ background: rgba(234,88,12,0.1);  color: var(--chris); border: 1px solid rgba(234,88,12,0.3); }
 
   .fault-code { font-size: 10px; color: var(--text-dim); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
   .part-num   { font-family: 'IBM Plex Mono', monospace; font-size: 10px; }
@@ -384,21 +384,21 @@
 
   /* ── Shared nav ── */
   .site-nav {
-    background:#0d1017;border-bottom:1px solid #1e2a3a;
+    background:#ffffff;border-bottom:1px solid #e2e8f0;
     padding:0 28px;display:flex;align-items:center;gap:4px;
   }
   .site-nav .nav-brand {
     font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
-    color:#3b82f6;padding:10px 14px 10px 0;margin-right:8px;
-    border-right:1px solid #1e2a3a;white-space:nowrap;
+    color:#2563eb;padding:10px 14px 10px 0;margin-right:8px;
+    border-right:1px solid #e2e8f0;white-space:nowrap;
   }
   .site-nav a {
     text-decoration:none;color:#64748b;font-size:12px;
     padding:10px 14px;border-bottom:2px solid transparent;
     transition:all .15s;white-space:nowrap;
   }
-  .site-nav a:hover { color:#e2e8f0; }
-  .site-nav a.active { color:#e2e8f0;border-bottom-color:#3b82f6; }
+  .site-nav a:hover { color:#0f172a; }
+  .site-nav a.active { color:#0f172a;border-bottom-color:#2563eb; }
 
   /* ── NCR system status badges ── */
   .sys-badge {
@@ -407,9 +407,9 @@
     font-size: 9px; font-weight: 600; letter-spacing: 0.04em;
     white-space: nowrap;
   }
-  .sys-open     { background: rgba(59,130,246,0.12);  color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
-  .sys-signoff  { background: rgba(245,158,11,0.15);  color: #fbbf24; border: 1px solid rgba(245,158,11,0.4); }
-  .sys-closed   { background: rgba(16,185,129,0.12);  color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+  .sys-open     { background: rgba(37,99,235,0.08);   color: #1d4ed8; border: 1px solid rgba(37,99,235,0.25); }
+  .sys-signoff  { background: rgba(217,119,6,0.1);    color: #b45309; border: 1px solid rgba(217,119,6,0.3); }
+  .sys-closed   { background: rgba(5,150,105,0.1);    color: #047857; border: 1px solid rgba(5,150,105,0.25); }
   .signoff-name { font-size: 9px; color: var(--text-muted); font-style: italic; display: block; }
 
   .row-closed   { opacity: 0.38; }
