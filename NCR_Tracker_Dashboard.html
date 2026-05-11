@@ -1011,11 +1011,12 @@ function processImportRows(rows) {
 
   const headers = rows[headerIdx].map(h => String(h).trim());
 
-  // Flexible column finder — tries exact then partial match
+  // Column finder — exact match first, then partial only for longer strings (len > 4)
   const idx = target => {
     const tl = target.toLowerCase();
     let i = headers.findIndex(h => h.toLowerCase() === tl);
-    if (i < 0) i = headers.findIndex(h => h.toLowerCase().includes(tl));
+    if (i < 0 && tl.length > 4)
+      i = headers.findIndex(h => h.toLowerCase().includes(tl));
     return i;
   };
 
@@ -1025,7 +1026,7 @@ function processImportRows(rows) {
     part:    idx('Part Number'),
     fault:   idx('Fault Code'),
     status:  idx('Status'),
-    to:      idx('To'),
+    to:      idx('To'),          // exact match only — too short for partial
     wcFound: idx('Workcentre Found'),
     signOff: idx('Sign Off - Supervisor Name'),
   };
