@@ -1,31 +1,49 @@
 // ─── NCR Tracker — Google Apps Script Backend ──────────────────
 const SPREADSHEET_ID = '17WxtqSYbL4wt7bnAmHavbSM8MYE3CnRdkikeZpiHIuA';
-const PROGRESS_SHEET = 'NCR_Progress';
+const PROGRESS_SHEET  = 'NCR_Progress';
+const NCR_DATA_SHEET  = 'NCR_Data';
+const EXPECTED_HEADERS = ['NCR_Number','Investigator','Status','Notes','Category','Dept','LastUpdated'];
 
-function getOrCreateSheet(name, headers) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-  let sheet = ss.getSheetByName(name);
+// ─── Get sheet, adding any missing header columns automatically ─
+function getSheet() {
+  const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+  let sheet   = ss.getSheetByName(PROGRESS_SHEET);
+
   if (!sheet) {
-    sheet = ss.insertSheet(name);
-    sheet.appendRow(headers);
-    sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+    // Brand new sheet — create with all headers
+    sheet = ss.insertSheet(PROGRESS_SHEET);
+    sheet.appendRow(EXPECTED_HEADERS);
+    sheet.getRange(1, 1, 1, EXPECTED_HEADERS.length).setFontWeight('bold');
+    return sheet;
   }
+
+  // Sheet exists — check for any missing columns and append them
+  const lastCol      = sheet.getLastColumn() || 0;
+  const existingHdrs = lastCol > 0
+    ? sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(String)
+    : [];
+
+  EXPECTED_HEADERS.forEach(h => {
+    if (!existingHdrs.includes(h)) {
+      const col = sheet.getLastColumn() + 1;
+      sheet.getRange(1, col).setValue(h).setFontWeight('bold');
+      existingHdrs.push(h); // keep in sync for subsequent iterations
+    }
+  });
+
   return sheet;
 }
 
+// ─── JSON helpers ───────────────────────────────────────────────
 function jsonResp(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
-
 function ok(data)  { return jsonResp({ ok: true,  data: data  }); }
 function fail(msg) { return jsonResp({ ok: false, error: msg  }); }
 
 // ─── CORS-friendly: all calls arrive as GET params ──────────────
-function doGet(e) {
-  return route(e.parameter || {});
-}
-
+function doGet(e)  { return route(e.parameter || {}); }
 function doPost(e) {
   let p = {};
   try { p = JSON.parse(e.postData.contents); } catch (_) {}
@@ -36,9 +54,10 @@ function doPost(e) {
 function route(p) {
   try {
     switch (p.action) {
-      case 'getAll': return doGetAll();
-      case 'update': return doUpdate(p);
-      default:       return fail('Unknown action: ' + (p.action || 'none'));
+      case 'getAll':      return doGetAll();
+      case 'update':      return doUpdate(p);
+      case 'getNCRData':  return doGetNCRData();
+      default:            return fail('Unknown action: ' + (p.action || 'none'));
     }
   } catch (err) {
     return fail(err.toString());
@@ -47,15 +66,34 @@ function route(p) {
 
 // ─── GET ALL progress records ───────────────────────────────────
 function doGetAll() {
-  const sheet = getOrCreateSheet(PROGRESS_SHEET, ['NCR_Number','Investigator','Status','Notes','Category','Dept','LastUpdated']);
+  const sheet = getSheet();
   const data  = sheet.getDataRange().getValues();
   if (data.length < 2) return ok([]);
-  const headers = data[0];
+
+  const headers = data[0].map(String);
   const records = data.slice(1)
     .filter(row => row[0] !== '')
     .map(row => {
       const obj = {};
-      headers.forEach((h, i) => obj[h] = row[i] !== undefined ? String(row[i]) : '');
+      headers.forEach((h, i) => { obj[h] = row[i] !== undefined ? String(row[i]) : ''; });
+      return obj;
+    });
+  return ok(records);
+}
+
+// ─── GET NCR list data from NCR_Data sheet ──────────────────────
+function doGetNCRData() {
+  const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(NCR_DATA_SHEET);
+  if (!sheet) return ok([]);
+  const data  = sheet.getDataRange().getValues();
+  if (data.length < 2) return ok([]);
+  const headers = data[0].map(String);
+  const records = data.slice(1)
+    .filter(row => row.some(c => c !== '' && c !== null && c !== undefined))
+    .map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] !== undefined ? String(row[i]) : ''; });
       return obj;
     });
   return ok(records);
@@ -66,31 +104,43 @@ function doUpdate(p) {
   const ncr = (p.ncr || '').toString().trim();
   if (!ncr) return fail('ncr is required');
 
-  const sheet   = getOrCreateSheet(PROGRESS_SHEET, ['NCR_Number','Investigator','Status','Notes','Category','Dept','LastUpdated']);
+  const sheet   = getSheet();
   const data    = sheet.getDataRange().getValues();
-  const headers = data[0];
-  const ncrCol  = headers.indexOf('NCR_Number');
+  const headers = data[0].map(String);
 
-  const rowValues = [
-    ncr,
-    p.investigator || '',
-    p.status       || '',
-    p.notes        || '',
-    p.category     || '',
-    p.dept         || '',
-    new Date().toISOString()
-  ];
+  // Build header → column index map (0-based)
+  const colIdx = {};
+  headers.forEach((h, i) => { colIdx[h] = i; });
 
-  // Find existing row (1-indexed, row 1 = headers)
+  // Values we want to write keyed by header name
+  const values = {
+    'NCR_Number':   ncr,
+    'Investigator': p.investigator || '',
+    'Status':       p.status       || '',
+    'Notes':        p.notes        || '',
+    'Category':     p.category     || '',
+    'Dept':         p.dept         || '',
+    'LastUpdated':  new Date().toISOString(),
+  };
+
+  // Build a row array aligned to current column positions
+  const numCols  = headers.length;
+  const rowArray = new Array(numCols).fill('');
+  Object.keys(values).forEach(h => {
+    if (colIdx[h] !== undefined) rowArray[colIdx[h]] = values[h];
+  });
+
+  // Find existing row for this NCR (skip header row 0)
+  const ncrCol = colIdx['NCR_Number'];
   let found = -1;
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][ncrCol]) === ncr) { found = i + 1; break; }
+    if (String(data[i][ncrCol]) === ncr) { found = i + 1; break; } // 1-indexed sheet row
   }
 
   if (found > 0) {
-    sheet.getRange(found, 1, 1, rowValues.length).setValues([rowValues]);
+    sheet.getRange(found, 1, 1, numCols).setValues([rowArray]);
   } else {
-    sheet.appendRow(rowValues);
+    sheet.appendRow(rowArray);
   }
 
   return ok({ ncr: ncr });
