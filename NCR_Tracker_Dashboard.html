@@ -718,32 +718,40 @@ async function loadNCRData() {
     if (json.ok && Array.isArray(json.data) && json.data.length > 0) {
       const mapped = json.data
         .map(mapNCRRecord)
-        .filter(r => r['NCR Number'] && r['To'] && ['Sam Pascoe','Chris Wilson'].includes(r['To']));
+        .filter(r => r['NCR Number']);   // keep all NCRs — assignee filter handles the rest
 
-      if (mapped.length > 0) {
-        currentData = mapped;
-        localStorage.setItem(NCR_STORAGE_KEY, JSON.stringify(currentData));
-        render();
-        setNCRSyncState('synced', mapped.length + ' NCRs loaded ✓');
-      } else if (!localStorage.getItem(NCR_STORAGE_KEY)) {
-        // Sheet exists but no matching NCRs — fall back to embedded data
-        setNCRSyncState('error', 'NCR_Data sheet empty — using built-in data');
-      } else {
-        setNCRSyncState('synced', 'NCRs up to date ✓');
-      }
+      currentData = mapped;
+      localStorage.setItem(NCR_STORAGE_KEY, JSON.stringify(currentData));
+
+      // Rebuild assignee filter pills from whoever is in the data
+      rebuildAssigneeFilter();
+      render();
+      setNCRSyncState('synced', mapped.length + ' NCRs loaded ✓');
     } else {
-      // Sheet not set up yet — use embedded NCR_DATA
+      // Sheet not populated yet — use embedded NCR_DATA
       if (!localStorage.getItem(NCR_STORAGE_KEY)) {
         currentData = [...NCR_DATA];
         render();
       }
-      setNCRSyncState('error', 'NCR_Data sheet not found — using built-in data');
+      setNCRSyncState('error', 'NCR_Data sheet empty — using built-in data');
     }
   } catch (e) {
     console.warn('NCR data fetch failed:', e);
     if (!currentData.length) { currentData = [...NCR_DATA]; render(); }
     setNCRSyncState('error', 'Offline — using cached data');
   }
+}
+
+// ── Rebuild assignee filter pills from current data ────────────
+function rebuildAssigneeFilter() {
+  const assignees = [...new Set(currentData.map(r => r['To']).filter(Boolean))].sort();
+  const container = document.querySelector('[data-filter="assignee"]')?.parentElement;
+  if (!container) return;
+  container.innerHTML =
+    `<button class="pill active" data-filter="assignee" data-value="all" onclick="setFilter('assignee','all',this)">All</button>` +
+    assignees.map(a =>
+      `<button class="pill" data-filter="assignee" data-value="${a}" onclick="setFilter('assignee','${a}',this)">${a}</button>`
+    ).join('');
 }
 
 // ── Google Sheets: load all progress ──────────────────────────
@@ -1159,8 +1167,7 @@ async function importCSVToSheets(input) {
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'Upload failed');
     toast(`✓ ${records.length} NCRs uploaded to Google Sheets`);
-    // Reload from Sheets so everyone sees the fresh data
-    await loadNCRData();
+    await loadNCRData();   // reload so everyone sees the fresh data
   } catch (e) {
     alert('Upload to Google Sheets failed: ' + e.message + '\n\nCheck the Apps Script is deployed.');
     setNCRSyncState('error', 'Upload failed');
