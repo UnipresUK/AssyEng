@@ -458,7 +458,7 @@
   <div class="stat">
     <span class="stat-label">Total Open</span>
     <span class="stat-value" id="stat-total">—</span>
-    <span class="stat-sub">NCRs assigned</span>
+    <span class="stat-sub" id="stat-total-sub">NCRs assigned</span>
   </div>
   <div class="stat investigated">
     <span class="stat-label">Investigated</span>
@@ -999,26 +999,29 @@ function updateStats() {
   const isFiltered = filters.assignee.size > 0 || filters.sysstatus.size > 0 ||
                      catFilter.size > 0 || filters.progress !== 'all' || searchTerm;
 
-  // Stats bar always shows totals across full dataset
-  document.getElementById('stat-total').textContent = all.filter(r => getSysStatus(r) !== 'closed').length;
+  // When filtered: stats show filtered numbers; when not: show full totals
+  const src = isFiltered ? visible : all;
+
+  document.getElementById('stat-total').textContent = src.filter(r => getSysStatus(r) !== 'closed').length;
   ['investigated','countermeasure','failed','complete'].forEach(s => {
     document.getElementById(`stat-${s}`).textContent =
-      all.filter(r => getP(r['NCR Number']).status === s).length;
+      src.filter(r => getP(r['NCR Number']).status === s).length;
   });
-  document.getElementById('stat-signoff').textContent   = all.filter(r => getSysStatus(r) === 'signoff').length;
-  document.getElementById('stat-ncrclosed').textContent = all.filter(r => getSysStatus(r) === 'closed').length;
+  document.getElementById('stat-signoff').textContent   = src.filter(r => getSysStatus(r) === 'signoff').length;
+  document.getElementById('stat-ncrclosed').textContent = src.filter(r => getSysStatus(r) === 'closed').length;
 
-  // Filter status line
+  // Show a subtle "(filtered X of Y)" note on the Total tile when filtered
+  const sub = document.getElementById('stat-total-sub');
+  if (sub) {
+    sub.textContent = isFiltered
+      ? `filtered · ${all.length} total`
+      : 'NCRs assigned';
+  }
+
+  // Filter status line in category bar
   const fs = document.getElementById('filter-status');
   if (fs) {
-    if (isFiltered) {
-      const open   = visible.filter(r => getSysStatus(r) !== 'closed').length;
-      const done   = visible.filter(r => getP(r['NCR Number']).status === 'complete').length;
-      const uninv  = visible.filter(r => !getP(r['NCR Number']).status).length;
-      fs.textContent = `Showing ${visible.length} NCRs — ${open} open · ${done} complete · ${uninv} unstarted`;
-    } else {
-      fs.textContent = '';
-    }
+    fs.textContent = isFiltered ? `${visible.length} of ${all.length} NCRs shown` : '';
   }
 }
 
