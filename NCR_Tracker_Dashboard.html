@@ -1261,6 +1261,32 @@ function initFilterButtons() {
   });
 }
 
+// ── Keyboard navigation — arrow keys move between rows ─────────
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+  const el = document.activeElement;
+  if (!el) return;
+
+  // Only apply inside interactive cells
+  const isInteractive = el.classList.contains('investigator-select') ||
+                        el.classList.contains('dept-select') ||
+                        el.classList.contains('notes-input');
+  if (!isInteractive) return;
+
+  e.preventDefault();
+
+  const rows = Array.from(document.querySelectorAll('#ncr-body tr'));
+  const currentRow = el.closest('tr');
+  const rowIdx = rows.indexOf(currentRow);
+  const targetIdx = e.key === 'ArrowDown' ? rowIdx + 1 : rowIdx - 1;
+  if (targetIdx < 0 || targetIdx >= rows.length) return;
+
+  // Find the same class of element in the target row
+  const cls = el.classList[0];
+  const target = rows[targetIdx].querySelector('.' + cls);
+  if (target) { target.focus(); if (target.select) target.select(); }
+});
+
 // ── Init ───────────────────────────────────────────────────────
 initFilterButtons();
 loadNCRData();
