@@ -650,7 +650,7 @@ function getSysStatus(r) {
 
 // ── State ──────────────────────────────────────────────────────
 let progress    = {};
-let filters     = { assignee: 'all', progress: 'all', sysstatus: 'all' };
+let filters     = { assignee: new Set(), progress: 'all', sysstatus: 'all' };
 let catFilter   = 'all';
 let searchTerm  = '';
 let sortCol     = 'NCR Number';
@@ -747,10 +747,11 @@ function rebuildAssigneeFilter() {
   const assignees = [...new Set(currentData.map(r => r['To']).filter(Boolean))].sort();
   const container = document.querySelector('[data-filter="assignee"]')?.parentElement;
   if (!container) return;
+  const allActive = filters.assignee.size === 0;
   container.innerHTML =
-    `<button class="pill active" data-filter="assignee" data-value="all" onclick="setFilter('assignee','all',this)">All</button>` +
+    `<button class="pill ${allActive?'active':''}" data-filter="assignee" data-value="all" onclick="setFilter('assignee','all',this)">All</button>` +
     assignees.map(a =>
-      `<button class="pill" data-filter="assignee" data-value="${a}" onclick="setFilter('assignee','${a}',this)">${a}</button>`
+      `<button class="pill ${filters.assignee.has(a)?'active':''}" data-filter="assignee" data-value="${a}" onclick="setFilter('assignee','${a}',this)">${a}</button>`
     ).join('');
 }
 
@@ -838,9 +839,26 @@ function getP(ncr) { return progress[ncr] || { investigator: '', status: '', not
 
 // ── Filters ────────────────────────────────────────────────────
 function setFilter(type, value, btn) {
-  filters[type] = value;
-  document.querySelectorAll(`[data-filter="${type}"]`).forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (type === 'assignee') {
+    if (value === 'all') {
+      filters.assignee.clear();
+    } else {
+      // Toggle this name on/off
+      if (filters.assignee.has(value)) filters.assignee.delete(value);
+      else filters.assignee.add(value);
+    }
+    // Update button states
+    document.querySelectorAll('[data-filter="assignee"]').forEach(b => {
+      const v = b.getAttribute('data-value');
+      b.classList.toggle('active',
+        v === 'all' ? filters.assignee.size === 0 : filters.assignee.has(v)
+      );
+    });
+  } else {
+    filters[type] = value;
+    document.querySelectorAll(`[data-filter="${type}"]`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
   render();
 }
 
@@ -862,7 +880,7 @@ function sortBy(col) {
 // ── Visible rows ───────────────────────────────────────────────
 function getVisible() {
   return currentData.filter(r => {
-    if (filters.assignee !== 'all' && r['To'] !== filters.assignee) return false;
+    if (filters.assignee.size > 0 && !filters.assignee.has(r['To'])) return false;
     const p = getP(r['NCR Number']);
     if (filters.progress !== 'all' && p.status !== filters.progress) return false;
     if (filters.sysstatus !== 'all' && getSysStatus(r) !== filters.sysstatus) return false;
