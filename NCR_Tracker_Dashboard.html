@@ -733,7 +733,7 @@ async function loadNCRData() {
         currentData = [...NCR_DATA];
         render();
       }
-      setNCRSyncState('error', 'NCR_Data sheet empty — using built-in data');
+      setNCRSyncState('error', 'All NCRs sheet empty — using built-in data');
     }
   } catch (e) {
     console.warn('NCR data fetch failed:', e);

@@ -1,7 +1,7 @@
 // ─── NCR Tracker — Google Apps Script Backend ──────────────────
 const SPREADSHEET_ID = '17WxtqSYbL4wt7bnAmHavbSM8MYE3CnRdkikeZpiHIuA';
 const PROGRESS_SHEET  = 'NCR_Progress';
-const NCR_DATA_SHEET  = 'NCR_Data';
+const NCR_DATA_SHEET  = 'All NCRs';
 const EXPECTED_HEADERS = ['NCR_Number','Investigator','Status','Notes','Category','Dept','LastUpdated'];
 
 // ─── Get sheet, adding any missing header columns automatically ─
@@ -82,19 +82,29 @@ function doGetAll() {
   return ok(records);
 }
 
-// ─── GET NCR list data from NCR_Data sheet ──────────────────────
+// ─── GET NCR list data from All NCRs sheet ──────────────────────
 function doGetNCRData() {
   const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName(NCR_DATA_SHEET);
   if (!sheet) return ok([]);
   const data  = sheet.getDataRange().getValues();
   if (data.length < 2) return ok([]);
-  const headers = data[0].map(String);
-  const records = data.slice(1)
-    .filter(row => row.some(c => c !== '' && c !== null && c !== undefined))
-    .map(row => {
+
+  // Find the header row — scan first 10 rows for one containing 'NCR'
+  let headerIdx = -1;
+  for (var i = 0; i < Math.min(data.length, 10); i++) {
+    if (data[i].some(function(c) { return /ncr/i.test(String(c)); })) {
+      headerIdx = i; break;
+    }
+  }
+  if (headerIdx < 0) return ok([]);
+
+  const headers = data[headerIdx].map(String);
+  const records = data.slice(headerIdx + 1)
+    .filter(function(row) { return row.some(function(c) { return c !== '' && c !== null; }); })
+    .map(function(row) {
       const obj = {};
-      headers.forEach((h, i) => { obj[h] = row[i] !== undefined ? String(row[i]) : ''; });
+      headers.forEach(function(h, i) { obj[h] = row[i] !== undefined ? String(row[i]) : ''; });
       return obj;
     });
   return ok(records);
