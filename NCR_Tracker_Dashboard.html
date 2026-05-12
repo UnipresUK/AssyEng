@@ -527,8 +527,8 @@
 <div class="controls" style="padding-top:10px;padding-bottom:10px;">
   <span class="filter-label">NCR Status</span>
   <div class="filter-group">
-    <button class="pill active" data-filter="sysstatus" data-value="all"      onclick="setFilter('sysstatus','all',this)">All</button>
-    <button class="pill"        data-filter="sysstatus" data-value="open"     onclick="setFilter('sysstatus','open',this)">🔵 Open</button>
+    <button class="pill"        data-filter="sysstatus" data-value="all"      onclick="setFilter('sysstatus','all',this)">All</button>
+    <button class="pill active" data-filter="sysstatus" data-value="open"     onclick="setFilter('sysstatus','open',this)">🔵 Open</button>
     <button class="pill"        data-filter="sysstatus" data-value="signoff"  onclick="setFilter('sysstatus','signoff',this)">🟡 Awaiting Sign Off</button>
     <button class="pill"        data-filter="sysstatus" data-value="closed"   onclick="setFilter('sysstatus','closed',this)">✅ Closed</button>
   </div>
@@ -545,6 +545,7 @@
   <button class="cat-chip"        data-cat="Dimensional"  onclick="setCatFilter('Dimensional',this)">Dimensional</button>
   <button class="cat-chip"        data-cat="Other"        onclick="setCatFilter('Other',this)">Other</button>
   <span style="margin-left:8px;font-size:11px;color:var(--text-muted)">— auto-detected from fault code prefix</span>
+  <span id="filter-status" style="margin-left:auto;font-size:11px;color:var(--text-muted);white-space:nowrap;"></span>
 </div>
 
 <div class="table-wrap">
@@ -650,7 +651,7 @@ function getSysStatus(r) {
 
 // ── State ──────────────────────────────────────────────────────
 let progress    = {};
-let filters     = { assignee: new Set(), progress: 'all', sysstatus: new Set() };
+let filters     = { assignee: new Set(['Sam Pascoe','Chris Wilson']), progress: 'all', sysstatus: new Set(['open']) };
 let catFilter   = new Set();
 let searchTerm  = '';
 let sortCol     = 'NCR Number';
@@ -993,7 +994,12 @@ function render() {
 function escHtml(s) { return s.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function updateStats() {
-  const all = currentData;
+  const all      = currentData;
+  const visible  = getVisible();
+  const isFiltered = filters.assignee.size > 0 || filters.sysstatus.size > 0 ||
+                     catFilter.size > 0 || filters.progress !== 'all' || searchTerm;
+
+  // Stats bar always shows totals across full dataset
   document.getElementById('stat-total').textContent = all.filter(r => getSysStatus(r) !== 'closed').length;
   ['investigated','countermeasure','failed','complete'].forEach(s => {
     document.getElementById(`stat-${s}`).textContent =
@@ -1001,6 +1007,19 @@ function updateStats() {
   });
   document.getElementById('stat-signoff').textContent   = all.filter(r => getSysStatus(r) === 'signoff').length;
   document.getElementById('stat-ncrclosed').textContent = all.filter(r => getSysStatus(r) === 'closed').length;
+
+  // Filter status line
+  const fs = document.getElementById('filter-status');
+  if (fs) {
+    if (isFiltered) {
+      const open   = visible.filter(r => getSysStatus(r) !== 'closed').length;
+      const done   = visible.filter(r => getP(r['NCR Number']).status === 'complete').length;
+      const uninv  = visible.filter(r => !getP(r['NCR Number']).status).length;
+      fs.textContent = `Showing ${visible.length} NCRs — ${open} open · ${done} complete · ${uninv} unstarted`;
+    } else {
+      fs.textContent = '';
+    }
+  }
 }
 
 // ── Mutations ──────────────────────────────────────────────────
