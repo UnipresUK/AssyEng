@@ -1239,7 +1239,27 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
+// ── Sync all filter button states to match initial filter values ─
+function initFilterButtons() {
+  document.querySelectorAll('[data-filter="assignee"]').forEach(b => {
+    const v = b.getAttribute('data-value');
+    b.classList.toggle('active', v === 'all' ? filters.assignee.size === 0 : filters.assignee.has(v));
+  });
+  document.querySelectorAll('[data-filter="sysstatus"]').forEach(b => {
+    const v = b.getAttribute('data-value');
+    b.classList.toggle('active', v === 'all' ? filters.sysstatus.size === 0 : filters.sysstatus.has(v));
+  });
+  document.querySelectorAll('[data-filter="progress"]').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-value') === filters.progress);
+  });
+  document.querySelectorAll('[data-cat]').forEach(b => {
+    const c = b.getAttribute('data-cat');
+    b.classList.toggle('active', c === 'all' ? catFilter.size === 0 : catFilter.has(c));
+  });
+}
+
 // ── Init ───────────────────────────────────────────────────────
+initFilterButtons();
 loadNCRData();
 loadProgress();
 </script>
