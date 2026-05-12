@@ -534,6 +534,20 @@
   </div>
 </div>
 
+<!-- Member Allocated + Dept Responsible filters -->
+<div class="category-bar" id="member-filter-bar">
+  <span class="filter-label">Member</span>
+  <button class="cat-chip active" data-member="all" onclick="setMemberFilter('all',this)">All</button>
+</div>
+<div class="category-bar">
+  <span class="filter-label">Dept</span>
+  <button class="cat-chip active" data-dept="all"         onclick="setDeptFilter('all',this)">All</button>
+  <button class="cat-chip"        data-dept="Engineering" onclick="setDeptFilter('Engineering',this)">Engineering</button>
+  <button class="cat-chip"        data-dept="Weld Team"   onclick="setDeptFilter('Weld Team',this)">Weld Team</button>
+  <button class="cat-chip"        data-dept="Assy"        onclick="setDeptFilter('Assy',this)">Assy</button>
+  <button class="cat-chip"        data-dept="Quality"     onclick="setDeptFilter('Quality',this)">Quality</button>
+</div>
+
 <!-- Fault code category filter bar -->
 <div class="category-bar">
   <span class="filter-label">Category</span>
@@ -652,7 +666,9 @@ function getSysStatus(r) {
 // ── State ──────────────────────────────────────────────────────
 let progress    = {};
 let filters     = { assignee: new Set(['Sam Pascoe','Chris Wilson']), progress: 'all', sysstatus: new Set(['open']) };
-let catFilter   = new Set();
+let catFilter    = new Set();
+let memberFilter = new Set();
+let deptFilter   = new Set();
 let searchTerm  = '';
 let sortCol     = 'NCR Number';
 let sortAsc     = true;
@@ -875,6 +891,26 @@ function setCatFilter(cat, btn) {
   render();
 }
 
+function setMemberFilter(val, btn) {
+  if (val === 'all') memberFilter.clear();
+  else { if (memberFilter.has(val)) memberFilter.delete(val); else memberFilter.add(val); }
+  document.querySelectorAll('[data-member]').forEach(b => {
+    const v = b.getAttribute('data-member');
+    b.classList.toggle('active', v === 'all' ? memberFilter.size === 0 : memberFilter.has(v));
+  });
+  render();
+}
+
+function setDeptFilter(val, btn) {
+  if (val === 'all') deptFilter.clear();
+  else { if (deptFilter.has(val)) deptFilter.delete(val); else deptFilter.add(val); }
+  document.querySelectorAll('[data-dept]').forEach(b => {
+    const v = b.getAttribute('data-dept');
+    b.classList.toggle('active', v === 'all' ? deptFilter.size === 0 : deptFilter.has(v));
+  });
+  render();
+}
+
 function applySearch(v) { searchTerm = v.toLowerCase(); render(); }
 
 function sortBy(col) {
@@ -894,6 +930,8 @@ function getVisible() {
       const effectiveCat = p.category || suggestCategory(r['Fault Code']);
       if (!catFilter.has(effectiveCat)) return false;
     }
+    if (memberFilter.size > 0 && !memberFilter.has(p.investigator || '')) return false;
+    if (deptFilter.size > 0 && !deptFilter.has(p.dept || '')) return false;
     if (searchTerm) {
       const hay = [r['NCR Number'], r['Part Number'], r['Fault Code'], r['To'], r['Workcentre Found']].join(' ').toLowerCase();
       if (!hay.includes(searchTerm)) return false;
@@ -990,6 +1028,18 @@ function render() {
   }).join('');
 
   updateStats();
+  rebuildMemberFilterBar();
+}
+
+function rebuildMemberFilterBar() {
+  const members = [...new Set(currentData.map(r => getP(r['NCR Number']).investigator).filter(Boolean))].sort();
+  const bar = document.getElementById('member-filter-bar');
+  if (!bar) return;
+  bar.innerHTML = `<span class="filter-label">Member</span>` +
+    `<button class="cat-chip ${memberFilter.size===0?'active':''}" data-member="all" onclick="setMemberFilter('all',this)">All</button>` +
+    members.map(m =>
+      `<button class="cat-chip ${memberFilter.has(m)?'active':''}" data-member="${m}" onclick="setMemberFilter('${m}',this)">${m}</button>`
+    ).join('');
 }
 
 function escHtml(s) { return s.replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -998,7 +1048,8 @@ function updateStats() {
   const all      = currentData;
   const visible  = getVisible();
   const isFiltered = filters.assignee.size > 0 || filters.sysstatus.size > 0 ||
-                     catFilter.size > 0 || filters.progress !== 'all' || searchTerm;
+                     catFilter.size > 0 || memberFilter.size > 0 || deptFilter.size > 0 ||
+                     filters.progress !== 'all' || searchTerm;
 
   // When filtered: stats show filtered numbers; when not: show full totals
   const src = isFiltered ? visible : all;
