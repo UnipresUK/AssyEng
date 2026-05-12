@@ -450,7 +450,6 @@ const avgAge     = ages.length ? Math.round(ages.reduce((s,v)=>s+v,0)/ages.lengt
 // ── KPI row (needs avgAge + over90 computed above) ────────────
 const kpis = [
   { label:'Total Open NCRs',    value:total,                          sub:'Assembly Engineering dept',    color:'#2563eb' },
-  { label:'Avg NCR Age',        value:avgAge+'d',                     sub:'days open (dept average)',     color:'#d97706' },
   { label:'> 90 Days Old',      value:over90,                         sub:'critical — oldest tickets',    color:'#dc2626' },
   { label:'Rework',             value:(dispMap['Rework']||0),         sub:'parts for rework',             color:'#ea580c' },
   { label:'Scrap',              value:(dispMap['Scrap']||0),          sub:'parts scrapped',               color:'#7c3aed' },
@@ -467,8 +466,6 @@ document.getElementById('age-panel').innerHTML = `
   <div style="display:flex;gap:24px;margin-bottom:16px">
     <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:3px">Oldest NCR</div>
       <div style="font-family:monospace;font-size:22px;font-weight:600;color:#dc2626">${oldestDays}d</div></div>
-    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:3px">Average Age</div>
-      <div style="font-family:monospace;font-size:22px;font-weight:600;color:#d97706">${avgAge}d</div></div>
   </div>
   ${ageCounts.map(b=>`
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
