@@ -650,8 +650,8 @@ function getSysStatus(r) {
 
 // ── State ──────────────────────────────────────────────────────
 let progress    = {};
-let filters     = { assignee: new Set(), progress: 'all', sysstatus: 'all' };
-let catFilter   = 'all';
+let filters     = { assignee: new Set(), progress: 'all', sysstatus: new Set() };
+let catFilter   = new Set();
 let searchTerm  = '';
 let sortCol     = 'NCR Number';
 let sortAsc     = true;
@@ -839,20 +839,17 @@ function getP(ncr) { return progress[ncr] || { investigator: '', status: '', not
 
 // ── Filters ────────────────────────────────────────────────────
 function setFilter(type, value, btn) {
-  if (type === 'assignee') {
+  if (type === 'assignee' || type === 'sysstatus') {
+    const s = filters[type];
     if (value === 'all') {
-      filters.assignee.clear();
+      s.clear();
     } else {
-      // Toggle this name on/off
-      if (filters.assignee.has(value)) filters.assignee.delete(value);
-      else filters.assignee.add(value);
+      if (s.has(value)) s.delete(value);
+      else s.add(value);
     }
-    // Update button states
-    document.querySelectorAll('[data-filter="assignee"]').forEach(b => {
+    document.querySelectorAll(`[data-filter="${type}"]`).forEach(b => {
       const v = b.getAttribute('data-value');
-      b.classList.toggle('active',
-        v === 'all' ? filters.assignee.size === 0 : filters.assignee.has(v)
-      );
+      b.classList.toggle('active', v === 'all' ? s.size === 0 : s.has(v));
     });
   } else {
     filters[type] = value;
@@ -863,9 +860,16 @@ function setFilter(type, value, btn) {
 }
 
 function setCatFilter(cat, btn) {
-  catFilter = cat;
-  document.querySelectorAll('[data-cat]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (cat === 'all') {
+    catFilter.clear();
+  } else {
+    if (catFilter.has(cat)) catFilter.delete(cat);
+    else catFilter.add(cat);
+  }
+  document.querySelectorAll('[data-cat]').forEach(b => {
+    const c = b.getAttribute('data-cat');
+    b.classList.toggle('active', c === 'all' ? catFilter.size === 0 : catFilter.has(c));
+  });
   render();
 }
 
@@ -883,10 +887,10 @@ function getVisible() {
     if (filters.assignee.size > 0 && !filters.assignee.has(r['To'])) return false;
     const p = getP(r['NCR Number']);
     if (filters.progress !== 'all' && p.status !== filters.progress) return false;
-    if (filters.sysstatus !== 'all' && getSysStatus(r) !== filters.sysstatus) return false;
-    if (catFilter !== 'all') {
+    if (filters.sysstatus.size > 0 && !filters.sysstatus.has(getSysStatus(r))) return false;
+    if (catFilter.size > 0) {
       const effectiveCat = p.category || suggestCategory(r['Fault Code']);
-      if (effectiveCat !== catFilter) return false;
+      if (!catFilter.has(effectiveCat)) return false;
     }
     if (searchTerm) {
       const hay = [r['NCR Number'], r['Part Number'], r['Fault Code'], r['To'], r['Workcentre Found']].join(' ').toLowerCase();
