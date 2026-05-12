@@ -787,6 +787,7 @@ async function loadProgress() {
         render();
       }
       setSyncState('synced', 'Synced ✓');
+      applyWeldTeamDefaults();
     } else {
       throw new Error(json.error || 'Bad response');
     }
@@ -1259,6 +1260,29 @@ function initFilterButtons() {
     const c = b.getAttribute('data-cat');
     b.classList.toggle('active', c === 'all' ? catFilter.size === 0 : catFilter.has(c));
   });
+}
+
+// ── Auto-default Weld Team faults ──────────────────────────────
+// WS, BS, FM, MH, SIT → Member Allocated & Dept Responsible = Weld Team
+// Only applies when BOTH fields are still blank (never overwrites)
+function applyWeldTeamDefaults() {
+  const WELD_RE = /^(WS|BS|FM|MH|SIT)[\s-]/i;
+  let changed = false;
+  currentData.forEach(r => {
+    if (!WELD_RE.test(r['Fault Code'] || '')) return;
+    const p = getP(r['NCR Number']);
+    if (p.investigator === '' && p.dept === '') {
+      p.investigator  = 'Weld Team';
+      p.dept          = 'Weld Team';
+      progress[r['NCR Number']] = p;
+      scheduleSync(r['NCR Number']);
+      changed = true;
+    }
+  });
+  if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    render();
+  }
 }
 
 // ── Keyboard navigation — arrow keys move between rows ─────────
