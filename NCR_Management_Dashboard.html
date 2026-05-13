@@ -457,20 +457,6 @@ document.getElementById('kpi-row').innerHTML = kpis.map(k => `
     <span class="kpi-sub">${k.sub}</span>
   </div>`).join('');
 
-document.getElementById('age-panel').innerHTML = `
-  <div style="display:flex;gap:24px;margin-bottom:16px">
-    <div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:3px">Oldest NCR</div>
-      <div style="font-family:monospace;font-size:22px;font-weight:600;color:#dc2626">${oldestDays}d</div></div>
-  </div>
-  ${ageCounts.map(b=>`
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-    <span style="width:92px;font-size:11px;color:#475569;flex-shrink:0">${b.label}</span>
-    <div style="flex:1;background:#e2e8f0;border-radius:3px;height:18px;overflow:hidden;position:relative">
-      <div style="width:${(b.n/maxAge*100).toFixed(0)}%;height:100%;background:${b.color};opacity:.9;border-radius:3px;transition:width .6s"></div>
-    </div>
-    <span style="font-family:monospace;font-size:12px;font-weight:600;color:${b.color};width:28px;text-align:right">${b.n}</span>
-    <span style="font-size:10px;color:#64748b;width:30px">${(b.n/total*100).toFixed(0)}%</span>
-  </div>`).join('')}`;
 
 // ── Progress funnel (uses localStorage progress if available) ──
 const stored = (() => { try { return JSON.parse(localStorage.getItem('pz1d_ncr_progress_v1')||'{}'); } catch{return{};} })();

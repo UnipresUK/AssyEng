@@ -2,7 +2,8 @@
 const SPREADSHEET_ID = '17WxtqSYbL4wt7bnAmHavbSM8MYE3CnRdkikeZpiHIuA';
 const PROGRESS_SHEET  = 'NCR_Progress';
 const NCR_DATA_SHEET  = 'All NCRs';
-const EXPECTED_HEADERS = ['NCR_Number','Investigator','Status','Notes','Category','Dept','LastUpdated'];
+const EXPECTED_HEADERS = ['NCR_Number','Investigator','Status','Notes','Category','Dept',
+                          'TS_Investigated','TS_Countermeasure','TS_Failed','TS_Complete','LastUpdated'];
 
 // ─── Get sheet, adding any missing header columns automatically ─
 function getSheet() {
@@ -146,13 +147,17 @@ function doUpdate(p) {
 
   // Values we want to write keyed by header name
   const values = {
-    'NCR_Number':   ncr,
-    'Investigator': p.investigator || '',
-    'Status':       p.status       || '',
-    'Notes':        p.notes        || '',
-    'Category':     p.category     || '',
-    'Dept':         p.dept         || '',
-    'LastUpdated':  new Date().toISOString(),
+    'NCR_Number':        ncr,
+    'Investigator':      p.investigator      || '',
+    'Status':            p.status            || '',
+    'Notes':             p.notes             || '',
+    'Category':          p.category          || '',
+    'Dept':              p.dept              || '',
+    'TS_Investigated':   p.ts_investigated   || '',
+    'TS_Countermeasure': p.ts_countermeasure || '',
+    'TS_Failed':         p.ts_failed         || '',
+    'TS_Complete':       p.ts_complete       || '',
+    'LastUpdated':       new Date().toISOString(),
   };
 
   // Build a row array aligned to current column positions

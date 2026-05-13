@@ -299,7 +299,9 @@
   .dept-select:focus { border-color: var(--accent); }
 
   /* ── Progress buttons ── */
-  .progress-btns { display: flex; gap: 3px; flex-wrap: nowrap; }
+  .progress-btns { display: flex; gap: 4px; flex-wrap: nowrap; align-items: flex-start; }
+  .prog-btn-wrap { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; }
+  .prog-ts { font-size: 9px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; line-height: 1.2; }
   .prog-btn {
     padding: 2px 6px;
     border-radius: 3px;
@@ -415,14 +417,17 @@
     font-size: 9px; font-weight: 600; letter-spacing: 0.04em;
     white-space: nowrap;
   }
-  .sys-open     { background: rgba(37,99,235,0.08);   color: #1d4ed8; border: 1px solid rgba(37,99,235,0.25); }
-  .sys-signoff  { background: rgba(217,119,6,0.1);    color: #b45309; border: 1px solid rgba(217,119,6,0.3); }
-  .sys-closed   { background: rgba(5,150,105,0.1);    color: #047857; border: 1px solid rgba(5,150,105,0.25); }
-  .signoff-name { font-size: 9px; color: var(--text-muted); font-style: italic; display: block; }
+  .sys-open      { background: rgba(37,99,235,0.08);   color: #1d4ed8; border: 1px solid rgba(37,99,235,0.25); }
+  .sys-signoff   { background: rgba(217,119,6,0.1);    color: #b45309; border: 1px solid rgba(217,119,6,0.3); }
+  .sys-closed    { background: rgba(5,150,105,0.1);    color: #047857; border: 1px solid rgba(5,150,105,0.25); }
+  .sys-cancelled { background: rgba(100,116,139,0.08); color: #64748b; border: 1px solid rgba(100,116,139,0.25); }
+  .signoff-name  { font-size: 9px; color: var(--text-muted); font-style: italic; display: block; }
 
-  .row-closed   { opacity: 0.38; }
-  .stat.signoff .stat-value { color: #f59e0b; }
-  .stat.closed  .stat-value { color: var(--s-complete); }
+  .row-closed    { opacity: 0.38; }
+  .row-cancelled { opacity: 0.35; }
+  .stat.signoff    .stat-value { color: #f59e0b; }
+  .stat.closed     .stat-value { color: var(--s-complete); }
+  .stat.cancelled  .stat-value { color: #64748b; }
 </style>
 </head>
 <body>
@@ -490,6 +495,11 @@
     <span class="stat-value" id="stat-ncrclosed">0</span>
     <span class="stat-sub">status = Closed</span>
   </div>
+  <div class="stat cancelled">
+    <span class="stat-label">Cancelled</span>
+    <span class="stat-value" id="stat-cancelled">0</span>
+    <span class="stat-sub">status = Cancelled</span>
+  </div>
 </div>
 
 <div class="import-strip">
@@ -527,10 +537,11 @@
 <div class="controls" style="padding-top:10px;padding-bottom:10px;">
   <span class="filter-label">NCR Status</span>
   <div class="filter-group">
-    <button class="pill"        data-filter="sysstatus" data-value="all"      onclick="setFilter('sysstatus','all',this)">All</button>
-    <button class="pill active" data-filter="sysstatus" data-value="open"     onclick="setFilter('sysstatus','open',this)">🔵 Open</button>
-    <button class="pill"        data-filter="sysstatus" data-value="signoff"  onclick="setFilter('sysstatus','signoff',this)">🟡 Awaiting Sign Off</button>
-    <button class="pill"        data-filter="sysstatus" data-value="closed"   onclick="setFilter('sysstatus','closed',this)">✅ Closed</button>
+    <button class="pill"        data-filter="sysstatus" data-value="all"       onclick="setFilter('sysstatus','all',this)">All</button>
+    <button class="pill active" data-filter="sysstatus" data-value="open"      onclick="setFilter('sysstatus','open',this)">🔵 Open</button>
+    <button class="pill"        data-filter="sysstatus" data-value="signoff"   onclick="setFilter('sysstatus','signoff',this)">🟡 Awaiting Sign Off</button>
+    <button class="pill"        data-filter="sysstatus" data-value="closed"    onclick="setFilter('sysstatus','closed',this)">✅ Closed</button>
+    <button class="pill"        data-filter="sysstatus" data-value="cancelled" onclick="setFilter('sysstatus','cancelled',this)">🚫 Cancelled</button>
   </div>
 </div>
 
@@ -541,11 +552,12 @@
 </div>
 <div class="category-bar">
   <span class="filter-label">Dept</span>
-  <button class="cat-chip active" data-dept="all"         onclick="setDeptFilter('all',this)">All</button>
-  <button class="cat-chip"        data-dept="Engineering" onclick="setDeptFilter('Engineering',this)">Engineering</button>
-  <button class="cat-chip"        data-dept="Weld Team"   onclick="setDeptFilter('Weld Team',this)">Weld Team</button>
-  <button class="cat-chip"        data-dept="Assy"        onclick="setDeptFilter('Assy',this)">Assy</button>
-  <button class="cat-chip"        data-dept="Quality"     onclick="setDeptFilter('Quality',this)">Quality</button>
+  <button class="cat-chip active" data-dept="all"              onclick="setDeptFilter('all',this)">All</button>
+  <button class="cat-chip"        data-dept="__unassigned__"   onclick="setDeptFilter('__unassigned__',this)">Unassigned</button>
+  <button class="cat-chip"        data-dept="Engineering"      onclick="setDeptFilter('Engineering',this)">Engineering</button>
+  <button class="cat-chip"        data-dept="Weld Team"        onclick="setDeptFilter('Weld Team',this)">Weld Team</button>
+  <button class="cat-chip"        data-dept="Assy"             onclick="setDeptFilter('Assy',this)">Assy</button>
+  <button class="cat-chip"        data-dept="Quality"          onclick="setDeptFilter('Quality',this)">Quality</button>
 </div>
 
 <!-- Fault code category filter bar -->
@@ -658,7 +670,9 @@ function catClass(cat) {
 // ── NCR system status helper ───────────────────────────────────
 // Returns 'closed' | 'signoff' | 'open'
 function getSysStatus(r) {
-  if ((r['Status'] || '').toLowerCase() === 'closed') return 'closed';
+  const st = (r['Status'] || '').toLowerCase().trim();
+  if (st === 'closed')    return 'closed';
+  if (st === 'cancelled') return 'cancelled';
   if ((r['Sign Off - Supervisor Name'] || '').trim() !== '') return 'signoff';
   return 'open';
 }
@@ -789,11 +803,15 @@ async function loadProgress() {
       const fresh = {};
       json.data.forEach(r => {
         fresh[r.NCR_Number] = {
-          investigator: r.Investigator || '',
-          status:       r.Status       || '',
-          notes:        r.Notes        || '',
-          category:     r.Category     || '',
-          dept:         r.Dept         || '',
+          investigator:      r.Investigator      || '',
+          status:            r.Status            || '',
+          notes:             r.Notes             || '',
+          category:          r.Category          || '',
+          dept:              r.Dept              || '',
+          ts_investigated:   r.TS_Investigated   || '',
+          ts_countermeasure: r.TS_Countermeasure || '',
+          ts_failed:         r.TS_Failed         || '',
+          ts_complete:       r.TS_Complete       || '',
         };
       });
       // Only re-render if the data actually changed
@@ -825,13 +843,17 @@ async function pushRecord(ncr) {
   // Also persist locally as fallback
   localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
   const params = new URLSearchParams({
-    action:       'update',
-    ncr:          ncr,
-    investigator: p.investigator || '',
-    status:       p.status       || '',
-    notes:        p.notes        || '',
-    category:     p.category     || '',
-    dept:         p.dept         || '',
+    action:            'update',
+    ncr:               ncr,
+    investigator:      p.investigator      || '',
+    status:            p.status            || '',
+    notes:             p.notes             || '',
+    category:          p.category          || '',
+    dept:              p.dept              || '',
+    ts_investigated:   p.ts_investigated   || '',
+    ts_countermeasure: p.ts_countermeasure || '',
+    ts_failed:         p.ts_failed         || '',
+    ts_complete:       p.ts_complete       || '',
   });
   try {
     const res  = await fetch(SHEETS_URL + '?' + params.toString());
@@ -853,7 +875,24 @@ function setLoadingBar(pct) {
 }
 
 // ── Progress helpers ───────────────────────────────────────────
-function getP(ncr) { return progress[ncr] || { investigator: '', status: '', notes: '', category: '', dept: '' }; }
+function getP(ncr) {
+  return progress[ncr] || {
+    investigator: '', status: '', notes: '', category: '', dept: '',
+    ts_investigated: '', ts_countermeasure: '', ts_failed: '', ts_complete: '',
+  };
+}
+
+function formatTS(iso) {
+  if (!iso) return '';
+  try {
+    const d  = new Date(iso);
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const HH = String(d.getHours()).padStart(2,'0');
+    const MM = String(d.getMinutes()).padStart(2,'0');
+    return `${dd}/${mm} ${HH}:${MM}`;
+  } catch { return ''; }
+}
 
 // ── Filters ────────────────────────────────────────────────────
 function setFilter(type, value, btn) {
@@ -930,8 +969,14 @@ function getVisible() {
       const effectiveCat = p.category || suggestCategory(r['Fault Code']);
       if (!catFilter.has(effectiveCat)) return false;
     }
-    if (memberFilter.size > 0 && !memberFilter.has(p.investigator || '')) return false;
-    if (deptFilter.size > 0 && !deptFilter.has(p.dept || '')) return false;
+    if (memberFilter.size > 0) {
+      const inv = p.investigator || '';
+      if (!memberFilter.has(inv) && !(memberFilter.has('__unassigned__') && inv === '')) return false;
+    }
+    if (deptFilter.size > 0) {
+      const dept = p.dept || '';
+      if (!deptFilter.has(dept) && !(deptFilter.has('__unassigned__') && dept === '')) return false;
+    }
     if (searchTerm) {
       const hay = [r['NCR Number'], r['Part Number'], r['Fault Code'], r['To'], r['Workcentre Found']].join(' ').toLowerCase();
       if (!hay.includes(searchTerm)) return false;
@@ -973,10 +1018,13 @@ function render() {
     const isComplete = p.status === 'complete';
     const dotClass   = p.status ? `dot-${p.status}` : 'dot-none';
     const sysStatus  = getSysStatus(r);
-    const sysBadge   = sysStatus === 'closed'  ? `<span class="sys-badge sys-closed">✅ Closed</span>`
-                     : sysStatus === 'signoff' ? `<span class="sys-badge sys-signoff">🟡 Awaiting Sign Off</span><div class="signoff-name">${escHtml(r['Sign Off - Supervisor Name']||'')}</div>`
+    const sysBadge   = sysStatus === 'closed'    ? `<span class="sys-badge sys-closed">✅ Closed</span>`
+                     : sysStatus === 'cancelled' ? `<span class="sys-badge sys-cancelled">🚫 Cancelled</span>`
+                     : sysStatus === 'signoff'   ? `<span class="sys-badge sys-signoff">🟡 Awaiting Sign Off</span><div class="signoff-name">${escHtml(r['Sign Off - Supervisor Name']||'')}</div>`
                      : `<span class="sys-badge sys-open">🔵 Open</span>`;
-    const rowClass   = sysStatus === 'closed' ? 'row-closed' : (isComplete ? 'row-complete' : '');
+    const rowClass   = sysStatus === 'closed'    ? 'row-closed'
+                     : sysStatus === 'cancelled' ? 'row-cancelled'
+                     : isComplete ? 'row-complete' : '';
 
     const effectiveCat = p.category || suggestCategory(r['Fault Code']);
     const catCls       = catClass(effectiveCat);
@@ -986,9 +1034,14 @@ function render() {
       ['countermeasure', '✅ Countermeasure'],
       ['failed',         '❌ Failed CM'],
       ['complete',       '🏁 Complete'],
-    ].map(([val, label]) =>
-      `<button class="prog-btn ${val} ${p.status === val ? 'active' : ''}" onclick="setStatus('${n}','${val}')">${label}</button>`
-    ).join('');
+    ].map(([val, label]) => {
+      const ts     = formatTS(p['ts_' + val]);
+      const tsHtml = ts ? `<div class="prog-ts">${ts}</div>` : '';
+      return `<div class="prog-btn-wrap">` +
+        `<button class="prog-btn ${val} ${p.status === val ? 'active' : ''}" onclick="setStatus('${n}','${val}')">${label}</button>` +
+        tsHtml +
+        `</div>`;
+    }).join('');
 
     const DEPTS = ['','Engineering','Weld Team','Assy','Quality'];
     const deptOptions = DEPTS.map(d =>
@@ -1033,10 +1086,12 @@ function render() {
 
 function rebuildMemberFilterBar() {
   const members = [...new Set(currentData.map(r => getP(r['NCR Number']).investigator).filter(Boolean))].sort();
+  const hasUnassigned = currentData.some(r => !(getP(r['NCR Number']).investigator));
   const bar = document.getElementById('member-filter-bar');
   if (!bar) return;
   bar.innerHTML = `<span class="filter-label">Member</span>` +
     `<button class="cat-chip ${memberFilter.size===0?'active':''}" data-member="all" onclick="setMemberFilter('all',this)">All</button>` +
+    (hasUnassigned ? `<button class="cat-chip ${memberFilter.has('__unassigned__')?'active':''}" data-member="__unassigned__" onclick="setMemberFilter('__unassigned__',this)">Unassigned</button>` : '') +
     members.map(m =>
       `<button class="cat-chip ${memberFilter.has(m)?'active':''}" data-member="${m}" onclick="setMemberFilter('${m}',this)">${m}</button>`
     ).join('');
@@ -1054,13 +1109,14 @@ function updateStats() {
   // When filtered: stats show filtered numbers; when not: show full totals
   const src = isFiltered ? visible : all;
 
-  document.getElementById('stat-total').textContent = src.filter(r => getSysStatus(r) !== 'closed').length;
+  document.getElementById('stat-total').textContent = src.filter(r => !['closed','cancelled'].includes(getSysStatus(r))).length;
   ['investigated','countermeasure','failed','complete'].forEach(s => {
     document.getElementById(`stat-${s}`).textContent =
       src.filter(r => getP(r['NCR Number']).status === s).length;
   });
-  document.getElementById('stat-signoff').textContent   = src.filter(r => getSysStatus(r) === 'signoff').length;
-  document.getElementById('stat-ncrclosed').textContent = src.filter(r => getSysStatus(r) === 'closed').length;
+  document.getElementById('stat-signoff').textContent    = src.filter(r => getSysStatus(r) === 'signoff').length;
+  document.getElementById('stat-ncrclosed').textContent  = src.filter(r => getSysStatus(r) === 'closed').length;
+  document.getElementById('stat-cancelled').textContent  = src.filter(r => getSysStatus(r) === 'cancelled').length;
 
   // Show a subtle "(filtered X of Y)" note on the Total tile when filtered
   const sub = document.getElementById('stat-total-sub');
@@ -1079,8 +1135,15 @@ function updateStats() {
 
 // ── Mutations ──────────────────────────────────────────────────
 function setStatus(ncr, val) {
-  const p  = getP(ncr);
-  p.status = (p.status === val) ? '' : val;
+  const p          = getP(ncr);
+  const wasActive  = p.status === val;
+  p.status         = wasActive ? '' : val;
+  // Record a timestamp the first time (or every time) a status is set
+  // Only write when activating — preserve the original stamp if re-clicking same button
+  if (!wasActive && val) {
+    const tsKey = 'ts_' + val;
+    if (!p[tsKey]) p[tsKey] = new Date().toISOString();  // only stamp if not already set
+  }
   progress[ncr] = p;
   scheduleSync(ncr);
   render();
