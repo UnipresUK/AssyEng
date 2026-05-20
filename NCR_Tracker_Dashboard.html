@@ -1173,16 +1173,32 @@ function getVisible() {
 
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function expandYear(y) { const n = parseInt(y); return n < 100 ? (n < 50 ? 2000+n : 1900+n) : n; }
+
+// Resolve ambiguous D/M vs M/D: if one interpretation is >60 days in future but the other isn't, pick the non-future one
+function resolveSlashDate(p1, p2, fullYr) {
+  const n1 = parseInt(p1), n2 = parseInt(p2);
+  if (n1 > 12) return { day: p1, mon: p2 }; // p1 can't be month — must be day
+  if (n2 > 12) return { day: p2, mon: p1 }; // p2 can't be month — must be day
+  // Both ≤ 12 — ambiguous
+  const SIXTY_DAYS = 60 * 86400 * 1000;
+  const now = Date.now();
+  const asDDMM = new Date(`${fullYr}-${p2.padStart(2,'0')}-${p1.padStart(2,'0')}`).getTime(); // day=p1 mon=p2
+  const asMMDD = new Date(`${fullYr}-${p1.padStart(2,'0')}-${p2.padStart(2,'0')}`).getTime(); // day=p2 mon=p1
+  // If DD/MM lands too far in future but MM/DD doesn't, the export is using MM/DD format
+  if (asDDMM > now + SIXTY_DAYS && asMMDD <= now + SIXTY_DAYS) return { day: p2, mon: p1 };
+  return { day: p1, mon: p2 }; // default UK: first number is day
+}
+
 function formatDate(s) {
   if (!s) return '';
   const str = String(s).trim();
   if (!str) return '';
   try {
-    // DD/MM/YYYY or DD/MM/YY (with or without time suffix) — always treat first number as day
-    const slashDMY = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
-    if (slashDMY) {
-      const [,day,mon,yr] = slashDMY;
+    const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (slashMatch) {
+      const [,p1,p2,yr] = slashMatch;
       const fullYr = expandYear(yr);
+      const { day, mon } = resolveSlashDate(p1, p2, fullYr);
       return `${parseInt(day)} ${MONTHS_SHORT[parseInt(mon)-1] || '?'} ${String(fullYr).slice(-2)}`;
     }
     // YYYY-MM-DD or ISO 8601 from Sheets
@@ -1191,7 +1207,6 @@ function formatDate(s) {
       const [,yr,mon,day] = isoYMD;
       return `${parseInt(day)} ${MONTHS_SHORT[parseInt(mon)-1] || '?'} ${String(yr).slice(-2)}`;
     }
-    // Fallback: let JS parse it
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
       return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
@@ -1204,14 +1219,13 @@ function parseDate(s) {
   if (!s) return 0;
   const str = String(s).trim();
   try {
-    // DD/MM/YYYY or DD/MM/YY — always treat first number as day
-    const slashDMY = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{2}:\d{2}:\d{2}))?/);
-    if (slashDMY) {
-      const [,day,mon,yr,t] = slashDMY;
+    const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{2}:\d{2}:\d{2}))?/);
+    if (slashMatch) {
+      const [,p1,p2,yr,t] = slashMatch;
       const fullYr = expandYear(yr);
+      const { day, mon } = resolveSlashDate(p1, p2, fullYr);
       return new Date(`${fullYr}-${mon.padStart(2,'0')}-${day.padStart(2,'0')}T${t||'00:00:00'}`).getTime();
     }
-    // ISO / YYYY-MM-DD / anything else JS can parse
     const d = new Date(str);
     return isNaN(d.getTime()) ? 0 : d.getTime();
   } catch { return 0; }
