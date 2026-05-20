@@ -1311,7 +1311,7 @@ function render() {
       .map(m => `<option value="${m}" ${(p.investigator||'')=== m ? 'selected' : ''}>${m || '— allocate —'}</option>`)
       .join('') + `<option value="__add__">➕ Add name…</option>`;
 
-    const dateShort = formatDate(r['Logged Date']);
+    const dateShort = r['Logged Date'] || '';
 
     return `<tr class="${rowClass}" id="row-${n}">
       <td><span class="status-dot ${dotClass}"></span><span class="ncr-num">${n}</span>${isNew ? '<span class="new-badge">NEW</span>' : ''}</td>
