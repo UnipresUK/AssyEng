@@ -447,8 +447,8 @@
 
   /* ── Model badge ── */
   .model-badge { display:inline-block; padding:1px 5px; border-radius:8px; font-size:9px; font-weight:600; margin-left:4px; vertical-align:middle; white-space:nowrap; }
-  .model-pz1d { background:rgba(37,99,235,0.1);  color:#1d4ed8; border:1px solid rgba(37,99,235,0.2); }
-  .model-pz1h { background:rgba(5,150,105,0.1);  color:#047857; border:1px solid rgba(5,150,105,0.2); }
+  .model-pz1d { background:rgba(245,158,11,0.13); color:#b45309; border:1px solid rgba(245,158,11,0.4); }
+  .model-pz1h { background:rgba(139,92,246,0.13); color:#6d28d9; border:1px solid rgba(139,92,246,0.4); }
 
   /* ── Settings panel ── */
   .settings-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:1000; }
@@ -738,6 +738,40 @@ function addMember(name) {
     }
     return true;
   } catch { return false; }
+}
+
+// ── Model list (extensible, persisted in localStorage) ────────
+const MODELS_KEY     = 'pz1d_models_v1';
+const DEFAULT_MODELS = ['PZ1D','PZ1H'];
+
+function getModels() {
+  try {
+    const extra = JSON.parse(localStorage.getItem(MODELS_KEY) || '[]');
+    const all   = [...DEFAULT_MODELS];
+    extra.forEach(m => { if (!all.includes(m)) all.push(m); });
+    return all;
+  } catch { return [...DEFAULT_MODELS]; }
+}
+
+function handleModelChange(ncr, sel) {
+  if (sel.value === '__add__') {
+    const name = prompt('Enter new model name (e.g. PZ2D):');
+    if (name && name.trim()) {
+      const m = name.trim().toUpperCase();
+      try {
+        const extra = JSON.parse(localStorage.getItem(MODELS_KEY) || '[]');
+        if (!DEFAULT_MODELS.includes(m) && !extra.includes(m)) {
+          extra.push(m);
+          localStorage.setItem(MODELS_KEY, JSON.stringify(extra));
+        }
+      } catch {}
+      setModel(ncr, m);
+    } else {
+      sel.value = getP(ncr).model || '';
+    }
+  } else {
+    setModel(ncr, sel.value);
+  }
 }
 
 function handleMemberChange(ncr, sel) {
@@ -1186,9 +1220,10 @@ function render() {
     const isNew = newNCRs.has(n);
     const effectiveModel = p.model || getModel(r['Part Number']);
     const modelBadge = effectiveModel ? `<span class="model-badge model-${effectiveModel.toLowerCase()}">${effectiveModel}</span>` : '';
-    const modelOpts = ['','PZ1D','PZ1H'].map(m =>
+    const modelList = getModels();
+    const modelOpts = ['', ...modelList].map(m =>
       `<option value="${m}" ${(p.model||'')=== m ? 'selected':''}>${m||'— model —'}</option>`
-    ).join('');
+    ).join('') + `<option value="__add__">➕ Add model…</option>`;
 
     const effectiveCat = p.category || suggestCategory(r['Fault Code']);
     const catCls       = catClass(effectiveCat);
@@ -1223,8 +1258,11 @@ function render() {
       <td><span class="status-dot ${dotClass}"></span><span class="ncr-num">${n}</span>${isNew ? '<span class="new-badge">NEW</span>' : ''}</td>
       <td class="date-col">${dateShort}</td>
       <td><span class="assignee-badge ${badgeClass}">${assignee || '—'}</span></td>
-      <td class="part-num">${r['Part Number']}${modelBadge}</td>
-      <td><select class="dept-select" style="min-width:72px;max-width:72px" onchange="setModel('${n}',this.value)">${modelOpts}</select></td>
+      <td class="part-num">${r['Part Number']}</td>
+      <td style="white-space:nowrap">
+        ${modelBadge}
+        <select class="dept-select" style="min-width:68px;max-width:68px;margin-top:2px" onchange="handleModelChange('${n}',this)">${modelOpts}</select>
+      </td>
       <td class="fault-code">${r['Fault Code']}</td>
       <td>${sysBadge}</td>
       <td>
