@@ -1606,7 +1606,7 @@ async function importCSVToSheets(input) {
 
   const COLS = {
     ncr:     findCol('NCR Number', 'NCR No', 'NCR No.', 'NCR#'),
-    date:    findCol('Logged Date', 'Date Logged', 'Date', 'Log Date', 'Logged', 'Created Date', 'Date Created', 'Raised Date', 'Date Raised'),
+    date:    2, // always column C
     to:      findCol('To', 'Assigned To', 'Assigned'),
     part:    findCol('Part Number', 'Part No'),
     fault:   findCol('Fault Code', 'Fault', 'Defect Code'),
@@ -1620,8 +1620,6 @@ async function importCSVToSheets(input) {
     setNCRSyncState('error', 'Import failed');
     return;
   }
-  // Column C (index 2) fallback for date when no header match found
-  if (COLS.date < 0 && headers.length > 2) COLS.date = 2;
 
   const col = (row, key) => {
     if (COLS[key] < 0) return '';
