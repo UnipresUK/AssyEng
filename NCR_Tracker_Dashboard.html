@@ -1556,7 +1556,7 @@ async function importCSVToSheets(input) {
   try {
     const buf      = await file.arrayBuffer();
     const data     = new Uint8Array(buf);
-    const workbook = XLSX.read(data, { type: 'array', cellDates: false, raw: false });
+    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
     // Pick sheet with most columns (the full data sheet)
     let bestSheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -1623,7 +1623,15 @@ async function importCSVToSheets(input) {
   // Column C (index 2) fallback for date when no header match found
   if (COLS.date < 0 && headers.length > 2) COLS.date = 2;
 
-  const col = (row, key) => COLS[key] >= 0 ? String(row[COLS[key]] || '').trim() : '';
+  const col = (row, key) => {
+    if (COLS[key] < 0) return '';
+    const v = row[COLS[key]];
+    // SheetJS with cellDates:true returns JS Date objects for date cells — normalise to DD/MM/YYYY
+    if (v instanceof Date && !isNaN(v.getTime())) {
+      return `${v.getDate().toString().padStart(2,'0')}/${(v.getMonth()+1).toString().padStart(2,'0')}/${v.getFullYear()}`;
+    }
+    return String(v || '').trim();
+  };
 
   const records = [];
   for (let i = headerIdx + 1; i < rows.length; i++) {
