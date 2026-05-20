@@ -1548,10 +1548,13 @@ async function importCSVToSheets(input) {
     return;
   }
 
-  // Find header row — scan first 30 rows for one containing "NCR"
+  // Find header row — needs to contain "NCR" AND have 4+ populated cells
+  // (avoids grabbing a title line like "NCR Report" which only has 1-2 cells)
   let headerIdx = -1;
   for (let i = 0; i < Math.min(rows.length, 30); i++) {
-    if (rows[i].some(c => /ncr/i.test(String(c)))) { headerIdx = i; break; }
+    const row = rows[i];
+    const populated = row.filter(c => c !== '' && c !== null && c !== undefined).length;
+    if (populated >= 4 && row.some(c => /ncr/i.test(String(c)))) { headerIdx = i; break; }
   }
   if (headerIdx < 0) {
     alert('Could not find NCR column in this file.\nMake sure you are exporting the correct NCR report.');
@@ -1577,7 +1580,7 @@ async function importCSVToSheets(input) {
 
   const COLS = {
     ncr:     findCol('NCR Number', 'NCR No', 'NCR No.', 'NCR#'),
-    date:    findCol('Logged Date', 'Date Logged', 'Date'),
+    date:    findCol('Logged Date', 'Date Logged', 'Date', 'Log Date', 'Logged', 'Created Date', 'Date Created', 'Raised Date', 'Date Raised'),
     to:      findCol('To', 'Assigned To', 'Assigned'),
     part:    findCol('Part Number', 'Part No'),
     fault:   findCol('Fault Code', 'Fault', 'Defect Code'),
@@ -1591,6 +1594,8 @@ async function importCSVToSheets(input) {
     setNCRSyncState('error', 'Import failed');
     return;
   }
+  // Column C (index 2) fallback for date when no header match found
+  if (COLS.date < 0 && headers.length > 2) COLS.date = 2;
 
   const col = (row, key) => COLS[key] >= 0 ? String(row[COLS[key]] || '').trim() : '';
 
