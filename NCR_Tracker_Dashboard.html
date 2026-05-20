@@ -628,6 +628,7 @@
         <th onclick="sortBy('Logged Date')">Logged</th>
         <th onclick="sortBy('To')">Assigned To</th>
         <th onclick="sortBy('Part Number')">Part Number</th>
+        <th class="no-sort">Model</th>
         <th onclick="sortBy('Fault Code')">Fault Code</th>
         <th class="no-sort">NCR Status</th>
         <th class="no-sort">Member Allocated</th>
@@ -944,6 +945,7 @@ async function loadProgress() {
           notes:             r.Notes             || '',
           category:          r.Category          || '',
           dept:              r.Dept              || '',
+          model:             r.Model             || '',
           ts_investigated:   r.TS_Investigated   || '',
           ts_countermeasure: r.TS_Countermeasure || '',
           ts_failed:         r.TS_Failed         || '',
@@ -959,6 +961,7 @@ async function loadProgress() {
       }
       setSyncState('synced', 'Synced ✓');
       applyWeldTeamDefaults();
+      applyModelDefaults();
     } else {
       throw new Error(json.error || 'Bad response');
     }
@@ -987,6 +990,7 @@ async function pushRecord(ncr) {
     notes:             p.notes             || '',
     category:          p.category          || '',
     dept:              p.dept              || '',
+    model:             p.model             || '',
     ts_investigated:   p.ts_investigated   || '',
     ts_countermeasure: p.ts_countermeasure || '',
     ts_failed:         p.ts_failed         || '',
@@ -1015,7 +1019,7 @@ function setLoadingBar(pct) {
 // ── Progress helpers ───────────────────────────────────────────
 function getP(ncr) {
   return progress[ncr] || {
-    investigator: '', status: '', notes: '', category: '', dept: '',
+    investigator: '', status: '', notes: '', category: '', dept: '', model: '',
     ts_investigated: '', ts_countermeasure: '', ts_failed: '', ts_complete: '',
     due_date: '',
   };
@@ -1116,7 +1120,10 @@ function getVisible() {
       const dept = p.dept || '';
       if (!deptFilter.has(dept) && !(deptFilter.has('__unassigned__') && dept === '')) return false;
     }
-    if (modelFilter.size > 0 && !modelFilter.has(getModel(r['Part Number']))) return false;
+    if (modelFilter.size > 0) {
+      const effectiveModel = p.model || getModel(r['Part Number']);
+      if (!modelFilter.has(effectiveModel)) return false;
+    }
     if (searchTerm) {
       const hay = [r['NCR Number'], r['Part Number'], r['Fault Code'], r['To'], r['Workcentre Found']].join(' ').toLowerCase();
       if (!hay.includes(searchTerm)) return false;
@@ -1143,7 +1150,7 @@ function render() {
   const tbody = document.getElementById('ncr-body');
 
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state">No NCRs match the current filters.</div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state">No NCRs match the current filters.</div></td></tr>`;
     updateStats();
     return;
   }
@@ -1177,8 +1184,11 @@ function render() {
                      : isComplete  ? 'row-complete' : '';
 
     const isNew = newNCRs.has(n);
-    const model = getModel(r['Part Number']);
-    const modelBadge = model ? `<span class="model-badge model-${model.toLowerCase()}">${model}</span>` : '';
+    const effectiveModel = p.model || getModel(r['Part Number']);
+    const modelBadge = effectiveModel ? `<span class="model-badge model-${effectiveModel.toLowerCase()}">${effectiveModel}</span>` : '';
+    const modelOpts = ['','PZ1D','PZ1H'].map(m =>
+      `<option value="${m}" ${(p.model||'')=== m ? 'selected':''}>${m||'— model —'}</option>`
+    ).join('');
 
     const effectiveCat = p.category || suggestCategory(r['Fault Code']);
     const catCls       = catClass(effectiveCat);
@@ -1214,6 +1224,7 @@ function render() {
       <td class="date-col">${dateShort}</td>
       <td><span class="assignee-badge ${badgeClass}">${assignee || '—'}</span></td>
       <td class="part-num">${r['Part Number']}${modelBadge}</td>
+      <td><select class="dept-select" style="min-width:72px;max-width:72px" onchange="setModel('${n}',this.value)">${modelOpts}</select></td>
       <td class="fault-code">${r['Fault Code']}</td>
       <td>${sysBadge}</td>
       <td>
@@ -1355,6 +1366,14 @@ function setDept(ncr, val) {
   progress[ncr] = p;
   scheduleSync(ncr);
   toast(`NCR ${ncr} dept → ${val || 'cleared'}`);
+}
+
+function setModel(ncr, val) {
+  const p   = getP(ncr);
+  p.model   = val;
+  progress[ncr] = p;
+  scheduleSync(ncr);
+  render();
 }
 
 function setDueDate(ncr, val) {
@@ -1624,6 +1643,27 @@ function initFilterButtons() {
     b.classList.toggle('active', v === 'all' ? modelFilter.size === 0 : modelFilter.has(v));
   });
   rebuildAssigneeFilter();   // build group buttons immediately with embedded data
+}
+
+// ── Auto-set model from part number suffix (only when blank) ──
+function applyModelDefaults() {
+  let changed = false;
+  currentData.forEach(r => {
+    const p = getP(r['NCR Number']);
+    if (!p.model) {
+      const auto = getModel(r['Part Number']);
+      if (auto) {
+        p.model = auto;
+        progress[r['NCR Number']] = p;
+        scheduleSync(r['NCR Number']);
+        changed = true;
+      }
+    }
+  });
+  if (changed) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    render();
+  }
 }
 
 // ── Auto-default Weld Team faults ──────────────────────────────
