@@ -1174,18 +1174,44 @@ function getVisible() {
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function formatDate(s) {
   if (!s) return '';
+  const str = String(s).trim();
+  if (!str) return '';
   try {
-    const [d] = s.split(' ');
-    const [day, mon, yr] = d.split('/');
-    return `${parseInt(day)} ${MONTHS_SHORT[parseInt(mon)-1]} ${String(yr).slice(-2)}`;
-  } catch { return s; }
+    // DD/MM/YYYY or DD/MM/YYYY HH:MM:SS
+    const slashDMY = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (slashDMY) {
+      const [,day,mon,yr] = slashDMY;
+      return `${parseInt(day)} ${MONTHS_SHORT[parseInt(mon)-1] || '?'} ${String(yr).slice(-2)}`;
+    }
+    // YYYY-MM-DD or ISO 8601 from Sheets
+    const isoYMD = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (isoYMD) {
+      const [,yr,mon,day] = isoYMD;
+      return `${parseInt(day)} ${MONTHS_SHORT[parseInt(mon)-1] || '?'} ${String(yr).slice(-2)}`;
+    }
+    // Fallback: let JS parse it
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${String(d.getFullYear()).slice(-2)}`;
+    }
+    return str;
+  } catch { return str; }
 }
 
 function parseDate(s) {
   if (!s) return 0;
-  const [d, t] = s.split(' ');
-  const [day, mon, yr] = d.split('/');
-  return new Date(`${yr}-${mon}-${day}T${t||'00:00:00'}`).getTime();
+  const str = String(s).trim();
+  try {
+    // DD/MM/YYYY or DD/MM/YYYY HH:MM:SS — JS Date won't parse this natively
+    const slashDMY = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{2}:\d{2}:\d{2}))?/);
+    if (slashDMY) {
+      const [,day,mon,yr,t] = slashDMY;
+      return new Date(`${yr}-${mon.padStart(2,'0')}-${day.padStart(2,'0')}T${t||'00:00:00'}`).getTime();
+    }
+    // ISO / YYYY-MM-DD / anything else JS can parse
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? 0 : d.getTime();
+  } catch { return 0; }
 }
 
 // ── Render ─────────────────────────────────────────────────────
