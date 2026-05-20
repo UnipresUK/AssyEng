@@ -1229,7 +1229,13 @@ function render() {
 
     const isNew = newNCRs.has(n);
     const effectiveModel = p.model || getModel(r['Part Number']);
-    const modelBadge = effectiveModel ? `<span class="model-badge model-${effectiveModel.toLowerCase()}">${effectiveModel}</span>` : '';
+    const modelSelectStyle = effectiveModel === 'PZ1D'
+      ? 'background:rgba(245,158,11,0.13);border-color:rgba(245,158,11,0.5);color:#b45309;font-weight:600'
+      : effectiveModel === 'PZ1H'
+      ? 'background:rgba(139,92,246,0.13);border-color:rgba(139,92,246,0.5);color:#6d28d9;font-weight:600'
+      : effectiveModel
+      ? 'background:rgba(100,116,139,0.1);border-color:rgba(100,116,139,0.4);color:#475569;font-weight:600'
+      : '';
     const modelList = getModels();
     const modelOpts = ['', ...modelList].map(m =>
       `<option value="${m}" ${(p.model||'')=== m ? 'selected':''}>${m||'— model —'}</option>`
@@ -1269,9 +1275,8 @@ function render() {
       <td class="date-col">${dateShort}</td>
       <td><span class="assignee-badge ${badgeClass}">${assignee || '—'}</span></td>
       <td class="part-num">${r['Part Number']}</td>
-      <td style="white-space:nowrap">
-        ${modelBadge}
-        <select class="dept-select" style="min-width:68px;max-width:68px;margin-top:2px" onchange="handleModelChange('${n}',this)">${modelOpts}</select>
+      <td>
+        <select class="dept-select" style="min-width:68px;max-width:68px;${modelSelectStyle}" onchange="handleModelChange('${n}',this)">${modelOpts}</select>
       </td>
       <td class="fault-code">${r['Fault Code']}</td>
       <td>${sysBadge}</td>
