@@ -825,8 +825,8 @@ let memberFilter = new Set();
 let deptFilter   = new Set();
 let modelFilter  = new Set();
 let searchTerm  = '';
-let sortCol     = 'NCR Number';
-let sortAsc     = true;
+let sortCol     = 'Logged Date';
+let sortAsc     = false;   // newest first
 let currentData = [...NCR_DATA];
 let syncPending = {};   // ncr → debounce timer
 let newNCRs = new Set(JSON.parse(localStorage.getItem(NEW_NCRS_KEY) || '[]'));
@@ -1171,6 +1171,16 @@ function getVisible() {
   });
 }
 
+const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function formatDate(s) {
+  if (!s) return '';
+  try {
+    const [d] = s.split(' ');
+    const [day, mon, yr] = d.split('/');
+    return `${parseInt(day)} ${MONTHS_SHORT[parseInt(mon)-1]} ${String(yr).slice(-2)}`;
+  } catch { return s; }
+}
+
 function parseDate(s) {
   if (!s) return 0;
   const [d, t] = s.split(' ');
@@ -1252,7 +1262,7 @@ function render() {
       .map(m => `<option value="${m}" ${(p.investigator||'')=== m ? 'selected' : ''}>${m || '— allocate —'}</option>`)
       .join('') + `<option value="__add__">➕ Add name…</option>`;
 
-    const dateShort = r['Logged Date'] ? r['Logged Date'].split(' ')[0] : '';
+    const dateShort = formatDate(r['Logged Date']);
 
     return `<tr class="${rowClass}" id="row-${n}">
       <td><span class="status-dot ${dotClass}"></span><span class="ncr-num">${n}</span>${isNew ? '<span class="new-badge">NEW</span>' : ''}</td>
