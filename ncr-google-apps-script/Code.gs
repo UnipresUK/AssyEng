@@ -3,7 +3,7 @@ const SPREADSHEET_ID = '17WxtqSYbL4wt7bnAmHavbSM8MYE3CnRdkikeZpiHIuA';
 const PROGRESS_SHEET  = 'NCR_Progress';
 const NCR_DATA_SHEET  = 'All NCRs';
 const EXPECTED_HEADERS = ['NCR_Number','Investigator','Status','Notes','Category','Dept',
-                          'Model','TS_Investigated','TS_Countermeasure','TS_Failed','TS_Complete','DueDate','LastUpdated'];
+                          'Model','TS_Investigated','TS_Countermeasure','TS_Failed','TS_Complete','DueDate','CellNo','LastUpdated'];
 
 // ─── Get sheet, adding any missing header columns automatically ─
 function getSheet() {
@@ -160,6 +160,7 @@ function doUpdate(p) {
     'TS_Failed':         p.ts_failed         || '',
     'TS_Complete':       p.ts_complete       || '',
     'DueDate':           p.due_date          || '',
+    'CellNo':            p.cell_no           || '',
     'LastUpdated':       new Date().toISOString(),
   };
 

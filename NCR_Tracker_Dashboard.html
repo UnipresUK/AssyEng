@@ -301,7 +301,10 @@
   /* ── Progress buttons ── */
   .progress-btns { display: flex; gap: 4px; flex-wrap: nowrap; align-items: flex-start; }
   .prog-btn-wrap { display: inline-flex; flex-direction: column; align-items: center; gap: 1px; }
-  .prog-ts { font-size: 9px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; line-height: 1.2; }
+  .prog-ts { font-size: 9px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; line-height: 1.2; display:flex; align-items:center; gap:2px; }
+  .ts-clear { background:none; border:none; color:#ef4444; font-size:9px; cursor:pointer; padding:0 1px; line-height:1; opacity:0.6; }
+  .ts-clear:hover { opacity:1; }
+  .cell-no-input { width:54px; padding:3px 5px; border:1px solid var(--border); border-radius:4px; font-size:12px; font-family:inherit; background:var(--surface2); color:var(--text); text-align:center; }
   .prog-btn {
     padding: 2px 6px;
     border-radius: 3px;
@@ -633,6 +636,7 @@
         <th class="no-sort">NCR Status</th>
         <th class="no-sort">Member Allocated</th>
         <th class="no-sort">Dept Responsible</th>
+        <th class="no-sort">Cell No</th>
         <th class="no-sort">Progress</th>
         <th class="no-sort">Comment</th>
         <th class="no-sort">Due Date</th>
@@ -683,6 +687,36 @@ const ASSIGNEE_DEPT = {
   'Troy Stewart-Wyke':  'Assy',
 };
 const ASSIGNEE_DEPTS = ['Assy','Press','Despatch'];
+
+// ── Cell No lookup: part number → cell number ──────────────────
+const CELL_MAP = {
+  '64120 7TA0A':'300','64121 7TA0A':'301','64180/1 7TA0A':'302',
+  '67310 / 745A8 7TA0A':'303','67400/1 7TA0A':'304','67402 7TA0A':'305',
+  '74330 7TA0A':'306','74370 7TA0A':'307','74370 7TH1A':'308',
+  '74515 7TA0A':'309','74530/1 7TA0A':'310','751A5 7TA0A':'311',
+  '751A4/5 7TA0A':'311','75110 7TA0A':'312','75111 7TA0A':'313',
+  '75130 7TA0A':'314','75131 7TA0A':'315','75274/5 7TA0A':'316',
+  '75430 7TA0A':'317','75510 7TA0A':'318','75511 7TA0A':'319',
+  '755E0/1/ 75650 7TA0A':'320','76450/1 7TA0A':'321','76240 7TA0A':'322',
+  '76241 7TA0A':'323','76750 7TA0A':'325','76751 7TA0A':'326',
+  '75152/3 7TA0A 0A (SUB 2)':'331','62520 7TA0B (SUB 3)':'332',
+  '62521 7TA0B (SUB 3)':'333','751N8/9 7TA0A 0A (SUB 3)':'334',
+  '75940/1 7TA0A (SUB 4)':'335','76454 7TA0A 0A (SUB 1)':'336',
+  '76455 7TA0A 0A (SUB 1)':'337','75522 7TA0A 0A (SUB 2)':'338',
+  '75523 7TA0A 0A (SUB 2)':'339','75692/3 7TA0A 0B (SUB 3)':'341',
+  '75692/3 7TA0A 0A':'342','755F3/4 7TA0A 0A (SUB 5)':'343',
+  '76760/1 7TA0A':'344','75932/3 7TA0A 0A (SUB 1)':'345',
+};
+const CELL_NOS = [...new Set(Object.values(CELL_MAP))].sort((a,b)=>parseInt(a)-parseInt(b));
+function getCellNo(partNumber) {
+  if (!partNumber) return '';
+  const p = partNumber.trim();
+  if (CELL_MAP[p]) return CELL_MAP[p];
+  for (const key of Object.keys(CELL_MAP)) {
+    if (p.includes(key) || key.includes(p)) return CELL_MAP[key];
+  }
+  return '';
+}
 
 // ── Team map: member → dept (used for auto-fill & settings panel) ─
 const TEAM_MAP = {
@@ -985,6 +1019,7 @@ async function loadProgress() {
           ts_failed:         r.TS_Failed         || '',
           ts_complete:       r.TS_Complete       || '',
           due_date:          r.DueDate           || '',
+          cell_no:           r.CellNo            || '',
         };
       });
       // Only re-render if the data actually changed
@@ -1030,6 +1065,7 @@ async function pushRecord(ncr) {
     ts_failed:         p.ts_failed         || '',
     ts_complete:       p.ts_complete       || '',
     due_date:          p.due_date          || '',
+    cell_no:           p.cell_no           || '',
   });
   try {
     const res  = await fetch(SHEETS_URL + '?' + params.toString());
@@ -1055,7 +1091,7 @@ function getP(ncr) {
   return progress[ncr] || {
     investigator: '', status: '', notes: '', category: '', dept: '', model: '',
     ts_investigated: '', ts_countermeasure: '', ts_failed: '', ts_complete: '',
-    due_date: '',
+    due_date: '', cell_no: '',
   };
 }
 
@@ -1280,12 +1316,18 @@ function render() {
       ['complete',       '🏁 Complete'],
     ].map(([val, label]) => {
       const ts     = formatTS(p['ts_' + val]);
-      const tsHtml = ts ? `<div class="prog-ts">${ts}</div>` : '';
+      const tsHtml = ts
+        ? `<div class="prog-ts">${ts}<button class="ts-clear" onclick="clearTS('${n}','${val}')" title="Clear timestamp">✕</button></div>`
+        : '';
       return `<div class="prog-btn-wrap">` +
         `<button class="prog-btn ${val} ${p.status === val ? 'active' : ''}" onclick="setStatus('${n}','${val}')">${label}</button>` +
         tsHtml +
         `</div>`;
     }).join('');
+
+    const autoCellNo  = getCellNo(r['Part Number']);
+    const cellNoVal   = p.cell_no || autoCellNo;
+    const cellNoOpts  = CELL_NOS.map(c => `<option value="${c}">${c}</option>`).join('');
 
     const DEPTS = ['','Engineering','Weld Team','Assy','Quality'];
     const deptOptions = DEPTS.map(d =>
@@ -1318,6 +1360,12 @@ function render() {
         <select class="dept-select" onchange="setDept('${n}', this.value)">
           ${deptOptions}
         </select>
+      </td>
+      <td>
+        <input class="cell-no-input" list="cell-no-list-${n}" value="${escHtml(cellNoVal)}"
+          placeholder="Cell…"
+          onchange="setCellNo('${n}',this.value)" onblur="setCellNo('${n}',this.value)">
+        <datalist id="cell-no-list-${n}">${cellNoOpts}</datalist>
       </td>
       <td><div class="progress-btns">${progBtns}</div></td>
       <td>
@@ -1456,6 +1504,22 @@ function setModel(ncr, val) {
   progress[ncr] = p;
   scheduleSync(ncr);
   render();
+}
+
+function clearTS(ncr, val) {
+  const p = getP(ncr);
+  p['ts_' + val] = '';
+  if (p.status === val) p.status = '';
+  progress[ncr] = p;
+  scheduleSync(ncr);
+  render();
+}
+
+function setCellNo(ncr, val) {
+  const p    = getP(ncr);
+  p.cell_no  = val.trim();
+  progress[ncr] = p;
+  scheduleSync(ncr);
 }
 
 function setDueDate(ncr, val) {
