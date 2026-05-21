@@ -1174,19 +1174,12 @@ function getVisible() {
 const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function expandYear(y) { const n = parseInt(y); return n < 100 ? (n < 50 ? 2000+n : 1900+n) : n; }
 
-// Resolve ambiguous D/M vs M/D: if one interpretation is >60 days in future but the other isn't, pick the non-future one
+// Export format is MM/DD/YYYY — treat first number as month, second as day.
+// Exception: if first number > 12 it can't be a month, so swap (DD/MM).
 function resolveSlashDate(p1, p2, fullYr) {
-  const n1 = parseInt(p1), n2 = parseInt(p2);
-  if (n1 > 12) return { day: p1, mon: p2 }; // p1 can't be month — must be day
-  if (n2 > 12) return { day: p2, mon: p1 }; // p2 can't be month — must be day
-  // Both ≤ 12 — ambiguous
-  const SIXTY_DAYS = 60 * 86400 * 1000;
-  const now = Date.now();
-  const asDDMM = new Date(`${fullYr}-${p2.padStart(2,'0')}-${p1.padStart(2,'0')}`).getTime(); // day=p1 mon=p2
-  const asMMDD = new Date(`${fullYr}-${p1.padStart(2,'0')}-${p2.padStart(2,'0')}`).getTime(); // day=p2 mon=p1
-  // If DD/MM lands too far in future but MM/DD doesn't, the export is using MM/DD format
-  if (asDDMM > now + SIXTY_DAYS && asMMDD <= now + SIXTY_DAYS) return { day: p2, mon: p1 };
-  return { day: p1, mon: p2 }; // default UK: first number is day
+  const n1 = parseInt(p1);
+  if (n1 > 12) return { day: p1, mon: p2 }; // p1 > 12 → must be day, p2 is month
+  return { day: p2, mon: p1 };               // default: MM/DD — p1 is month, p2 is day
 }
 
 function formatDate(s) {
@@ -1311,7 +1304,7 @@ function render() {
       .map(m => `<option value="${m}" ${(p.investigator||'')=== m ? 'selected' : ''}>${m || '— allocate —'}</option>`)
       .join('') + `<option value="__add__">➕ Add name…</option>`;
 
-    const dateShort = r['Logged Date'] || '';
+    const dateShort = formatDate(r['Logged Date']);
 
     return `<tr class="${rowClass}" id="row-${n}">
       <td><span class="status-dot ${dotClass}"></span><span class="ncr-num">${n}</span>${isNew ? '<span class="new-badge">NEW</span>' : ''}</td>
