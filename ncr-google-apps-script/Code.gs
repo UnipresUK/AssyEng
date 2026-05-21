@@ -88,7 +88,8 @@ function doGetNCRData() {
   const ss    = SpreadsheetApp.openById(SPREADSHEET_ID);
   const sheet = ss.getSheetByName(NCR_DATA_SHEET);
   if (!sheet) return ok([]);
-  const data  = sheet.getDataRange().getValues();
+  const range = sheet.getDataRange();
+  const data  = range.getDisplayValues(); // use display text — preserves date format as shown in sheet
   if (data.length < 2) return ok([]);
 
   // Find the header row — scan first 10 rows for one containing 'NCR'
@@ -102,10 +103,10 @@ function doGetNCRData() {
 
   const headers = data[headerIdx].map(String);
   const records = data.slice(headerIdx + 1)
-    .filter(function(row) { return row.some(function(c) { return c !== '' && c !== null; }); })
+    .filter(function(row) { return row.some(function(c) { return c !== ''; }); })
     .map(function(row) {
       const obj = {};
-      headers.forEach(function(h, i) { obj[h] = row[i] !== undefined ? String(row[i]) : ''; });
+      headers.forEach(function(h, i) { obj[h] = row[i] || ''; });
       return obj;
     });
   return ok(records);
