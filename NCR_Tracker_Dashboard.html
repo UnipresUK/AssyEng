@@ -471,7 +471,7 @@
 <nav class="site-nav">
   <div class="nav-brand">PZ1D NCR</div>
   <a href="NCR_Tracker_Dashboard.html" class="active">📋 Tracker</a>
-  <a href="NCR_Management_Dashboard.html">📊 Management Dashboard</a>
+  <a href="NCR_Management_Dashboard.html" onclick="saveMgmtFilter()">📊 Management Dashboard</a>
   <a href="NCR_Gantt_Plan.html">📅 Timing Plan</a>
 </nav>
 
@@ -602,6 +602,12 @@
   <button class="cat-chip"        data-model="PZ1D" onclick="setModelFilter('PZ1D',this)">PZ1D</button>
   <button class="cat-chip"        data-model="PZ1H" onclick="setModelFilter('PZ1H',this)">PZ1H</button>
   <button class="cat-chip"        data-model=""     onclick="setModelFilter('',this)">Other / Unknown</button>
+</div>
+
+<!-- Cell No filter bar (dynamic) -->
+<div class="category-bar" id="cell-filter-bar">
+  <span class="filter-label">Cell</span>
+  <button class="cat-chip active" data-cell="all" onclick="setCellFilter('all',this)">All</button>
 </div>
 
 <!-- Fault code category filter bar -->
@@ -858,6 +864,7 @@ let catFilter    = new Set();
 let memberFilter = new Set();
 let deptFilter   = new Set();
 let modelFilter  = new Set();
+let cellFilter   = new Set();
 let searchTerm  = '';
 let sortCol     = 'Logged Date';
 let sortAsc     = false;   // newest first
@@ -1194,6 +1201,10 @@ function getVisible() {
       const effectiveModel = p.model || getModel(r['Part Number']);
       if (!modelFilter.has(effectiveModel)) return false;
     }
+    if (cellFilter.size > 0) {
+      const effectiveCell = p.cell_no || getCellNo(r['Part Number']);
+      if (!cellFilter.has(effectiveCell)) return false;
+    }
     if (searchTerm) {
       const hay = [r['NCR Number'], r['Part Number'], r['Fault Code'], r['To'], r['Workcentre Found']].join(' ').toLowerCase();
       if (!hay.includes(searchTerm)) return false;
@@ -1382,6 +1393,7 @@ function render() {
 
   updateStats();
   rebuildMemberFilterBar();
+  rebuildCellFilterBar();
 
   // New NCR banner
   const banner = document.getElementById('new-ncr-banner');
@@ -1416,7 +1428,7 @@ function updateStats() {
   const visible  = getVisible();
   const isFiltered = filters.assignee.size > 0 || filters.sysstatus.size > 0 ||
                      catFilter.size > 0 || memberFilter.size > 0 || deptFilter.size > 0 ||
-                     modelFilter.size > 0 ||
+                     modelFilter.size > 0 || cellFilter.size > 0 ||
                      filters.progress !== 'all' || searchTerm;
 
   // When filtered: stats show filtered numbers; when not: show full totals
@@ -1538,6 +1550,44 @@ function setModelFilter(val, btn) {
     b.classList.toggle('active', v === 'all' ? modelFilter.size === 0 : modelFilter.has(v));
   });
   render();
+}
+
+function setCellFilter(val, btn) {
+  if (val === 'all') cellFilter.clear();
+  else { if (cellFilter.has(val)) cellFilter.delete(val); else cellFilter.add(val); }
+  document.querySelectorAll('[data-cell]').forEach(b => {
+    const v = b.getAttribute('data-cell');
+    b.classList.toggle('active', v === 'all' ? cellFilter.size === 0 : cellFilter.has(v));
+  });
+  render();
+}
+
+function rebuildCellFilterBar() {
+  const bar = document.getElementById('cell-filter-bar');
+  if (!bar) return;
+  const cells = [...new Set(currentData.map(r => {
+    const p = getP(r['NCR Number']);
+    return p.cell_no || getCellNo(r['Part Number']);
+  }).filter(Boolean))].sort((a,b) => parseInt(a)-parseInt(b));
+
+  bar.innerHTML = `<span class="filter-label">Cell</span>` +
+    `<button class="cat-chip ${cellFilter.size===0?'active':''}" data-cell="all" onclick="setCellFilter('all',this)">All</button>` +
+    cells.map(c =>
+      `<button class="cat-chip ${cellFilter.has(c)?'active':''}" data-cell="${c}" onclick="setCellFilter('${c}',this)">${c}</button>`
+    ).join('');
+}
+
+function saveMgmtFilter() {
+  const visible = getVisible().map(r => r['NCR Number']);
+  const isFiltered = filters.assignee.size > 0 || filters.sysstatus.size > 0 ||
+    catFilter.size > 0 || memberFilter.size > 0 || deptFilter.size > 0 ||
+    modelFilter.size > 0 || cellFilter.size > 0 ||
+    filters.progress !== 'all' || searchTerm;
+  if (isFiltered) {
+    localStorage.setItem('pz1d_mgmt_filter_v1', JSON.stringify(visible));
+  } else {
+    localStorage.removeItem('pz1d_mgmt_filter_v1');
+  }
 }
 
 function markAllSeen() {
